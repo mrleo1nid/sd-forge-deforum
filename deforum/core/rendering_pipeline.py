@@ -15,7 +15,7 @@ from pathlib import Path
 
 from .frame_models import (
     FrameState, FrameResult, RenderContext, RenderingSession,
-    ProcessingStage, RenderingError, ModelState
+    ProcessingStage, RenderingError, ModelState, FrameMetadata
 )
 from .frame_processing import (
     create_frame_state, process_frame, validate_frame_state,
@@ -376,21 +376,23 @@ def pipeline_with_error_handling(
 # Moved convert_legacy_frame_args function here from legacy_renderer.py
 def convert_legacy_frame_args(
     frame_idx: int,
-    args: Any,
+    args: Any, # This is context.legacy_args
+    anim_args: Any, # This is context.legacy_anim_args
     keys: Any,
     prompt_series: Any
-) -> Dict[str, Any]:
+) -> FrameMetadata: # Changed return type to FrameMetadata
     """
-    Convert legacy frame arguments to metadata dictionary.
+    Convert legacy frame arguments to a FrameMetadata object.
     
     Args:
         frame_idx: Frame index
         args: Legacy args object
+        anim_args: Legacy animation args object
         keys: Legacy keys object
         prompt_series: Legacy prompt series
         
     Returns:
-        Dictionary of frame metadata
+        FrameMetadata object containing frame metadata
     """
     metadata = {
         'frame_idx': frame_idx,
@@ -411,12 +413,27 @@ def convert_legacy_frame_args(
     print(f"[DEBUG] In convert_legacy_frame_args: args.seed='{args.seed}', type={type(args.seed)}")
     metadata['seed'] = int(keys.seed_schedule_series[frame_idx])
 
-    # Prompts (simplified, assuming keys.prompts is a series of combined prompts)
-    # Actual prompt construction might be more complex in the original legacy system
-    if hasattr(prompt_series, '__getitem__') and frame_idx < len(prompt_series):
-        metadata['prompt'] = str(prompt_series[frame_idx])
-    elif hasattr(args, 'prompt'):
-        metadata['prompt'] = str(args.prompt)
+    # Prompts
+    current_prompt_text = ""
+    # Prioritize scheduled animation_prompts (passed as prompt_series)
+    if isinstance(prompt_series, dict) and prompt_series:
+        # Find the greatest keyframe number <= current frame_idx
+        # Ensure keys are integers for comparison and lookup
+        applicable_keys = [k for k in prompt_series.keys() if isinstance(k, int) and k <= frame_idx]
+        if applicable_keys:
+            current_prompt_text = str(prompt_series[max(applicable_keys)])
+        
+    # If no scheduled prompt was found for this frame_idx or before it, or prompt_series is not a dict/is empty
+    if not current_prompt_text: # This condition ensures fallback if scheduled prompt is empty string for current keyframe too
+        if hasattr(args, 'positive_prompts') and args.positive_prompts:
+            current_prompt_text = str(args.positive_prompts)
+        elif hasattr(args, 'prompts') and isinstance(args.prompts, dict) and 0 in args.prompts and args.prompts[0]: # Fallback for old single prompt in dict at frame 0
+            current_prompt_text = str(args.prompts[0])
+        elif hasattr(args, 'prompt') and args.prompt: # Fallback for very old single prompt attribute
+             current_prompt_text = str(args.prompt)
+        # else: current_prompt_text remains "" if all fallbacks fail or are empty
+
+    metadata['prompt'] = current_prompt_text
     
     # Extract scheduled values if available
     if hasattr(keys, 'strength_schedule_series') and frame_idx < len(keys.strength_schedule_series):
@@ -432,8 +449,22 @@ def convert_legacy_frame_args(
     # These might need to be added to convert_legacy_frame_args or handled here by accessing legacy_keys schedules directly.
     current_negative_prompt = "" # Placeholder
     current_sampler_name = None # Placeholder
-    current_scheduler_name = None # Placeholder
+    # current_scheduler_name = None # Placeholder - Handled below
     current_checkpoint = None # Placeholder
+
+    # Determine scheduler for the current frame
+    current_scheduler_name = anim_args.scheduler_schedule # Default from anim_args
+    if hasattr(keys, 'scheduler_schedule_series') and anim_args.enable_scheduler_scheduling and frame_idx < len(keys.scheduler_schedule_series):
+        scheduled_scheduler = keys.scheduler_schedule_series[frame_idx]
+        if scheduled_scheduler is not None:
+            current_scheduler_name = str(scheduled_scheduler) # Ensure it's a string
+
+    # Determine steps for the current frame
+    current_steps = args.steps # Default from main args
+    if hasattr(keys, 'steps_schedule_series') and anim_args.enable_steps_scheduling and frame_idx < len(keys.steps_schedule_series):
+        scheduled_steps = keys.steps_schedule_series[frame_idx]
+        if scheduled_steps is not None:
+            current_steps = int(scheduled_steps)
     
     metadata = FrameMetadata(
         frame_idx=frame_idx,
@@ -441,13 +472,14 @@ def convert_legacy_frame_args(
         seed=metadata['seed'],
         strength=metadata['strength'],
         cfg_scale=metadata['cfg_scale'],
-        distilled_cfg_scale=metadata['distilled_cfg_scale'], # Assuming this is available or handled
+        distilled_cfg_scale=metadata['distilled_cfg_scale'],
         noise_level=metadata['noise_level'],
         prompt=metadata['prompt'],
         negative_prompt=current_negative_prompt,
-        sampler_name=current_sampler_name,
-        scheduler_name=current_scheduler_name,
-        checkpoint=current_checkpoint
+        sampler_name=current_sampler_name, # TODO: Populate from schedule if enabled
+        scheduler_name=current_scheduler_name, # TODO: Populate from schedule if enabled
+        steps=current_steps, # Set the determined steps
+        checkpoint=current_checkpoint # TODO: Populate from schedule if enabled
     )
     
     return metadata
@@ -462,7 +494,7 @@ def create_frame_generator(
     Each FrameState will have fully populated metadata using convert_legacy_frame_args.
     
     Args:
-        context: Rendering context (should contain legacy_args, legacy_keys, legacy_prompts)
+        context: Rendering context (should contain legacy_args, legacy_anim_args, legacy_keys, legacy_prompts)
         start_frame: Starting frame index
         
     Yields:
@@ -470,71 +502,30 @@ def create_frame_generator(
     """
     # These legacy objects are now expected to be in the RenderContext
     legacy_args = context.legacy_args
+    legacy_anim_args = context.legacy_anim_args
     legacy_keys = context.legacy_keys # This is the DeformAnimKeys or Parseq keys object
     legacy_prompts = context.legacy_prompts # This is root.animation_prompts
 
-    if not all([legacy_args, legacy_keys, legacy_prompts is not None]): # Prompts can be empty dict
+    if not all([legacy_args, legacy_anim_args, legacy_keys, legacy_prompts is not None]): # Prompts can be empty dict
         # This case should ideally be prevented by robust context creation
         # or raise an error if these are essential for proceeding.
-        print("Warning: Legacy objects (args, keys, or prompts) missing in RenderContext for create_frame_generator.")
+        print("Warning: Legacy objects (args, anim_args, keys, or prompts) missing in RenderContext for create_frame_generator.")
         # Fallback or error: Depending on how critical this is. For now, let it proceed and potentially fail later if metadata is incomplete.
         # Or, create placeholder metadata if that's a valid scenario for some pipeline use.
 
     for frame_idx in range(start_frame, context.max_frames):
         # Generate full metadata for the frame using the legacy conversion function
-        frame_specific_metadata_dict = convert_legacy_frame_args(
+        # This now directly returns a FrameMetadata object
+        metadata_obj = convert_legacy_frame_args(
             frame_idx,
-            legacy_args, 
-            legacy_keys, 
-            legacy_prompts 
-            # Ensure convert_legacy_frame_args handles prompt_series correctly if it expects a series vs dict
-            # The current convert_legacy_frame_args expects a prompt_series (like a list/interpolated series)
-            # We might need to adapt how prompts are passed or how convert_legacy_frame_args accesses them if legacy_prompts is a dict.
-            # For now, assume convert_legacy_frame_args can handle legacy_prompts as passed.
-        )
-        
-        # Ensure all fields required by FrameMetadata are present, with defaults for optional ones
-        # FrameMetadata fields: frame_idx, timestamp, seed, strength, cfg_scale, distilled_cfg_scale, noise_level, prompt
-        # Optional: negative_prompt, sampler_name, scheduler_name, checkpoint
-        
-        # Create FrameMetadata object
-        # Note: convert_legacy_frame_args might not provide all fields or might have extra ones.
-        # We need to ensure FrameMetadata is initialized correctly.
-        # A robust way is to filter frame_specific_metadata_dict for known FrameMetadata fields.
-        
-        # Quick check for essential fields from convert_legacy_frame_args output
-        # (timestamp is calculated by create_frame_state if not provided, but good to have it from schedule if possible)
-        current_prompt = frame_specific_metadata_dict.get('prompt', "")
-        current_seed = int(frame_specific_metadata_dict.get('seed', 42))
-        current_strength = float(frame_specific_metadata_dict.get('strength', 0.75))
-        current_cfg_scale = float(frame_specific_metadata_dict.get('cfg_scale', 7.0))
-        current_distilled_cfg_scale = float(frame_specific_metadata_dict.get('distilled_cfg_scale', current_cfg_scale)) # Fallback to cfg_scale
-        current_noise_level = float(frame_specific_metadata_dict.get('noise_level', 0.0))
-
-        # TODO: Extract negative_prompt, sampler_name, scheduler_name, checkpoint from schedules if available
-        # These might need to be added to convert_legacy_frame_args or handled here by accessing legacy_keys schedules directly.
-        current_negative_prompt = "" # Placeholder
-        current_sampler_name = None # Placeholder
-        current_scheduler_name = None # Placeholder
-        current_checkpoint = None # Placeholder
-        
-        metadata = FrameMetadata(
-            frame_idx=frame_idx,
-            timestamp=frame_idx / context.fps, # Consistent timestamp calculation
-            seed=current_seed,
-            strength=current_strength,
-            cfg_scale=current_cfg_scale,
-            distilled_cfg_scale=current_distilled_cfg_scale, # Assuming this is available or handled
-            noise_level=current_noise_level,
-            prompt=current_prompt,
-            negative_prompt=current_negative_prompt,
-            sampler_name=current_sampler_name,
-            scheduler_name=current_scheduler_name,
-            checkpoint=current_checkpoint
+            legacy_args,
+            legacy_anim_args, # Pass legacy_anim_args here
+            legacy_keys,
+            legacy_prompts
         )
         
         yield FrameState(
-            metadata=metadata,
+            metadata=metadata_obj, # Use the returned FrameMetadata object directly
             stage=ProcessingStage.INITIALIZATION
             # current_image and previous_image will be populated by pipeline stages
         )

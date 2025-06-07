@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
 
-from ..data_models import (
+from ..models.data_models import (
     AnimationMode, BorderMode, ColorCoherence, DepthAlgorithm, 
     PaddingMode, SamplingMode, validate_positive_int, validate_range,
     validate_non_negative_number
@@ -79,8 +79,8 @@ class DeforumGenerationArgs:
     """Immutable core generation arguments with validation"""
     
     # Image dimensions
-    width: int = 1024
-    height: int = 1024
+    width: int = 1280
+    height: int = 720
     
     # Generation settings
     seed: int = -1

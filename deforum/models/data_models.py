@@ -257,6 +257,10 @@ class AnimationArgs:
     enable_ddim_eta_scheduling: bool = False
     ddim_eta_schedule: str = "0: (0.0)"
     
+    # Resume functionality
+    resume_from_timestring: Optional[str] = None # Added for tqdm and resume logic
+    resume_timestring: Optional[str] = None # Companion for resume_from_timestring, often used together
+    
     def __post_init__(self):
         """Validate all schedule strings and numerical values"""
         # Validate frame count
@@ -304,7 +308,8 @@ class DeforumArgs:
     seed: int = -1
     sampler: str = "Euler a"
     steps: int = 25
-    scale: float = 7.0
+    cfg_scale: float = 7.0
+    distilled_cfg_scale: Optional[float] = None
     ddim_eta: float = 0.0
     dynamic_threshold: Optional[float] = None
     static_threshold: Optional[float] = None
@@ -324,6 +329,7 @@ class DeforumArgs:
     mask_brightness_adjust: float = 1.0
     
     # Output settings
+    outdir: str = "outputs/deforum"
     batch_name: str = "Deforum"
     filename_format: str = "{timestring}_{index:05}_{seed}"
     save_samples: bool = True
@@ -337,13 +343,19 @@ class DeforumArgs:
     
     # Advanced settings
     clip_skip: int = 1
+    scheduler: Optional[str] = "karras"
+    tiling: bool = False
+    restore_faces: bool = False
+    seed_resize_from_w: int = 0
+    seed_resize_from_h: int = 0
+    fill: bool = False
     
     def __post_init__(self):
         """Validate arguments"""
         validate_positive_int(self.W, "W")
         validate_positive_int(self.H, "H")
         validate_positive_int(self.steps, "steps")
-        validate_range(self.scale, 1.0, 30.0, "scale")
+        validate_range(self.cfg_scale, 1.0, 30.0, "cfg_scale")
         validate_range(self.strength, 0.0, 1.0, "strength")
         validate_range(self.ddim_eta, 0.0, 1.0, "ddim_eta")
         validate_non_negative_number(self.mask_overlay_blur, "mask_overlay_blur")

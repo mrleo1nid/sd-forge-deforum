@@ -8,6 +8,7 @@ import os
 import time
 from types import SimpleNamespace
 import pathlib
+import traceback
 from .general_utils import substitute_placeholders, get_deforum_version, clean_gradio_path_strings
 from ..utils import log_utils
 from ..utils.color_constants import BOLD, CYAN, RESET_COLOR
@@ -61,20 +62,26 @@ except ImportError:
 
 try:
     from ..models.data_models import (
-        AnimationArgs, DeforumArgs, DeforumOutputArgs, ParseqArgs, RootArgs, 
-        WanArgs, LoopArgs, ControlnetArgs, # VideoArgs removed as DeforumOutputArgs is used for video_args
-        create_animation_args_from_dict, create_deforum_args_from_dict, 
-        create_deforum_output_args_from_dict, # Added for video_args
+        AnimationArgs, DeforumArgs as DeforumArgs_Dataclass, # Aliasing to avoid conflict
+        DeforumOutputArgs as DeforumOutputArgs_Dataclass, 
+        ParseqArgs as ParseqArgs_Dataclass, RootArgs as RootArgs_Dataclass, 
+        WanArgs as WanArgs_Dataclass, LoopArgs as LoopArgs_Dataclass, 
+        ControlnetArgs as ControlnetArgs_Dataclass,
+        create_animation_args_from_dict, 
+        create_deforum_args_from_dict, 
+        create_deforum_output_args_from_dict, 
         create_parseq_args_from_dict, create_wan_args_from_dict, create_root_args_from_dict, 
-        create_loop_args_from_dict, create_controlnet_args_from_dict # Added for controlnet_args
+        create_loop_args_from_dict, create_controlnet_args_from_dict
     )
+    # ADD IMPORT FOR THE CORRECT ANIMATIONARGS DATACLASS
+    from .argument_models import DeforumAnimationArgs, DeforumGenerationArgs, DeforumVideoArgs, ParseqArgs as ParseqArgs_Config, WanArgs as WanArgs_Config # Use DeforumVideoArgs for video_args
     DATACLASSES_AVAILABLE = True
 except ImportError as e:
     print(f"[DEBUG] Failed to import dataclasses in arg_transformations: {e}")
     DATACLASSES_AVAILABLE = False
     # Define fallback placeholders if dataclasses are not available
     class PlaceholderArgs: pass
-    AnimationArgs, DeforumArgs, DeforumOutputArgs, ParseqArgs, RootArgs, WanArgs, LoopArgs, ControlnetArgs = (PlaceholderArgs,) * 8 # VideoArgs removed
+    AnimationArgs, DeforumArgs_Dataclass, DeforumOutputArgs_Dataclass, ParseqArgs_Dataclass, RootArgs_Dataclass, WanArgs_Dataclass, LoopArgs_Dataclass, ControlnetArgs_Dataclass = (PlaceholderArgs,) * 8 # VideoArgs removed
     def create_animation_args_from_dict(d): return SimpleNamespace(**d)
     def create_deforum_args_from_dict(d): return SimpleNamespace(**d)
     def create_deforum_output_args_from_dict(d): return SimpleNamespace(**d) # Added
@@ -339,39 +346,70 @@ def process_args(args_dict, index=0):
         if not DATACLASSES_AVAILABLE:
             log_utils.error("Dataclasses not available. Falling back to SimpleNamespace. THIS IS UNEXPECTED.")
             # Fallback to old behavior if dataclasses cannot be imported
-            args = SimpleNamespace(**args_dict.get('args', {}))
-            anim_args = SimpleNamespace(**args_dict.get('anim_args', {}))
-            video_args_ns = SimpleNamespace(**args_dict.get('video_args', {})) # This was for DeforumOutputArgs
-            parseq_args = SimpleNamespace(**args_dict.get('parseq_args', {}))
-            loop_args = SimpleNamespace(**args_dict.get('loop_args', {}))
-            controlnet_args_ns = SimpleNamespace(**args_dict.get('controlnet_args', {}))
-            wan_args = SimpleNamespace(**args_dict.get('wan_args', {}))
-            root = SimpleNamespace()
-            return True, root, args, anim_args, video_args_ns, parseq_args, loop_args, controlnet_args_ns, wan_args
+            _args = SimpleNamespace(**args_dict.get('args', {})) # Renamed to avoid conflict with outer scope 'args'
+            _anim_args = SimpleNamespace(**args_dict.get('anim_args', {})) # Renamed
+            _video_args_ns = SimpleNamespace(**args_dict.get('video_args', {})) # Renamed
+            _parseq_args = SimpleNamespace(**args_dict.get('parseq_args', {})) # Renamed
+            _loop_args = SimpleNamespace(**args_dict.get('loop_args', {})) # Renamed
+            _controlnet_args_ns = SimpleNamespace(**args_dict.get('controlnet_args', {})) # Renamed
+            _wan_args = SimpleNamespace(**args_dict.get('wan_args', {})) # Renamed
+            _root = SimpleNamespace() # Renamed
+            return True, _root, _args, _anim_args, _video_args_ns, _parseq_args, _loop_args, _controlnet_args_ns, _wan_args
 
-        raw_deforum_args = args_dict.get('args', {})
-        args = create_deforum_args_from_dict(raw_deforum_args)
+        # DeforumGenerationArgs (aliased as 'args' in original return tuple)
+        gen_arg_fields = set(DeforumGenerationArgs.__dataclass_fields__.keys())
+        dict_for_gen_args = {k: args_dict[k] for k in gen_arg_fields if k in args_dict and args_dict[k] is not None}
+        # TODO: Handle Enum conversions for DeforumGenerationArgs if any field needs it
+        args = DeforumGenerationArgs(**dict_for_gen_args) # Instantiated 'args'
 
-        raw_anim_args = args_dict.get('anim_args', {})
-        anim_args = create_animation_args_from_dict(raw_anim_args)
-
-        # video_args in run_deforum.py corresponds to DeforumOutputArgs
-        raw_video_output_args = args_dict.get('video_args', {}) 
-        video_args = create_deforum_output_args_from_dict(raw_video_output_args)
-
-        raw_parseq_args = args_dict.get('parseq_args', {})
-        parseq_args = create_parseq_args_from_dict(raw_parseq_args)
+        # DeforumAnimationArgs (aliased as 'anim_args')
+        anim_arg_fields = set(DeforumAnimationArgs.__dataclass_fields__.keys())
+        dict_for_anim_args = {k: args_dict[k] for k in anim_arg_fields if k in args_dict and args_dict[k] is not None}
         
-        raw_loop_args = args_dict.get('loop_args', {})
-        loop_args = create_loop_args_from_dict(raw_loop_args)
+        if 'animation_mode' in dict_for_anim_args and isinstance(dict_for_anim_args['animation_mode'], str):
+            from ..models.data_models import AnimationMode # Enum from data_models
+            try:
+                dict_for_anim_args['animation_mode'] = AnimationMode(dict_for_anim_args['animation_mode'])
+            except ValueError:
+                log_utils.warning(f"Invalid string for AnimationMode: {dict_for_anim_args['animation_mode']}. Default will be used.")
+                del dict_for_anim_args['animation_mode'] # Let dataclass default apply
 
-        raw_controlnet_args = args_dict.get('controlnet_args', {})
-        controlnet_args = create_controlnet_args_from_dict(raw_controlnet_args)
-
-        raw_wan_args = args_dict.get('wan_args', {})
-        wan_args = create_wan_args_from_dict(raw_wan_args)
+        if 'border' in dict_for_anim_args and isinstance(dict_for_anim_args['border'], str):
+            from ..models.data_models import BorderMode # Enum from data_models
+            try:
+                dict_for_anim_args['border'] = BorderMode(dict_for_anim_args['border'])
+            except ValueError:
+                log_utils.warning(f"Invalid string for BorderMode: {dict_for_anim_args['border']}. Default will be used.")
+                del dict_for_anim_args['border']
         
-        # RootArgs handling (remains the same for now)
+        # Add other enum conversions for DeforumAnimationArgs as needed (e.g. color_coherence, noise_type)
+
+        anim_args = DeforumAnimationArgs(**dict_for_anim_args) # Instantiated 'anim_args'
+
+        # DeforumVideoArgs (aliased as 'video_args') - was DeforumOutputArgs previously
+        video_arg_fields = set(DeforumVideoArgs.__dataclass_fields__.keys())
+        dict_for_video_args = {k: args_dict[k] for k in video_arg_fields if k in args_dict and args_dict[k] is not None}
+        # TODO: Handle Enum conversions for DeforumVideoArgs if any field needs it (e.g. add_soundtrack if it becomes an enum)
+        video_args = DeforumVideoArgs(**dict_for_video_args) # Instantiated 'video_args'
+        
+        # For ParseqArgs, WanArgs, LoopArgs, ControlnetArgs - currently using create_..._from_dict from data_models
+        # This might need similar adjustment if they also have specific dataclasses in argument_models.py
+        # For now, keeping them as they were if they don't cause immediate issues.
+        raw_parseq_args = {k: args_dict[k] for k in ParseqArgs_Config.__dataclass_fields__ if k in args_dict and args_dict[k] is not None} if DATACLASSES_AVAILABLE and hasattr(ParseqArgs_Config, '__dataclass_fields__') else args_dict.get('parseq_args', {})
+        parseq_args = ParseqArgs_Config(**raw_parseq_args) if DATACLASSES_AVAILABLE and hasattr(ParseqArgs_Config, '__dataclass_fields__') else create_parseq_args_from_dict(args_dict.get('parseq_args', {}))
+        
+        raw_loop_args = {k: args_dict[k] for k in LoopArgs_Dataclass.__dataclass_fields__ if k in args_dict and args_dict[k] is not None} if DATACLASSES_AVAILABLE and hasattr(LoopArgs_Dataclass, '__dataclass_fields__') else args_dict.get('loop_args', {})
+        loop_args = LoopArgs_Dataclass(**raw_loop_args) if DATACLASSES_AVAILABLE and hasattr(LoopArgs_Dataclass, '__dataclass_fields__') else create_loop_args_from_dict(args_dict.get('loop_args', {}))
+
+        raw_controlnet_args = {k: args_dict[k] for k in ControlnetArgs_Dataclass.__dataclass_fields__ if k in args_dict and args_dict[k] is not None} if DATACLASSES_AVAILABLE and hasattr(ControlnetArgs_Dataclass, '__dataclass_fields__') else args_dict.get('controlnet_args', {})
+        controlnet_args = ControlnetArgs_Dataclass(**raw_controlnet_args) if DATACLASSES_AVAILABLE and hasattr(ControlnetArgs_Dataclass, '__dataclass_fields__') else create_controlnet_args_from_dict(args_dict.get('controlnet_args', {}))
+
+        raw_wan_args = {k: args_dict[k] for k in WanArgs_Config.__dataclass_fields__ if k in args_dict and args_dict[k] is not None} if DATACLASSES_AVAILABLE and hasattr(WanArgs_Config, '__dataclass_fields__') else args_dict.get('wan_args', {}) # Assuming WanArgs_Config is the one from .argument_models
+        wan_args = WanArgs_Config(**raw_wan_args) if DATACLASSES_AVAILABLE and hasattr(WanArgs_Config, '__dataclass_fields__') else create_wan_args_from_dict(args_dict.get('wan_args', {})) # Ensure create_wan_args_from_dict is also updated or WanArgs_Config is used directly.
+                                                                                                                                                                       # For consistency, direct instantiation is better: WanArgs_Config(**raw_wan_args)
+                                                                                                                                                                       # This line might be complex, simplifying for now, but ideally all should use direct instantiation of config.argument_models classes.
+        
+        # RootArgs handling (remains the same for now, using data_models.RootArgs)
         root_data = {
             'timestring': args_dict.get('timestring', time.strftime('%Y%m%d_%H%M%S')),
             'animation_prompts': args_dict.get('animation_prompts', {"0": "a beautiful landscape"}),

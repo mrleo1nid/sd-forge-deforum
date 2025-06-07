@@ -123,7 +123,11 @@ class FrameInterpolater():
         self.seed = seed
 
     def parse_inbetweens(self, value, filename = 'unknown', is_single_string = False):
-        return self.get_inbetweens(self.parse_key_frames(value, filename), is_single_string=is_single_string, filename=filename)
+        is_integer_schedule = (filename == 'seed_schedule') # Add other integer schedules if any
+        # Add other integer schedules like steps_schedule, clipskip_schedule if they need to be integers
+        if filename in ['steps_schedule', 'clipskip_schedule', 'kernel_schedule']:
+            is_integer_schedule = True
+        return self.get_inbetweens(self.parse_key_frames(value, filename), integer=is_integer_schedule, is_single_string=is_single_string, filename=filename)
 
     def sanitize_value(self, value):
         return value.replace("'", "").replace('"', "").replace('(', "").replace(')', "")

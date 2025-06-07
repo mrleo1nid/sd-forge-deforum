@@ -53,6 +53,7 @@ class FrameMetadata:
     negative_prompt: str = ""
     sampler_name: Optional[str] = None
     scheduler_name: Optional[str] = None
+    steps: Optional[int] = None
     checkpoint: Optional[str] = None
     
     def __post_init__(self):

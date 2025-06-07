@@ -19,8 +19,9 @@ from .frame_models import (
     FrameState, FrameResult, FrameMetadata, RenderContext,
     ProcessingStage, RenderingError, ImageArray, ValidationResult
 )
-from .main_generation_pipeline import generate
 from modules.shared import opts
+from modules import processing
+from ..integrations.webui_pipeline import get_webui_sd_pipeline
 
 # Import processing functions with graceful fallbacks
 try:
@@ -456,161 +457,150 @@ def process_frame(
     processing_params: Optional[Dict[str, Any]] = None
 ) -> FrameResult:
     """
-    Process a single frame through the rendering pipeline, including image generation.
-    
-    Args:
-        frame_state: Current frame state (with populated metadata)
-        context: Rendering context (with legacy objects)
-        processing_params: Optional processing parameters (currently unused)
-        
-    Returns:
-        FrameResult with processed image and status
+    Process a single frame through transformations and image generation.
     """
     start_time = time.time()
-    metadata = frame_state.metadata
-    frame_idx = metadata.frame_idx
+    current_state = frame_state.with_stage(ProcessingStage.INITIALIZATION)
 
-    # --- Stage 1: Image Generation (New) ---
-    try:
-        # Retrieve legacy objects from context for generate()
-        legacy_args = context.legacy_args
-        legacy_anim_args = context.legacy_anim_args
-        legacy_video_args = context.legacy_video_args # Though not directly used by generate, might be in root or other logic
-        legacy_parseq_args = context.legacy_parseq_args
-        legacy_loop_args = context.legacy_loop_args
-        legacy_controlnet_args = context.legacy_controlnet_args
-        legacy_root = context.legacy_root
-        legacy_keys = context.legacy_keys # DeformAnimKeys or Parseq keys
-        # legacy_prompts = context.legacy_prompts # available if needed
-        legacy_parseq_adapter = getattr(context, 'legacy_parseq_adapter', None) # Needs to be added to RenderContext
-        if legacy_parseq_adapter is None and legacy_parseq_args is not None:
-             # Attempt to create it if not passed in context but args are there.
-             # This is a fallback, ideally it should be created in legacy_renderer and passed in RenderContext.
-             from ..integrations.parseq_adapter import ParseqAdapter
-             legacy_parseq_adapter = ParseqAdapter(legacy_parseq_args, legacy_anim_args, legacy_video_args, legacy_controlnet_args, legacy_loop_args)
-             if legacy_parseq_adapter.use_parseq:
-                 legacy_keys = legacy_parseq_adapter.anim_keys # Parseq might overwrite keys
-
-        if not all([legacy_args, legacy_anim_args, legacy_root, legacy_keys, legacy_parseq_adapter is not None]):
-            raise ValueError("Essential legacy objects (args, anim_args, root, keys, parseq_adapter) missing in RenderContext for image generation.")
-
-        # Create a temporary args-like object for the current frame, using a deep copy to avoid modifying the original.
-        current_frame_args = copy.deepcopy(legacy_args)
-
-        # Populate current_frame_args and root with scheduled values for this frame_idx
-        current_frame_args.prompt = metadata.prompt
-        current_frame_args.cfg_scale = metadata.cfg_scale
-        # current_frame_args.distilled_cfg_scale = metadata.distilled_cfg_scale # Ensure this exists in metadata
-        current_frame_args.seed = metadata.seed
-        # current_frame_args.strength = metadata.strength # for img2img, handle with init_image
-        
-        # Steps, Subseed, Checkpoint, CLIPSkip from schedules (similar to rendering_modes.py)
-        if legacy_anim_args.enable_steps_scheduling and legacy_keys.steps_schedule_series[frame_idx] is not None:
-            current_frame_args.steps = int(legacy_keys.steps_schedule_series[frame_idx])
-        # else: current_frame_args.steps remains as per legacy_args.steps
-        
-        if legacy_anim_args.enable_checkpoint_scheduling and legacy_keys.checkpoint_schedule_series[frame_idx] is not None:
-            current_frame_args.checkpoint = legacy_keys.checkpoint_schedule_series[frame_idx]
-        # else: current_frame_args.checkpoint remains as per legacy_args.checkpoint
-
-        if legacy_anim_args.enable_subseed_scheduling:
-            legacy_root.subseed = int(legacy_keys.subseed_schedule_series[frame_idx])
-            legacy_root.subseed_strength = legacy_keys.subseed_strength_schedule_series[frame_idx]
-        # else: subseed/strength remain as per legacy_root (potentially set by initial seed behavior)
-        
-        scheduled_clipskip = None
-        if legacy_anim_args.enable_clipskip_scheduling and legacy_keys.clipskip_schedule_series[frame_idx] is not None:
-            scheduled_clipskip = int(legacy_keys.clipskip_schedule_series[frame_idx])
-            opts.data["CLIP_stop_at_last_layers"] = scheduled_clipskip
-        # else: opts.data["CLIP_stop_at_last_layers"] uses its existing value or value from Deforum settings
-
-        # Sampler and Scheduler names from schedule
-        scheduled_sampler_name = None
-        if legacy_anim_args.enable_sampler_scheduling and legacy_keys.sampler_schedule_series[frame_idx] is not None:
-            scheduled_sampler_name = legacy_keys.sampler_schedule_series[frame_idx].casefold()
-            
-        scheduled_scheduler_name = None
-        if legacy_anim_args.enable_scheduler_scheduling and legacy_keys.scheduler_schedule_series[frame_idx] is not None:
-            scheduled_scheduler_name = legacy_keys.scheduler_schedule_series[frame_idx].casefold()
-
-        # Handle init_image for img2img based on strength and previous frame
-        init_image_pil = None
-        current_strength = metadata.strength
-        if frame_state.previous_image is not None and current_strength < 1.0 and current_strength > 0.0:
-            # Assuming previous_image is a NumPy array, convert to PIL for generate()
-            init_image_pil = Image.fromarray(frame_state.previous_image.astype(np.uint8))
-            # generate() also needs current_frame_args.strength to be set
-            current_frame_args.strength = current_strength 
-        else:
-            # If no previous image or strength is 1.0 (txt2img) or 0.0 (no change from init)
-            current_frame_args.strength = 1.0 # Effectively txt2img if no init_image
-            if frame_state.current_image is not None and current_strength == 0.0:
-                 # Special case: strength 0 means use current_image as is (e.g. from video input)
-                 # This logic might need adjustment based on how video input frames are handled.
-                 # For now, assume generate() is the primary source or uses init_image
-                 pass 
-
-        # Call generate()
-        # Ensure all args (current_frame_args, keys, anim_args, etc.) are what generate() expects.
-        print(f"Generating frame {frame_idx} with seed {current_frame_args.seed} and prompt: {current_frame_args.prompt[:100]}...")
-        pil_image = generate(
-            current_frame_args, 
-            legacy_keys, 
-            legacy_anim_args, 
-            legacy_loop_args, 
-            legacy_controlnet_args, 
-            legacy_root, 
-            legacy_parseq_adapter, 
-            frame_idx, 
-            scheduled_sampler_name, 
-            scheduled_scheduler_name,
-            init_image=init_image_pil # Pass PIL init_image
-        )
-
-        if pil_image is None:
-            raise RuntimeError(f"Image generation failed for frame {frame_idx}. generate() returned None.")
-
-        generated_image_np = np.array(pil_image)
-        new_frame_state = frame_state.with_image(generated_image_np)
-        new_frame_state = replace(new_frame_state, stage=ProcessingStage.GENERATION) # Update stage
-
-    except Exception as e:
-        return FrameResult(
-            frame_state=frame_state.with_stage(ProcessingStage.GENERATION), # Or a new ERROR_GENERATION stage
-            success=False,
-            error=RenderingError(
-                f"Image generation failed for frame {frame_idx}: {str(e)}",
-                ProcessingStage.GENERATION,
-                frame_idx
-            ),
-            processing_time=time.time() - start_time
-        )
-    
-    # --- Stage 2: Apply other transformations (existing logic) ---
-    # The rest of the function will now use new_frame_state which has the generated image
-    frame_state_after_gen = new_frame_state # Pass the updated state
-
-    # Validate frame state (optional, if transformations expect valid images)
-    validation = validate_frame_state(frame_state_after_gen)
+    # Validate initial state
+    validation = validate_frame_state(current_state)
     if validation is not True:
         return FrameResult(
-            frame_state=frame_state_after_gen,
+            frame_state=current_state,
             success=False,
-            error=RenderingError(
-                f"Frame validation failed: {validation}",
-                ProcessingStage.GENERATION,
-                frame_idx
-            )
+            error=RenderingError(str(validation), current_state.stage, current_state.metadata.frame_idx)
         )
+
+    # Placeholder for previous image if needed for img2img or warping
+    # This needs to be correctly passed into FrameState upstream if it's the first frame
+    # or derived from previous FrameResult.
+    # For now, assume it might be None or a placeholder if not set.
+    # previous_image_np = current_state.previous_image 
     
-    # Update final processing time
-    total_time = time.time() - start_time
-    final_frame_state = frame_state_after_gen.with_stage(ProcessingStage.COMPLETED)
+    # If current_state.current_image is None (e.g. first frame for txt2img, or if init image not loaded yet)
+    # and previous_image_np is also None, we might need to handle txt2img path.
+    # For img2img, current_image might be the warped version of previous_image.
+
+    # Let's assume current_state.current_image is the one to process (e.g. after warping)
+    # or current_state.previous_image is the init_image for img2img.
+    # The functional pipeline needs to manage this handoff.
+    # For now, we'll try to use previous_image as init for img2img.
+
+    pil_init_image = None
+    if current_state.previous_image is not None:
+        try:
+            pil_init_image = Image.fromarray(current_state.previous_image.astype(np.uint8))
+        except Exception as e:
+            return FrameResult(frame_state=current_state, success=False, error=RenderingError(f"Could not convert previous_image to PIL: {e}", current_state.stage, current_state.metadata.frame_idx))
+    # else: txt2img path or error if img2img expected an image
+
+    # Create and configure the Stable Diffusion processing pipeline object
+    # We need legacy_args and legacy_root from the context
+    if not hasattr(context, 'legacy_args') or not hasattr(context, 'legacy_root'):
+        return FrameResult(frame_state=current_state, success=False, error=RenderingError("legacy_args or legacy_root not in RenderContext for get_webui_sd_pipeline", current_state.stage, current_state.metadata.frame_idx))
+
+    p = get_webui_sd_pipeline(context.legacy_args, context.legacy_root)
+
+    # Override p with frame-specific metadata
+    p.prompt = frame_state.metadata.prompt
+    # TODO: p.negative_prompt = frame_state.metadata.negative_prompt (needs to be added to FrameMetadata)
+    p.negative_prompt = context.legacy_args.negative_prompts if hasattr(context.legacy_args, 'negative_prompts') else ""
+
+
+    p.seed = int(frame_state.metadata.seed)
+    p.steps = int(frame_state.metadata.steps) if hasattr(frame_state.metadata, 'steps') else int(p.steps) # Ensure steps is in metadata
+    p.cfg_scale = float(frame_state.metadata.cfg_scale)
+    p.width = int(context.width)
+    p.height = int(context.height)
     
+    if hasattr(frame_state.metadata, 'sampler_name') and frame_state.metadata.sampler_name:
+        p.sampler_name = frame_state.metadata.sampler_name
+    # if hasattr(frame_state.metadata, 'scheduler_name') and frame_state.metadata.scheduler_name:
+    #     p.scheduler_name = frame_state.metadata.scheduler_name # p.scheduler is the attribute
+
+    # Denoising strength (for img2img)
+    # strength_schedule comes from anim_args.strength_schedule
+    # metadata.strength should hold the scheduled value for the current frame.
+    if pil_init_image is not None: # This is an img2img operation
+        p.init_images = [pil_init_image]
+        p.denoising_strength = 1.0 - float(frame_state.metadata.strength)
+    else: # This would be txt2img
+        p.denoising_strength = None # Not used for txt2img directly in p object like this
+        # Ensure p is of type StableDiffusionProcessingTxt2Img or that StableDiffusionProcessingImg2Img handles init_images=None correctly.
+        # For now, get_webui_sd_pipeline always returns Img2Img. A proper txt2img path would need different setup.
+        # Let's assume for now Deforum always works in an img2img-like mode, even if the init_image is black/noise for the first frame.
+        # If previous_image was truly None, we must provide a dummy/blank init_image or switch to a Txt2Img pipeline
+        if p.init_images is None:
+             p.init_images = [Image.new("RGB", (p.width, p.height), "black")] # Provide a black init image for Img2Img
+             p.denoising_strength = 1.0 # Full strength if no init image was really there
+
+    # Masking (simplified)
+    if hasattr(frame_state, 'mask') and frame_state.mask is not None:
+        try:
+            p.image_mask = Image.fromarray(frame_state.mask.astype(np.uint8))
+        except Exception as e:
+            return FrameResult(frame_state=current_state, success=False, error=RenderingError(f"Could not convert mask to PIL: {e}", current_state.stage, current_state.metadata.frame_idx))
+
+    # TODO: ControlNet - this needs to be adapted to use frame_state and context
+    # controlnet_units = ...
+    # if controlnet_units:
+    #    p.scripts = getattr(p, 'scripts', None) or processing.ScriptRunner()
+    #    cn_script_args_from_get_cn_script = get_controlnet_script_args(...) # This needs refactoring
+    #    p.scripts.alwayson_scripts.append(ScriptAlwayson("ControlNet", cn_script_args_from_get_cn_script))
+    
+    # Actual image generation using A1111/Forge's processing pipeline
+    try:
+        print(f"[DEBUG process_frame] Frame {frame_state.metadata.frame_idx}: About to call process_images.")
+        print(f"[DEBUG process_frame] p.prompt: '{p.prompt[:100]}...'")
+        print(f"[DEBUG process_frame] p.negative_prompt: '{p.negative_prompt[:100]}...'")
+        print(f"[DEBUG process_frame] p.seed: {p.seed}, p.steps: {p.steps}, p.cfg_scale: {p.cfg_scale}")
+        print(f"[DEBUG process_frame] p.width: {p.width}, p.height: {p.height}")
+        print(f"[DEBUG process_frame] p.sampler_name: {p.sampler_name}")
+        # print(f"[DEBUG process_frame] p.scheduler: {p.scheduler}") # p.scheduler might be an object or name
+        print(f"[DEBUG process_frame] p.denoising_strength: {p.denoising_strength}")
+        if p.init_images:
+            print(f"[DEBUG process_frame] p.init_images type: {type(p.init_images[0])}, size: {p.init_images[0].size if hasattr(p.init_images[0], 'size') else 'N/A'}")
+        else:
+            print("[DEBUG process_frame] p.init_images is None or empty.")
+        if hasattr(p, 'image_mask') and p.image_mask:
+            print(f"[DEBUG process_frame] p.image_mask type: {type(p.image_mask)}, size: {p.image_mask.size if hasattr(p.image_mask, 'size') else 'N/A'}")
+        else:
+            print("[DEBUG process_frame] p.image_mask is None or not set.")
+
+
+        print(f"Generating frame {frame_state.metadata.frame_idx} with seed {p.seed} and prompt: {p.prompt[:100]}...")
+        processed_result = processing.process_images(p)
+        generated_image_pil = processed_result.images[0]
+        
+        # Convert PIL image to NumPy array (RGB)
+        generated_image_np = np.array(generated_image_pil.convert("RGB"))
+
+    except Exception as e:
+        import traceback
+        print(f"Error during image generation for frame {frame_state.metadata.frame_idx}: {e}")
+        traceback.print_exc()
+        return FrameResult(
+            frame_state=current_state.with_stage(ProcessingStage.GENERATION),
+            success=False,
+            error=RenderingError(f"Image generation failed: {e}", ProcessingStage.GENERATION, frame_state.metadata.frame_idx),
+            processing_time=time.time() - start_time
+        )
+
+    current_state = current_state.with_image(generated_image_np)
+    current_state = current_state.with_stage(ProcessingStage.GENERATION_COMPLETE)
+    # End of main image generation
+
+    # Apply further transformations if any (e.g., unsharp mask from legacy)
+    # current_state = apply_frame_transformations(current_state, context, ...) 
+
+    processing_time = time.time() - start_time
     return FrameResult(
-        frame_state=final_frame_state,
+        frame_state=current_state,
         success=True,
-        processing_time=total_time
+        processing_time=processing_time,
+        # Optionally include generated image directly in result if needed elsewhere,
+        # but FrameState.current_image should be the primary carrier.
+        # generated_image_pil=generated_image_pil 
     )
 
 

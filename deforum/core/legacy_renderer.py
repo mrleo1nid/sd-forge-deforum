@@ -154,17 +154,18 @@ def functional_render_animation(
         root: Legacy root object
     """
     if not _FUNCTIONAL_RENDERING_ENABLED:
-        # Fall back to original implementation
-        # This block should ideally not be reached if _FUNCTIONAL_RENDERING_ENABLED is True
+        import traceback
         print("Attempting to fall back to a legacy render function (this path is problematic due to missing '..render' module)")
-        from ..render import render_animation as legacy_render_animation # This import will likely fail
-        return legacy_render_animation(
-            args, anim_args, video_args, parseq_args, loop_args,
-            controlnet_args, # freeu_args, # Removed
-            # kohya_hrfix_args, # Removed
-            root
-        )
-    
+        # from ..render import render_animation as legacy_render_animation # This import will likely fail - Commented out
+        # return legacy_render_animation( # Commented out
+        #     args, anim_args, video_args, parseq_args, loop_args,
+        #     controlnet_args, # freeu_args, # Removed
+        #     # kohya_hrfix_args, # Removed
+        #     root
+        # )
+        # Instead, raise an error indicating this path is deprecated or non-functional
+        raise NotImplementedError("Fallback to non-existent '..render' module is not supported. Functional rendering was disabled.")
+
     print("Using functional rendering system...")
     
     # Instantiate keys and parseq_adapter first
@@ -216,17 +217,18 @@ def functional_render_animation(
                 print(f"    Frame {error.frame_idx}: {error.message}")
         
     except Exception as e:
-        print(f"Functional rendering failed: {e}")
-        print("Falling back to legacy rendering...")
-        
-        # Fall back to original implementation
-        from ..render import render_animation as legacy_render_animation
-        return legacy_render_animation(
-            args, anim_args, video_args, parseq_args, loop_args,
-            controlnet_args, # freeu_args, # Removed
-            # kohya_hrfix_args, # Removed
-            root
-        )
+        import traceback
+        print(f"Functional rendering failed. Original error:")
+        traceback.print_exc() # Print the full traceback of e
+        print(f"Cannot fall back to legacy ..render module as it does not exist.")
+        # from ..render import render_animation as legacy_render_animation # Commented out
+        # return legacy_render_animation( # Commented out
+        #     args, anim_args, video_args, parseq_args, loop_args,
+        #     controlnet_args, # freeu_args, # Removed
+        #     # kohya_hrfix_args, # Removed
+        #     root
+        # )
+        raise e # Re-raise the original exception
 
 
 def create_legacy_compatible_pipeline():
