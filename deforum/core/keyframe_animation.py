@@ -188,6 +188,14 @@ class FrameInterpolater():
         return key_frame_series
 
     def parse_key_frames(self, string, filename='unknown'):
+        # Handle None or non-string values
+        if string is None:
+            print(f"Warning: {filename} schedule is None, using default '0:(0)'")
+            string = "0:(0)"
+        elif not isinstance(string, str):
+            print(f"Warning: {filename} schedule is not a string, converting: {string}")
+            string = str(string)
+            
         # because math functions (i.e. sin(t)) can utilize brackets 
         # it extracts the value in form of some stuff
         # which has previously been enclosed with brackets and

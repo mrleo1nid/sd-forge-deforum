@@ -171,9 +171,21 @@ def get_settings_component_names():
 
 
 def pack_args(args_dict, keys_function):
-    """Pack arguments using specified keys function - with fallback for missing keys."""
+    """Pack arguments using specified keys function or dataclass - with fallback for missing keys."""
     result = {}
-    for name in keys_function():
+    
+    # Handle both old callable style and new dataclass style
+    if hasattr(keys_function, '__dataclass_fields__'):
+        # It's a dataclass, get field names
+        keys = list(keys_function.__dataclass_fields__.keys())
+    elif callable(keys_function):
+        # It's a callable, call it to get keys
+        keys = keys_function()
+    else:
+        # Fallback: try to iterate directly
+        keys = list(keys_function)
+    
+    for name in keys:
         if name in args_dict:
             result[name] = args_dict[name]
         else:
