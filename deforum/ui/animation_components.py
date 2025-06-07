@@ -120,7 +120,29 @@ def get_tab_animation(da, dloopArgs):
                 resume_from_timestring = create_gr_elem(da.resume_from_timestring)
                 resume_timestring = create_gr_elem(da.resume_timestring)
         
-    return {k: v for k, v in {**locals(), **vars()}.items()}
+    # Return only the actual UI components created in this function
+    return {
+        'animation_mode': animation_mode,
+        'max_frames': max_frames,
+        'border': border,
+        'video_init_path': video_init_path,
+        'extract_from_frame': extract_from_frame,
+        'extract_to_frame': extract_to_frame,
+        'extract_nth_frame': extract_nth_frame,
+        'overwrite_extracted_frames': overwrite_extracted_frames,
+        'use_mask_video': use_mask_video,
+        'video_mask_path': video_mask_path,
+        'use_looper': use_looper,
+        'init_images': init_images,
+        'image_strength_schedule': image_strength_schedule,
+        'image_keyframe_strength_schedule': image_keyframe_strength_schedule,
+        'blendFactorMax': blendFactorMax,
+        'blendFactorSlope': blendFactorSlope,
+        'tweening_frames_schedule': tweening_frames_schedule,
+        'color_correction_factor': color_correction_factor,
+        'resume_from_timestring': resume_from_timestring,
+        'resume_timestring': resume_timestring,
+    }
 
 
 def get_tab_prompts(da):
@@ -277,4 +299,13 @@ def get_tab_prompts(da):
                 except Exception as e:
                     print(f"⚠️ Failed to connect animation prompts change handler: {e}")
     
-    return {k: v for k, v in {**locals(), **vars()}.items()} 
+    # Return only the actual UI components created in this function
+    return {
+        'animation_prompts': animation_prompts,
+        'load_prompts_btn': load_prompts_btn,
+        'save_prompts_btn': save_prompts_btn,
+        'validate_prompts_btn': validate_prompts_btn,
+        'validation_output': validation_output,
+        'animation_prompts_positive': animation_prompts_positive,
+        'animation_prompts_negative': animation_prompts_negative,
+    } 
