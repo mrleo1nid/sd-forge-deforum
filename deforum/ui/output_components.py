@@ -26,12 +26,12 @@ def get_tab_output(da, dv):
         
         # VIDEO OUTPUT SECTION
         with gr.Accordion("🎬 Video Output Settings", open=True):
-            with FormRow():
+            with FormRow() as fps_out_format_row:
                 fps = create_gr_elem(dv.fps)
                 max_video_frames = create_gr_elem(dv.max_video_frames)
-                add_soundtrack = create_gr_elem(dv.add_soundtrack)
                 
-            with FormRow():
+            with FormRow() as soundtrack_row:
+                add_soundtrack = create_gr_elem(dv.add_soundtrack)
                 soundtrack_path = create_gr_elem(dv.soundtrack_path)
                 
             with FormRow():
@@ -90,12 +90,10 @@ def get_tab_output(da, dv):
                     
         # UPSCALING SETTINGS
         with gr.Accordion("📐 Upscaling Settings", open=False):
-            with FormRow():
+            with FormRow(equal_height=True) as r_upscale_row:
                 r_upscale_video = create_gr_elem(dv.r_upscale_video)
-                r_upscale_factor = create_gr_elem(dv.r_upscale_factor)
-                
-            with FormRow():
                 r_upscale_model = create_gr_elem(dv.r_upscale_model)
+                r_upscale_factor = create_gr_elem(dv.r_upscale_factor)
                 r_upscale_keep_imgs = create_gr_elem(dv.r_upscale_keep_imgs)
                 
     return {k: v for k, v in {**locals(), **vars()}.items()}
