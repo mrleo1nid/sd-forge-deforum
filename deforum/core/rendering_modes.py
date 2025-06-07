@@ -9,16 +9,16 @@ import pathlib
 import re
 import numexpr
 from modules.shared import opts, state
-from .render import render_animation
+from .legacy_renderer import functional_render_animation as render_animation
 from ..utils.color_constants import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
-from .seed import next_seed
+from ..utils.seed import next_seed
 from ..media.video_audio_pipeline import vid2frames, render_preview
 from ..prompt import interpolate_prompts
-from .generate import generate
+from .main_generation_pipeline import generate
 from .keyframe_animation import DeformAnimKeys
-from .parseq_adapter import ParseqAdapter
-from .save_images import save_image
-from .settings import save_settings_from_animation_run
+from ..integrations.parseq_adapter import ParseqAdapter
+from ..media.image_saving import save_image
+from ..config.settings import save_settings_from_animation_run
 
 def render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
     """
@@ -227,7 +227,7 @@ def render_interpolation(args, anim_args, video_args, parseq_args, loop_args, co
         image = generate(args, keys, anim_args, loop_args, controlnet_args, root, parseq_adapter, frame_idx, scheduled_sampler_name, scheduled_scheduler_name)
         filename = f"{root.timestring}_{frame_idx:09}.png"
 
-        save_image(image, 'PIL', filename, args, video_args, root)
+        save_image(image, 'PIL', filename, args, anim_args, video_args, root)
 
         state.current_image = image
         

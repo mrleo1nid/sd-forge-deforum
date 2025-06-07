@@ -6,7 +6,7 @@ the mutable SimpleNamespace and dictionary patterns used throughout Deforum.
 """
 
 from .data_models import (
-    AnimationArgs, DeforumArgs, VideoArgs, ParseqArgs, WanArgs, RootArgs,
+    AnimationArgs, DeforumArgs, DeforumOutputArgs, VideoArgs, ParseqArgs, WanArgs, RootArgs, LoopArgs, ControlnetArgs,
     ProcessingResult, UIDefaults, SettingsState, ExternalLibraryArgs, TestFixtureArgs,
     create_animation_args_from_dict, create_deforum_args_from_dict, create_video_args_from_dict,
     create_parseq_args_from_dict, create_wan_args_from_dict, create_root_args_from_dict,
@@ -20,7 +20,7 @@ from .schedule_models import (
 
 __all__ = [
     # Data models
-    'AnimationArgs', 'DeforumArgs', 'VideoArgs', 'ParseqArgs', 'WanArgs', 'RootArgs',
+    'AnimationArgs', 'DeforumArgs', 'DeforumOutputArgs', 'VideoArgs', 'ParseqArgs', 'WanArgs', 'RootArgs', 'LoopArgs', 'ControlnetArgs',
     'ProcessingResult', 'UIDefaults', 'SettingsState', 'ExternalLibraryArgs', 'TestFixtureArgs',
     
     # Schedule models

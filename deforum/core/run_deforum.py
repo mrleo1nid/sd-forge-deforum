@@ -17,6 +17,9 @@ from pathlib import Path
 from ..utils.color_constants import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
 from ..config.settings import save_settings_from_animation_run
 from ..integrations.controlnet.core_integration import num_of_models
+from PIL import Image, ImageOps, ImageFilter
+from PIL.PngImagePlugin import PngInfo
+from ..models.data_models import AnimationMode
 
 
 # this global param will contain the latest generated video HTML-data-URL info (for preview inside the UI when needed)
@@ -100,8 +103,9 @@ def run_deforum(*args):
         torch.cuda.empty_cache()
         
         # Import them *here* or we add 3 seconds to initial webui launch-time. user doesn't feel it when we import inside the func:
-        from .render import render_animation, is_use_experimental_render_core
-        from .render_modes import render_input_video, render_animation_with_video_mask, render_interpolation
+        from .legacy_renderer import functional_render_animation as render_animation
+        from .rendering_engine import is_use_experimental_render_core
+        from .rendering_modes import render_input_video, render_animation_with_video_mask, render_interpolation
 
         tqdm_backup = shared.total_tqdm
 
@@ -110,14 +114,14 @@ def run_deforum(*args):
 
         try:  # dispatch to appropriate renderer
             print(f"{YELLOW}Starting job {job_id}...{RESET_COLOR}")
-            if anim_args.animation_mode == '2D' or anim_args.animation_mode == '3D':
+            if anim_args.animation_mode == AnimationMode.TWO_D or anim_args.animation_mode == AnimationMode.THREE_D:
                 if anim_args.use_mask_video: 
                     render_animation_with_video_mask(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)  # allow mask video without an input video
                 else:    
                     render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
-            elif anim_args.animation_mode == 'Interpolation':
+            elif anim_args.animation_mode == AnimationMode.INTERPOLATION:
                 render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
-            elif anim_args.animation_mode == 'Wan Video':
+            elif anim_args.animation_mode == AnimationMode.WAN_VIDEO:
                 # Use direct Wan integration
                 try:
                     # Simple Wan validation (inline replacement)
@@ -165,7 +169,7 @@ def run_deforum(*args):
             shared.opts.data["eta_ancestral"] = root.initial_ancestral_eta
         
         print(f"{YELLOW}Starting job {job_id}...{RESET_COLOR}")
-        if video_args.store_frames_in_ram:
+        if anim_args.store_frames_in_ram:
             dump_frames_cache(root)
         
         from base64 import b64encode
@@ -175,7 +179,7 @@ def run_deforum(*args):
 
         # Decide whether we need to try and frame interpolate later
         need_to_frame_interpolate = False
-        if video_args.frame_interpolation_engine != "None" and not video_args.skip_video_creation and not video_args.store_frames_in_ram:
+        if video_args.frame_interpolation_engine != "None" and not video_args.skip_video_creation and not anim_args.store_frames_in_ram:
             need_to_frame_interpolate = True
             
         if video_args.skip_video_creation:
@@ -189,7 +193,7 @@ def run_deforum(*args):
                 mp4 = open(mp4_path, 'rb').read()
                 data_url = f"data:video/mp4;base64, {b64encode(mp4).decode()}"
                 global last_vid_data
-                last_vid_data = f'<p style=\"font-weight:bold;margin-bottom:0em\">Deforum fork for Forge </p><video controls loop><source src="{data_url}" type="video/mp4"></video>'
+                last_vid_data = f'<p style="font-weight:bold;margin-bottom:0em">Deforum fork for Forge </p><video controls loop><source src="{data_url}" type="video/mp4"></video>'
             except Exception as e:
                 if need_to_frame_interpolate:
                     print(f"FFMPEG DID NOT STITCH ANY VIDEO. However, you requested to frame interpolate  - so we will continue to frame interpolation, but you'll be left only with the interpolated frames and not a video, since ffmpeg couldn't run. Original ffmpeg error: {e}")
@@ -197,11 +201,11 @@ def run_deforum(*args):
                     print(f"** FFMPEG DID NOT STITCH ANY VIDEO ** Error: {e}")
                 pass
               
-        if video_args.make_gif and not video_args.skip_video_creation and not video_args.store_frames_in_ram:
+        if video_args.make_gif and not video_args.skip_video_creation and not anim_args.store_frames_in_ram:
             make_gifski_gif(imgs_raw_path = args.outdir, imgs_batch_id = root.timestring, fps = video_args.fps, models_folder = root.models_path, current_user_os = root.current_user_os)
         
         # Upscale video once generation is done:
-        if video_args.r_upscale_video and not video_args.skip_video_creation and not video_args.store_frames_in_ram:
+        if video_args.r_upscale_video and not video_args.skip_video_creation and not anim_args.store_frames_in_ram:
             # out mp4 path is defined in make_upscale func
             make_upscale_v2(upscale_factor = video_args.r_upscale_factor, upscale_model = video_args.r_upscale_model, keep_imgs = video_args.r_upscale_keep_imgs, imgs_raw_path = args.outdir, imgs_batch_id = root.timestring, fps = video_args.fps, deforum_models_path = root.models_path, current_user_os = root.current_user_os, ffmpeg_location=f_location, stitch_from_frame=0, stitch_to_frame=anim_args.max_frames, ffmpeg_crf=f_crf, ffmpeg_preset=f_preset, add_soundtrack = video_args.add_soundtrack ,audio_path=real_audio_track, srt_path=srt_path)
 

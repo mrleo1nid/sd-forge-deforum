@@ -138,6 +138,19 @@ class RenderContext:
     device: str = "cuda"
     half_precision: bool = True
     keep_models_in_vram: bool = False
+
+    # Legacy objects for bridging - use Any to avoid circular deps if complex
+    # These are needed by stages that call into older, non-functional parts like main_generation_pipeline.generate
+    legacy_args: Optional[Any] = None
+    legacy_anim_args: Optional[Any] = None
+    legacy_video_args: Optional[Any] = None # Added for completeness, may be needed by generate or its callees
+    legacy_parseq_args: Optional[Any] = None # Added for completeness
+    legacy_loop_args: Optional[Any] = None # Added for completeness
+    legacy_controlnet_args: Optional[Any] = None # Added for completeness
+    legacy_root: Optional[Any] = None # Added for completeness, 'root' is ubiquitous
+    legacy_keys: Optional[Any] = None # This will be DeformAnimKeys or similar
+    legacy_prompts: Dict[str, str] = field(default_factory=dict)
+    legacy_parseq_adapter: Optional[Any] = None # Added field
     
     def __post_init__(self):
         """Validate render context."""

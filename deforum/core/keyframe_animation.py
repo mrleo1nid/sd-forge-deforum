@@ -5,6 +5,7 @@ Contains classes for handling animation key frames and scheduling.
 Note: FreeU and Kohya HR Fix functionality has been removed.
 """
 
+import numpy as np
 import pandas as pd
 import numexpr
 import re
@@ -128,30 +129,57 @@ class FrameInterpolater():
         return value.replace("'", "").replace('"', "").replace('(', "").replace(')', "")
 
     def get_inbetweens(self, key_frames, integer=False, interp_method='Linear', is_single_string = False, filename = 'unknown'):
-        key_frame_series = pd.Series([np.nan for a in range(self.max_frames)])
+        key_frame_series = pd.Series([np.nan for _ in range(self.max_frames)], dtype=object)
 
-        # get our keys
-        for i, key in key_frames.items():
-            sanitized_key = self.sanitize_value(key) if is_single_string else key
-            key_frame_series[i] = sanitized_key
+        for i, key_str_val in key_frames.items():
+            if is_single_string:
+                key_frame_series[i] = self.sanitize_value(str(key_str_val))
+            elif filename == 'seed_schedule':
+                if isinstance(key_str_val, str):
+                    try:
+                        key_frame_series[i] = float(key_str_val)
+                    except ValueError:
+                        key_frame_series[i] = str(key_str_val).lower() 
+                else:
+                    key_frame_series[i] = float(key_str_val)
+            else:
+                try:
+                    key_frame_series[i] = float(key_str_val)
+                except ValueError:
+                    print(f"Warning: Could not convert value '{key_str_val}' to float for schedule '{filename}' at frame {i}. Using NaN.")
+                    key_frame_series[i] = np.nan
 
         if is_single_string:
             key_frame_series = key_frame_series.ffill().bfill()
         else:
-            key_frame_series = key_frame_series.astype(float)
-            
             if interp_method == 'Cubic' and len(key_frames.items()) <= 3:
                 interp_method = 'Linear'
-                
-            if interp_method == 'Linear':
-                key_frame_series = key_frame_series.interpolate(method=interp_method.lower(),limit_direction='both')
-            elif interp_method == 'Cubic':
-                key_frame_series = key_frame_series.interpolate(method='cubic',limit_direction='both') 
-            else:
-                key_frame_series = key_frame_series.interpolate(method=interp_method.lower(),limit_direction='both')
+            
+            numeric_series_for_interp = pd.to_numeric(key_frame_series, errors='coerce')
+            interpolated_numeric_series = numeric_series_for_interp.interpolate(method=interp_method.lower(), limit_direction='both')
+            
+            output_series = pd.Series([np.nan for _ in range(self.max_frames)], dtype=object)
+            for i in range(self.max_frames):
+                if isinstance(key_frame_series[i], str) and not pd.isna(key_frame_series[i]):
+                    output_series[i] = key_frame_series[i]
+                else:
+                    output_series[i] = interpolated_numeric_series[i]
+            key_frame_series = output_series.ffill().bfill()
 
-            if integer:
-                return key_frame_series.astype(int)
+        if integer:
+            if filename == 'seed_schedule':
+                def convert_seed_value(val):
+                    if isinstance(val, str) and val.lower() == 's':
+                        return self.seed
+                    try:
+                        return int(float(val))
+                    except (ValueError, TypeError):
+                        if pd.isna(val):
+                            return self.seed 
+                        return self.seed
+                key_frame_series = key_frame_series.apply(convert_seed_value).astype(int)
+            else:
+                key_frame_series = pd.to_numeric(key_frame_series, errors='raise').astype(int)
 
         return key_frame_series
 

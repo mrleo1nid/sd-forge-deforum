@@ -108,12 +108,6 @@ from .ui_wan_controls import (
     create_accordion_md_row
 )
 
-# Import output, FFmpeg, and video processing
-from .ui_output_ffmpeg import (
-    get_tab_output,
-    get_tab_ffmpeg
-)
-
 # Import advanced setup, animation, and configuration
 from .ui_advanced_setup import (
     get_tab_setup,
@@ -150,10 +144,6 @@ from .data_models import TestFixtureArgs
 def get_tab_wan(dw):
     """Placeholder for Wan tab - will be moved to ui_wan_controls module."""
     return {"placeholder": "wan_controls_module_pending"}
-
-def get_tab_output(da, dv):
-    """Placeholder for output tab - will be moved to ui_output_ffmpeg module."""
-    return {"placeholder": "output_ffmpeg_module_pending"}
 
 def get_tab_ffmpeg():
     """Placeholder for FFmpeg tab - will be moved to ui_output_ffmpeg module."""
@@ -2103,36 +2093,36 @@ def get_tab_output(da, dv):
                     elem_id="pics_to_interpolate_chosen_file", visible=True)
 
                 interpolate_pics_button.click(fn=upload_pics_to_interpolate,
-                                              inputs=[pics_to_interpolate_chosen_file,
-                                                      frame_interpolation_engine, frame_interpolation_x_amount,
-                                                      frame_interpolation_slow_mo_enabled,
-                                                      frame_interpolation_slow_mo_amount,
-                                                      frame_interpolation_keep_imgs, fps, add_soundtrack,
-                                                      soundtrack_path])
+                                             inputs=[pics_to_interpolate_chosen_file,
+                                                     frame_interpolation_engine, frame_interpolation_x_amount,
+                                                     frame_interpolation_slow_mo_enabled,
+                                                     frame_interpolation_slow_mo_amount,
+                                                     frame_interpolation_keep_imgs, fps, add_soundtrack,
+                                                     soundtrack_path])
         # VIDEO UPSCALE TAB - not built using our args.py at all - all data and params are here and in .upscaling file
         with gr.TabItem(f"{emoji_utils.up()} Video Upscaling"):
             vid_to_upscale_chosen_file = gr.File(label="Video to Upscale", interactive=True, file_count="single",
-                                                 file_types=["video"], elem_id="vid_to_upscale_chosen_file")
+                                                  file_types=["video"], elem_id="vid_to_upscale_chosen_file")
             with gr.Column():
                 # NCNN UPSCALE TAB
                 with FormRow() as ncnn_upload_vid_stats_row:
                     ncnn_upscale_in_vid_frame_count_window = gr.Textbox(label="In Frame Count", lines=1,
-                                                                        interactive=False,
-                                                                        value='---')  # Non-interactive textbox showing uploaded input vid Frame Count
+                                                                       interactive=False,
+                                                                       value='---')  # Non-interactive textbox showing uploaded input vid Frame Count
                     ncnn_upscale_in_vid_fps_ui_window = gr.Textbox(label="In FPS", lines=1, interactive=False,
-                                                                   value='---')  # Non-interactive textbox showing uploaded input vid FPS
+                                                                    value='---')  # Non-interactive textbox showing uploaded input vid FPS
                     ncnn_upscale_in_vid_res = gr.Textbox(label="In Res", lines=1, interactive=False,
-                                                         value='---')  # Non-interactive textbox showing uploaded input resolution
+                                                          value='---')  # Non-interactive textbox showing uploaded input resolution
                     ncnn_upscale_out_vid_res = gr.Textbox(label="Out Res",
-                                                          value='---')  # Non-interactive textbox showing expected output resolution
+                                                           value='---')  # Non-interactive textbox showing expected output resolution
 
                 with FormRow() as ncnn_upscale_factor_model_row:
                     upscale_factor_ncnn = gr.Dropdown(label='Upscale Factor', elem_id="upscale_factor_ncnn",
-                                                      choices=['x2', 'x3', 'x4'], value='x2')
+                                                       choices=['x2', 'x3', 'x4'], value='x2')
                     # Alias for gradio_funcs.py compatibility
                     ncnn_upscale_factor = upscale_factor_ncnn
                     ncnn_upscale_model = gr.Dropdown(label='NCNN Model', elem_id="ncnn_upscale_model",
-                                                     choices=['realesr-animevideov3'], value='realesr-animevideov3')
+                                                      choices=['realesr-animevideov3'], value='realesr-animevideov3')
                     ncnn_upscale_keep_imgs = gr.Checkbox(label='Keep Imgs', value=True, elem_id="ncnn_upscale_keep_imgs")
 
             # This is the actual button that's pressed to initiate the Upscaling:
@@ -2143,9 +2133,9 @@ def get_tab_output(da, dv):
 
             # make the function call when the UPSCALE button is clicked
             upscale_btn.click(fn=ncnn_upload_vid_to_upscale, 
-                            inputs=[vid_to_upscale_chosen_file, ncnn_upscale_in_vid_fps_ui_window, 
-                                    ncnn_upscale_in_vid_res, ncnn_upscale_out_vid_res, 
-                                    ncnn_upscale_model, upscale_factor_ncnn, ncnn_upscale_keep_imgs])
+                               inputs=[vid_to_upscale_chosen_file, ncnn_upscale_in_vid_fps_ui_window, 
+                                       ncnn_upscale_in_vid_res, ncnn_upscale_out_vid_res, 
+                                       ncnn_upscale_model, upscale_factor_ncnn, ncnn_upscale_keep_imgs])
         # Vid2Depth TAB - not built using our args.py at all - all data and params are here and in .vid2depth file
         with gr.TabItem('Vid2depth'):
             vid_to_depth_chosen_file = gr.File(label="Video to get Depth from", interactive=True, file_count="single",
@@ -2188,7 +2178,7 @@ def get_tab_output(da, dv):
             image_path = create_row(dv.image_path)
             ffmpeg_stitch_imgs_but = gr.Button(value="*Stitch frames to video*")
             ffmpeg_stitch_imgs_but.click(fn=direct_stitch_vid_from_frames,
-                                         inputs=[image_path, fps, add_soundtrack, soundtrack_path])
+                                        inputs=[image_path, fps, add_soundtrack, soundtrack_path])
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 

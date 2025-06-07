@@ -7,18 +7,20 @@ deforum.core.args.
 """
 
 # Re-export everything from the new config structure
-from .arguments import *
-from .arg_defaults import *
-from .arg_validation import *
-from .arg_transformations import *
+from ..config.arguments import *
+from ..config.arg_defaults import *
+from ..config.arg_validation import *
+from ..config.arg_transformations import process_args as transformation_process_args # Import specific function
 
 # Import the main dataclass definitions
 try:
-    from ..models.data_models import (
-        DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, 
+    from ..models import (
+        DeforumArgs, AnimationArgs, ParseqArgs, DeforumOutputArgs, 
         RootArgs, WanArgs, LoopArgs, ControlnetArgs
     )
-except ImportError:
+    DeforumAnimArgs = AnimationArgs # Assign after successful import
+except ImportError as e:
+    print(f"⚠️ Using fallback argument objects (failed to import from ..models): {e}")
     # Fallback if models not available - create placeholder classes
     class LoopArgs:
         """Fallback LoopArgs for when data_models import fails"""
@@ -103,9 +105,8 @@ def get_component_names():
     
     return components
 
-def process_args(*args, **kwargs):
-    """Process arguments - placeholder for compatibility"""
-    return args, kwargs
+# Use the imported process_args
+process_args = transformation_process_args
 
 def get_settings_component_names():
     """Get settings component names"""
@@ -118,10 +119,11 @@ def set_arg_lists(*args, **kwargs):
     """Set argument lists - returns initialized argument objects"""
     try:
         # Try to create instances using the dataclasses
-        from ..models.data_models import (
-            DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, 
+        from ..models import (
+            DeforumArgs, AnimationArgs, ParseqArgs, DeforumOutputArgs, 
             RootArgs, WanArgs, LoopArgs
         )
+        DeforumAnimArgs = AnimationArgs # Assign after successful import
         
         d = DeforumArgs()
         da = DeforumAnimArgs() 

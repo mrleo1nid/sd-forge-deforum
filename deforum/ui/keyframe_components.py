@@ -165,18 +165,31 @@ def _create_motion_tab(da, components):
             rotation_3d_x = create_row(da.rotation_3d_x)
             rotation_3d_y = create_row(da.rotation_3d_y)
             rotation_3d_z = create_row(da.rotation_3d_z)
+            motion_components['rotation_3d_x'] = rotation_3d_x
+            motion_components['rotation_3d_y'] = rotation_3d_y
+            motion_components['rotation_3d_z'] = rotation_3d_z
             
         # PERSPECTIVE FLIP - inner params are hidden if not enabled
         with FormRow() as enable_per_f_row:
             enable_perspective_flip = create_gr_elem(da.enable_perspective_flip)
+            motion_components['enable_per_f_row'] = enable_per_f_row
+            motion_components['enable_perspective_flip'] = enable_perspective_flip
         with FormRow(visible=False) as per_f_th_row:
             perspective_flip_theta = create_gr_elem(da.perspective_flip_theta)
+            motion_components['per_f_th_row'] = per_f_th_row
+            motion_components['perspective_flip_theta'] = perspective_flip_theta
         with FormRow(visible=False) as per_f_ph_row:
             perspective_flip_phi = create_gr_elem(da.perspective_flip_phi)
+            motion_components['per_f_ph_row'] = per_f_ph_row
+            motion_components['perspective_flip_phi'] = perspective_flip_phi
         with FormRow(visible=False) as per_f_ga_row:
             perspective_flip_gamma = create_gr_elem(da.perspective_flip_gamma)
+            motion_components['per_f_ga_row'] = per_f_ga_row
+            motion_components['perspective_flip_gamma'] = perspective_flip_gamma
         with FormRow(visible=False) as per_f_f_row:
             perspective_flip_fv = create_gr_elem(da.perspective_flip_fv)
+            motion_components['per_f_f_row'] = per_f_f_row
+            motion_components['perspective_flip_fv'] = perspective_flip_fv
             
     return motion_components
 
@@ -302,11 +315,10 @@ def _create_depth_warp_tab(da):
             sampling_mode = create_gr_elem(da.sampling_mode)
             
         with FormRow(visible=is_visible):
-            with gr.Accordion('Extended Depth Warp Settings', open=False):
-                with FormRow() as depth_warp_row_3:
-                    aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
-                with FormRow() as depth_warp_row_4:
-                    aspect_ratio_schedule = create_gr_elem(da.aspect_ratio_schedule)
+            with FormRow() as depth_warp_row_3:
+                aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
+            with FormRow() as depth_warp_row_4:
+                aspect_ratio_schedule = create_gr_elem(da.aspect_ratio_schedule)
                     
         with FormRow(visible=is_visible):
             with FormRow() as depth_warp_row_5:

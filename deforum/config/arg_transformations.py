@@ -59,6 +59,31 @@ except ImportError:
         """Fallback substitute function."""
         return text
 
+try:
+    from ..models.data_models import (
+        AnimationArgs, DeforumArgs, DeforumOutputArgs, ParseqArgs, RootArgs, 
+        WanArgs, LoopArgs, ControlnetArgs, # VideoArgs removed as DeforumOutputArgs is used for video_args
+        create_animation_args_from_dict, create_deforum_args_from_dict, 
+        create_deforum_output_args_from_dict, # Added for video_args
+        create_parseq_args_from_dict, create_wan_args_from_dict, create_root_args_from_dict, 
+        create_loop_args_from_dict, create_controlnet_args_from_dict # Added for controlnet_args
+    )
+    DATACLASSES_AVAILABLE = True
+except ImportError as e:
+    print(f"[DEBUG] Failed to import dataclasses in arg_transformations: {e}")
+    DATACLASSES_AVAILABLE = False
+    # Define fallback placeholders if dataclasses are not available
+    class PlaceholderArgs: pass
+    AnimationArgs, DeforumArgs, DeforumOutputArgs, ParseqArgs, RootArgs, WanArgs, LoopArgs, ControlnetArgs = (PlaceholderArgs,) * 8 # VideoArgs removed
+    def create_animation_args_from_dict(d): return SimpleNamespace(**d)
+    def create_deforum_args_from_dict(d): return SimpleNamespace(**d)
+    def create_deforum_output_args_from_dict(d): return SimpleNamespace(**d) # Added
+    def create_parseq_args_from_dict(d): return SimpleNamespace(**d)
+    def create_wan_args_from_dict(d): return SimpleNamespace(**d)
+    def create_root_args_from_dict(d): return SimpleNamespace(**d)
+    def create_loop_args_from_dict(d): return SimpleNamespace(**d)
+    def create_controlnet_args_from_dict(d): return SimpleNamespace(**d) # Added
+
 
 def get_component_names():
     """Get all component names for UI binding - FIXED VERSION."""
@@ -311,58 +336,80 @@ def process_args(args_dict, index=0):
         tuple: (args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args)
     """
     try:
-        # Create safe defaults for missing batch mode components
-        if 'override_settings_with_file' not in args_dict:
-            args_dict['override_settings_with_file'] = False
-        if 'custom_settings_file' not in args_dict:
-            args_dict['custom_settings_file'] = None
+        if not DATACLASSES_AVAILABLE:
+            log_utils.error("Dataclasses not available. Falling back to SimpleNamespace. THIS IS UNEXPECTED.")
+            # Fallback to old behavior if dataclasses cannot be imported
+            args = SimpleNamespace(**args_dict.get('args', {}))
+            anim_args = SimpleNamespace(**args_dict.get('anim_args', {}))
+            video_args_ns = SimpleNamespace(**args_dict.get('video_args', {})) # This was for DeforumOutputArgs
+            parseq_args = SimpleNamespace(**args_dict.get('parseq_args', {}))
+            loop_args = SimpleNamespace(**args_dict.get('loop_args', {}))
+            controlnet_args_ns = SimpleNamespace(**args_dict.get('controlnet_args', {}))
+            wan_args = SimpleNamespace(**args_dict.get('wan_args', {}))
+            root = SimpleNamespace()
+            return True, root, args, anim_args, video_args_ns, parseq_args, loop_args, controlnet_args_ns, wan_args
+
+        raw_deforum_args = args_dict.get('args', {})
+        args = create_deforum_args_from_dict(raw_deforum_args)
+
+        raw_anim_args = args_dict.get('anim_args', {})
+        anim_args = create_animation_args_from_dict(raw_anim_args)
+
+        # video_args in run_deforum.py corresponds to DeforumOutputArgs
+        raw_video_output_args = args_dict.get('video_args', {}) 
+        video_args = create_deforum_output_args_from_dict(raw_video_output_args)
+
+        raw_parseq_args = args_dict.get('parseq_args', {})
+        parseq_args = create_parseq_args_from_dict(raw_parseq_args)
+        
+        raw_loop_args = args_dict.get('loop_args', {})
+        loop_args = create_loop_args_from_dict(raw_loop_args)
+
+        raw_controlnet_args = args_dict.get('controlnet_args', {})
+        controlnet_args = create_controlnet_args_from_dict(raw_controlnet_args)
+
+        raw_wan_args = args_dict.get('wan_args', {})
+        wan_args = create_wan_args_from_dict(raw_wan_args)
+        
+        # RootArgs handling (remains the same for now)
+        root_data = {
+            'timestring': args_dict.get('timestring', time.strftime('%Y%m%d_%H%M%S')),
+            'animation_prompts': args_dict.get('animation_prompts', {"0": "a beautiful landscape"}),
+            'models_path': args_dict.get('models_path', 'models'),
+            'device': args_dict.get('device', 'cuda'),
+            'half_precision': args_dict.get('half_precision', True)
+        }
+        root = create_root_args_from_dict(root_data)
+
+        # Path processing and other logic needs careful review and adaptation
+        # For now, we focus on correct dataclass instantiation.
+        # The original logic for constructing outdir in setup_output_directory used args.batch_name and p.outpath_samples.
+        # This needs to be done *after* DeforumArgs (aliased as `args`) is created and populated.
+
+        p_obj = args_dict.get('p') # Get the processing object (StableDiffusionProcessingImg2Img instance)
+        if p_obj and hasattr(args, 'batch_name') and hasattr(args, 'outdir'): # DeforumArgs has batch_name and outdir defaults
+            current_arg_list = [args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root]
+            # Process batch name with substitutions
+            # Assuming args.batch_name is already set by create_deforum_args_from_dict or its defaults
+            full_base_folder_path = os.path.join(os.getcwd(), p_obj.outpath_samples)
+            processed_batch_name = substitute_placeholders(args.batch_name, current_arg_list, full_base_folder_path)
             
-        # Extract basic arguments with fallbacks
-        args = SimpleNamespace(**args_dict.get('args', {}))
-        anim_args = SimpleNamespace(**args_dict.get('anim_args', {}))
-        video_args = SimpleNamespace(**args_dict.get('video_args', {}))
-        parseq_args = SimpleNamespace(**args_dict.get('parseq_args', {}))
-        loop_args = SimpleNamespace(**args_dict.get('loop_args', {}))
-        controlnet_args = SimpleNamespace(**args_dict.get('controlnet_args', {}))
-        wan_args = SimpleNamespace(**args_dict.get('wan_args', {}))
-        
-        # Create root object
-        root = SimpleNamespace()
-        root.timestring = args_dict.get('timestring', time.strftime('%Y%m%d_%H%M%S'))
-        root.animation_prompts = args_dict.get('animation_prompts', {"0": "a beautiful landscape"})
-        root.models_path = args_dict.get('models_path', 'models')
-        root.device = args_dict.get('device', 'cuda')
-        root.half_precision = args_dict.get('half_precision', True)
-        
-        # Process paths and placeholders
-        if hasattr(args, 'outdir') and args.outdir:
-            args.outdir = substitute_placeholders(
-                args.outdir, 
-                [args, anim_args, video_args], 
-                os.path.dirname(args.outdir)
-            )
-            args.outdir = clean_gradio_path_strings(args.outdir)
-        
-        # Set defaults for missing fields
-        if not hasattr(args, 'outdir') or not args.outdir:
-            args.outdir = os.path.join("outputs", "deforum")
+            # Construct and set the final outdir on the `args` (DeforumArgs) instance
+            final_outdir = os.path.join(p_obj.outpath_samples, str(processed_batch_name))
+            final_outdir = os.path.join(os.getcwd(), final_outdir)
+            args.outdir = os.path.realpath(final_outdir) # Modify the outdir on the args instance
             
-        if not hasattr(anim_args, 'max_frames'):
-            anim_args.max_frames = 100
-        if not hasattr(anim_args, 'animation_mode'):
-            anim_args.animation_mode = '2D'
-        if not hasattr(video_args, 'fps'):
-            video_args.fps = 15
-        
-        # Ensure output directory exists
-        os.makedirs(args.outdir, exist_ok=True)
-        
-        log_utils.info(f"Arguments processed successfully for index {index}")
-        
+            os.makedirs(args.outdir, exist_ok=True)
+        elif not hasattr(args, 'outdir') or not args.outdir: # Fallback if p_obj not available or batch_name missing
+            args.outdir = os.path.join(os.getcwd(), "outputs", "deforum", "fallback")
+            os.makedirs(args.outdir, exist_ok=True)
+
+        log_utils.info(f"Arguments processed successfully with DATACLASSES for index {index}")
         return True, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args
         
     except Exception as e:
-        log_utils.error(f"Error processing arguments: {e}")
+        log_utils.error(f"Error processing arguments with DATACLASSES: {e}")
+        traceback.print_exc() # Print full traceback for debugging this critical path
         return False, None, None, None, None, None, None, None, None
 
 

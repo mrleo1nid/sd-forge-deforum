@@ -12,11 +12,15 @@ from dataclasses import replace
 import numpy as np
 import cv2
 from PIL import Image
+from pathlib import Path
+import copy
 
 from .frame_models import (
     FrameState, FrameResult, FrameMetadata, RenderContext,
     ProcessingStage, RenderingError, ImageArray, ValidationResult
 )
+from .main_generation_pipeline import generate
+from modules.shared import opts
 
 # Import processing functions with graceful fallbacks
 try:
@@ -452,61 +456,214 @@ def process_frame(
     processing_params: Optional[Dict[str, Any]] = None
 ) -> FrameResult:
     """
-    Process a single frame through the complete pipeline.
+    Process a single frame through the rendering pipeline, including image generation.
     
     Args:
-        frame_state: Initial frame state
-        context: Rendering context
-        processing_params: Optional processing parameters
+        frame_state: Current frame state (with populated metadata)
+        context: Rendering context (with legacy objects)
+        processing_params: Optional processing parameters (currently unused)
         
     Returns:
-        FrameResult with processed frame
+        FrameResult with processed image and status
     """
     start_time = time.time()
-    
-    # Validate input
-    validation_result = validate_frame_state(frame_state)
-    if validation_result is not True:
+    metadata = frame_state.metadata
+    frame_idx = metadata.frame_idx
+
+    # --- Stage 1: Image Generation (New) ---
+    try:
+        # Retrieve legacy objects from context for generate()
+        legacy_args = context.legacy_args
+        legacy_anim_args = context.legacy_anim_args
+        legacy_video_args = context.legacy_video_args # Though not directly used by generate, might be in root or other logic
+        legacy_parseq_args = context.legacy_parseq_args
+        legacy_loop_args = context.legacy_loop_args
+        legacy_controlnet_args = context.legacy_controlnet_args
+        legacy_root = context.legacy_root
+        legacy_keys = context.legacy_keys # DeformAnimKeys or Parseq keys
+        # legacy_prompts = context.legacy_prompts # available if needed
+        legacy_parseq_adapter = getattr(context, 'legacy_parseq_adapter', None) # Needs to be added to RenderContext
+        if legacy_parseq_adapter is None and legacy_parseq_args is not None:
+             # Attempt to create it if not passed in context but args are there.
+             # This is a fallback, ideally it should be created in legacy_renderer and passed in RenderContext.
+             from ..integrations.parseq_adapter import ParseqAdapter
+             legacy_parseq_adapter = ParseqAdapter(legacy_parseq_args, legacy_anim_args, legacy_video_args, legacy_controlnet_args, legacy_loop_args)
+             if legacy_parseq_adapter.use_parseq:
+                 legacy_keys = legacy_parseq_adapter.anim_keys # Parseq might overwrite keys
+
+        if not all([legacy_args, legacy_anim_args, legacy_root, legacy_keys, legacy_parseq_adapter is not None]):
+            raise ValueError("Essential legacy objects (args, anim_args, root, keys, parseq_adapter) missing in RenderContext for image generation.")
+
+        # Create a temporary args-like object for the current frame, using a deep copy to avoid modifying the original.
+        current_frame_args = copy.deepcopy(legacy_args)
+
+        # Populate current_frame_args and root with scheduled values for this frame_idx
+        current_frame_args.prompt = metadata.prompt
+        current_frame_args.cfg_scale = metadata.cfg_scale
+        # current_frame_args.distilled_cfg_scale = metadata.distilled_cfg_scale # Ensure this exists in metadata
+        current_frame_args.seed = metadata.seed
+        # current_frame_args.strength = metadata.strength # for img2img, handle with init_image
+        
+        # Steps, Subseed, Checkpoint, CLIPSkip from schedules (similar to rendering_modes.py)
+        if legacy_anim_args.enable_steps_scheduling and legacy_keys.steps_schedule_series[frame_idx] is not None:
+            current_frame_args.steps = int(legacy_keys.steps_schedule_series[frame_idx])
+        # else: current_frame_args.steps remains as per legacy_args.steps
+        
+        if legacy_anim_args.enable_checkpoint_scheduling and legacy_keys.checkpoint_schedule_series[frame_idx] is not None:
+            current_frame_args.checkpoint = legacy_keys.checkpoint_schedule_series[frame_idx]
+        # else: current_frame_args.checkpoint remains as per legacy_args.checkpoint
+
+        if legacy_anim_args.enable_subseed_scheduling:
+            legacy_root.subseed = int(legacy_keys.subseed_schedule_series[frame_idx])
+            legacy_root.subseed_strength = legacy_keys.subseed_strength_schedule_series[frame_idx]
+        # else: subseed/strength remain as per legacy_root (potentially set by initial seed behavior)
+        
+        scheduled_clipskip = None
+        if legacy_anim_args.enable_clipskip_scheduling and legacy_keys.clipskip_schedule_series[frame_idx] is not None:
+            scheduled_clipskip = int(legacy_keys.clipskip_schedule_series[frame_idx])
+            opts.data["CLIP_stop_at_last_layers"] = scheduled_clipskip
+        # else: opts.data["CLIP_stop_at_last_layers"] uses its existing value or value from Deforum settings
+
+        # Sampler and Scheduler names from schedule
+        scheduled_sampler_name = None
+        if legacy_anim_args.enable_sampler_scheduling and legacy_keys.sampler_schedule_series[frame_idx] is not None:
+            scheduled_sampler_name = legacy_keys.sampler_schedule_series[frame_idx].casefold()
+            
+        scheduled_scheduler_name = None
+        if legacy_anim_args.enable_scheduler_scheduling and legacy_keys.scheduler_schedule_series[frame_idx] is not None:
+            scheduled_scheduler_name = legacy_keys.scheduler_schedule_series[frame_idx].casefold()
+
+        # Handle init_image for img2img based on strength and previous frame
+        init_image_pil = None
+        current_strength = metadata.strength
+        if frame_state.previous_image is not None and current_strength < 1.0 and current_strength > 0.0:
+            # Assuming previous_image is a NumPy array, convert to PIL for generate()
+            init_image_pil = Image.fromarray(frame_state.previous_image.astype(np.uint8))
+            # generate() also needs current_frame_args.strength to be set
+            current_frame_args.strength = current_strength 
+        else:
+            # If no previous image or strength is 1.0 (txt2img) or 0.0 (no change from init)
+            current_frame_args.strength = 1.0 # Effectively txt2img if no init_image
+            if frame_state.current_image is not None and current_strength == 0.0:
+                 # Special case: strength 0 means use current_image as is (e.g. from video input)
+                 # This logic might need adjustment based on how video input frames are handled.
+                 # For now, assume generate() is the primary source or uses init_image
+                 pass 
+
+        # Call generate()
+        # Ensure all args (current_frame_args, keys, anim_args, etc.) are what generate() expects.
+        print(f"Generating frame {frame_idx} with seed {current_frame_args.seed} and prompt: {current_frame_args.prompt[:100]}...")
+        pil_image = generate(
+            current_frame_args, 
+            legacy_keys, 
+            legacy_anim_args, 
+            legacy_loop_args, 
+            legacy_controlnet_args, 
+            legacy_root, 
+            legacy_parseq_adapter, 
+            frame_idx, 
+            scheduled_sampler_name, 
+            scheduled_scheduler_name,
+            init_image=init_image_pil # Pass PIL init_image
+        )
+
+        if pil_image is None:
+            raise RuntimeError(f"Image generation failed for frame {frame_idx}. generate() returned None.")
+
+        generated_image_np = np.array(pil_image)
+        new_frame_state = frame_state.with_image(generated_image_np)
+        new_frame_state = replace(new_frame_state, stage=ProcessingStage.GENERATION) # Update stage
+
+    except Exception as e:
         return FrameResult(
-            frame_state=frame_state,
+            frame_state=frame_state.with_stage(ProcessingStage.GENERATION), # Or a new ERROR_GENERATION stage
             success=False,
             error=RenderingError(
-                f"Frame validation failed: {validation_result}",
-                ProcessingStage.INITIALIZATION,
-                frame_state.metadata.frame_idx
+                f"Image generation failed for frame {frame_idx}: {str(e)}",
+                ProcessingStage.GENERATION,
+                frame_idx
+            ),
+            processing_time=time.time() - start_time
+        )
+    
+    # --- Stage 2: Apply other transformations (existing logic) ---
+    # The rest of the function will now use new_frame_state which has the generated image
+    frame_state_after_gen = new_frame_state # Pass the updated state
+
+    # Validate frame state (optional, if transformations expect valid images)
+    validation = validate_frame_state(frame_state_after_gen)
+    if validation is not True:
+        return FrameResult(
+            frame_state=frame_state_after_gen,
+            success=False,
+            error=RenderingError(
+                f"Frame validation failed: {validation}",
+                ProcessingStage.GENERATION,
+                frame_idx
             )
         )
     
-    # Set up processing parameters
-    params = processing_params or {}
-    
-    # Apply transformations based on context
-    transformations = []
-    
-    if context.animation_mode in ['2D', '3D']:
-        transformations.append('animation_warp')
-    
-    transformations.extend(['noise', 'color_correction', 'mask_application'])
-    
-    # Process frame through pipeline
-    result = apply_frame_transformations(
-        frame_state.with_stage(ProcessingStage.PRE_PROCESSING),
-        context,
-        tuple(transformations),
-        **params
-    )
-    
     # Update final processing time
     total_time = time.time() - start_time
-    final_frame_state = result.frame_state.with_stage(ProcessingStage.COMPLETED)
+    final_frame_state = frame_state_after_gen.with_stage(ProcessingStage.COMPLETED)
     
     return FrameResult(
         frame_state=final_frame_state,
-        success=result.success,
-        error=result.error,
-        warnings=result.warnings,
+        success=True,
         processing_time=total_time
     )
+
+
+def save_frame_to_disk(
+    frame_state: FrameState,
+    context: RenderContext
+) -> FrameResult:
+    """Saves the current image in FrameState to disk."""
+    start_time = time.time()
+    
+    if frame_state.current_image is None:
+        return FrameResult(
+            frame_state=frame_state.with_stage(ProcessingStage.SAVING),
+            success=False,
+            error=RenderingError(
+                "No current image to save",
+                ProcessingStage.SAVING,
+                frame_state.metadata.frame_idx
+            ),
+            processing_time=time.time() - start_time
+        )
+
+    try:
+        frame_idx = frame_state.metadata.frame_idx
+        filename = f"{context.timestring}_{frame_idx:09d}.png"
+        output_path = context.output_dir / filename
+        
+        # Assuming current_image is a NumPy array in RGB format
+        # If it's BGR (e.g., from OpenCV), it needs conversion: image_rgb = cv2.cvtColor(frame_state.current_image, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(frame_state.current_image.astype(np.uint8))
+        pil_image.save(output_path)
+        
+        # print(f"[DEBUG] Saved frame {frame_idx} to {output_path}") # Optional debug print
+
+        new_frame_state = frame_state.with_stage(ProcessingStage.COMPLETED) # Or a new SAVING_COMPLETED stage
+        
+        return FrameResult(
+            frame_state=new_frame_state,
+            success=True,
+            processing_time=time.time() - start_time
+        )
+
+    except Exception as e:
+        return FrameResult(
+            frame_state=frame_state.with_stage(ProcessingStage.SAVING),
+            success=False,
+            error=RenderingError(
+                f"Failed to save frame {frame_state.metadata.frame_idx} to disk: {str(e)}",
+                ProcessingStage.SAVING,
+                frame_state.metadata.frame_idx
+            ),
+            processing_time=time.time() - start_time
+        )
 
 
 def merge_frame_results(results: Tuple[FrameResult, ...]) -> Dict[str, Any]:

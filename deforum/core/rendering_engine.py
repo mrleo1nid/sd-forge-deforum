@@ -8,30 +8,30 @@ import random
 import PIL
 import time
 from PIL import Image, ImageOps
-from .generate import generate, isJson
-from .noise import add_noise
-from .animation import anim_frame_warp
+from .main_generation_pipeline import generate, isJson
+from ..utils.noise import add_noise
+from .animation_controller import anim_frame_warp
 from .keyframe_animation import DeformAnimKeys, LooperAnimKeys
 from ..media.video_audio_pipeline import get_frame_name, get_next_frame, render_preview
-from .depth import DepthModel
-from .colors import maintain_colors
-from .parseq_adapter import ParseqAdapter
-from .seed import next_seed
-from .image_sharpening import unsharp_mask
+from ..depth.core_depth_analysis import DepthModel
+from ..utils.colors import maintain_colors
+from ..integrations.parseq_adapter import ParseqAdapter
+from ..utils.seed import next_seed
+from ..media.image_enhancement import unsharp_mask
 from ..media.image_loading import get_mask, load_img, load_image, get_mask_from_file
-from .save_images import save_image
-from .composable_masks import compose_mask_with_check
-from .settings import save_settings_from_animation_run
+from ..media.image_saving import save_image
+from ..utils.composable_mask_system import compose_mask_with_check
+from ..config.settings import save_settings_from_animation_run
 from ..integrations.controlnet.core_integration import unpack_controlnet_vids, is_controlnet_enabled
-from .subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
-from .resume import get_resume_vars
-from .masks import do_overlay_mask
+from ..utils.subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
+from ..utils.resume import get_resume_vars
+from ..utils.mask_utilities import do_overlay_mask
 from ..prompt import prepare_prompt
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
 from . import experimental_core
 from ..utils import log_utils
-from .RAFT import RAFT
+from ..integrations.raft.raft_integration import RAFT
 from ..media.video_audio_pipeline import download_audio
 
 

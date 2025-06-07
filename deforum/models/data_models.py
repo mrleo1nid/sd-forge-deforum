@@ -1,3 +1,4 @@
+print("[DEBUG] Entering deforum/models/data_models.py") # DEBUG
 """
 Immutable data models for Deforum to replace mutable SimpleNamespace objects.
 
@@ -15,15 +16,15 @@ import numpy as np
 from PIL import Image
 
 # Import legacy args for backward compatibility with tests
-try:
-    from .args import DeforumAnimArgs, DeforumArgs as LegacyDeforumArgs, ParseqArgs as LegacyParseqArgs, WanArgs as LegacyWanArgs, RootArgs as LegacyRootArgs
-except ImportError:
-    # Fallback if circular import issues
-    DeforumAnimArgs = None
-    LegacyDeforumArgs = None
-    LegacyParseqArgs = None
-    LegacyWanArgs = None
-    LegacyRootArgs = None
+# try:
+#     from .args import DeforumAnimArgs, DeforumArgs as LegacyDeforumArgs, ParseqArgs as LegacyParseqArgs, WanArgs as LegacyWanArgs, RootArgs as LegacyRootArgs
+# except ImportError:
+#     # Fallback if circular import issues
+#     DeforumAnimArgs = None
+#     LegacyDeforumArgs = None
+#     LegacyParseqArgs = None
+#     LegacyWanArgs = None
+#     LegacyRootArgs = None
 
 
 class AnimationMode(Enum):
@@ -114,7 +115,8 @@ def validate_range(value: Union[int, float], min_val: Union[int, float], max_val
         raise ValueError(f"{parameter_name} must be between {min_val} and {max_val}, got: {value}")
 
 
-@dataclass(frozen=True)
+print("[DEBUG] Reached AnimationArgs definition in deforum/models/data_models.py") # DEBUG
+@dataclass(frozen=False)
 class AnimationArgs:
     """Immutable animation arguments with validation"""
     
@@ -155,6 +157,7 @@ class AnimationArgs:
     aspect_ratio_use_old_formula: bool = False
     near_schedule: str = "0: (200)"
     far_schedule: str = "0: (10000)"
+    midas_weight: float = 0.3 # Default MiDaS weight
     
     # Seed scheduling
     seed_schedule: str = '0:(s), 1:(-1), "max_f-2":(-1), "max_f-1":(s)'
@@ -168,6 +171,10 @@ class AnimationArgs:
     # Sampler scheduling
     enable_sampler_scheduling: bool = False
     sampler_schedule: str = "0: (\"Euler a\")"
+    
+    # Scheduler scheduling (New)
+    enable_scheduler_scheduling: bool = False
+    scheduler_schedule: str = "0: (\"karras\")"
     
     # CFG scheduling
     enable_cfg_scheduling: bool = False
@@ -198,6 +205,9 @@ class AnimationArgs:
     optical_flow_redo_generation: str = "None"
     redo_flow_factor_schedule: str = "0:(1)"
     
+    # Keyframe distribution for experimental render core
+    keyframe_distribution: str = "Off"
+    
     # Looper settings
     use_looper: bool = False
     
@@ -215,6 +225,9 @@ class AnimationArgs:
     use_mask_video: bool = False
     video_mask_path: str = 'https://deforum.github.io/a1/VM1.mp4'
     
+    # Memory settings
+    store_frames_in_ram: bool = False
+    
     # Additional schedules
     mask_schedule: str = "0: (\"\")"
     noise_mask_schedule: str = "0: (\"\")"
@@ -226,6 +239,23 @@ class AnimationArgs:
     # Ancestral ETA scheduling
     enable_ancestral_eta_scheduling: bool = False
     ancestral_eta_schedule: str = "0: (1)"
+    
+    # Skip video creation for specific frames
+    skip_video_for_run_all: bool = False
+
+    # Keyframe strength schedule
+    keyframe_strength_schedule: str = "0:(1.0)"
+    
+    # Distilled CFG Scale Schedule
+    distilled_cfg_scale_schedule: str = "0: (7.0)"
+    
+    # Noise Multiplier Scheduling
+    enable_noise_multiplier_scheduling: bool = False
+    noise_multiplier_schedule: str = "0: (1.0)"
+    
+    # DDIM ETA Scheduling
+    enable_ddim_eta_scheduling: bool = False
+    ddim_eta_schedule: str = "0: (0.0)"
     
     def __post_init__(self):
         """Validate all schedule strings and numerical values"""
@@ -240,9 +270,12 @@ class AnimationArgs:
             'transform_center_x', 'transform_center_y',
             'noise_schedule', 'strength_schedule', 'contrast_schedule', 'cfg_scale_schedule',
             'fov_schedule', 'aspect_ratio_schedule', 'near_schedule', 'far_schedule',
-            'subseed_schedule', 'steps_schedule', 'clipskip_schedule',
-            'optical_flow_cadence_schedule', 'cadence_flow_factor_schedule', 'redo_flow_factor_schedule',
-            'amount_schedule', 'kernel_schedule', 'sigma_schedule', 'threshold_schedule', 'ancestral_eta_schedule'
+            'seed_schedule', 'subseed_schedule', 'steps_schedule', 'sampler_schedule', 
+            'checkpoint_schedule', 'clipskip_schedule',
+            'cadence_flow_factor_schedule', 'redo_flow_factor_schedule',
+            'mask_schedule', 'noise_mask_schedule',
+            'amount_schedule', 'kernel_schedule', 'sigma_schedule', 'threshold_schedule', 'ancestral_eta_schedule',
+            'keyframe_strength_schedule', 'distilled_cfg_scale_schedule', 'noise_multiplier_schedule', 'ddim_eta_schedule'
         ]
         
         for field_name in schedule_fields:
@@ -261,7 +294,7 @@ class AnimationArgs:
         validate_range(self.perlin_persistence, 0.0, 1.0, "perlin_persistence")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class DeforumArgs:
     """Immutable Deforum arguments with validation"""
     
@@ -319,7 +352,7 @@ class DeforumArgs:
         validate_positive_int(self.clip_skip, "clip_skip")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class DeforumOutputArgs:
     """Immutable output and video processing arguments with validation"""
     
@@ -337,16 +370,49 @@ class DeforumOutputArgs:
     ffmpeg_preset: str = "slow"
     use_manual_settings: bool = False
     
+    # Frame interpolation settings
+    frame_interpolation_engine: str = "None"
+    frame_interpolation_x_amount: int = 2
+    frame_interpolation_slow_mo_enabled: bool = False
+    frame_interpolation_slow_mo_amount: int = 2
+    frame_interpolation_keep_imgs: bool = False
+    frame_interpolation_use_upscaled: bool = False
+    
+    # Video upscaling settings (R-ESRGAN)
+    r_upscale_video: bool = False
+    r_upscale_factor: float = 2.0
+    r_upscale_model: str = "None"
+    r_upscale_keep_imgs: bool = False
+    
+    # Skip video creation
+    skip_video_creation: bool = False
+    
+    # Delete input frames
+    delete_input_frames: bool = False
+    
     def __post_init__(self):
         """Validate output arguments after initialization"""
-        validate_positive_int(int(self.fps), "fps")
+        validate_non_negative_number(self.fps, "fps")
         if self.fps <= 0:
-            raise ValueError("fps must be positive")
+            raise ValueError("fps must be strictly positive")
+            
         if self.add_soundtrack not in ["None", "File", "Init Video"]:
             raise ValueError("add_soundtrack must be 'None', 'File', or 'Init Video'")
+            
+        validate_range(self.ffmpeg_crf, 0, 51, "ffmpeg_crf")
+        # Add validation for ffmpeg_preset if a list of valid presets is available
+        
+        # Validate frame interpolation settings
+        # Add validation for frame_interpolation_engine if a list of valid engines is available
+        validate_range(self.frame_interpolation_x_amount, 1, 16, "frame_interpolation_x_amount") # Assuming 1x to 16x interpolation
+        validate_range(self.frame_interpolation_slow_mo_amount, 1, 16, "frame_interpolation_slow_mo_amount") # Assuming 1x to 16x slow-mo
+
+        # Validate upscaling settings
+        validate_range(self.r_upscale_factor, 1.0, 8.0, "r_upscale_factor") # Assuming 1x to 8x upscale
+        # Add validation for r_upscale_model if a list of valid models is available
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class VideoArgs:
     """Immutable video output arguments with validation"""
     
@@ -365,7 +431,7 @@ class VideoArgs:
         validate_range(self.ffmpeg_crf, 0, 51, "ffmpeg_crf")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class ParseqArgs:
     """Immutable Parseq arguments with validation"""
     
@@ -382,7 +448,7 @@ class ParseqArgs:
                 raise ValueError("parseq_manifest must be valid JSON or URL")
 
 
-@dataclass(frozen=True) 
+@dataclass(frozen=False)
 class WanArgs:
     """Immutable Wan arguments with validation"""
     
@@ -445,7 +511,7 @@ class WanArgs:
             raise ValueError(f"wan_qwen_language must be one of {valid_languages}, got: {self.wan_qwen_language}")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class RootArgs:
     """Immutable root arguments - runtime state and shared data"""
     
@@ -477,7 +543,7 @@ class RootArgs:
     initial_ancestral_eta: float = 1.0
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class LoopArgs:
     """Immutable loop arguments for guided images with validation"""
     
@@ -510,7 +576,7 @@ class LoopArgs:
             validate_schedule_string(self.color_correction_factor, "color_correction_factor")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class ControlnetArgs:
     """Immutable ControlNet arguments for all 5 models with validation"""
     
@@ -733,6 +799,20 @@ def create_loop_args_from_dict(data: Dict[str, Any]) -> LoopArgs:
     loop_fields = {field.name for field in LoopArgs.__dataclass_fields__.values()}
     filtered_data = {k: v for k, v in data.items() if k in loop_fields}
     return LoopArgs(**filtered_data)
+
+
+def create_controlnet_args_from_dict(data: Dict[str, Any]) -> ControlnetArgs:
+    """Create ControlnetArgs from legacy dictionary data"""
+    controlnet_fields = {field.name for field in ControlnetArgs.__dataclass_fields__.values()}
+    filtered_data = {k: v for k, v in data.items() if k in controlnet_fields}
+    return ControlnetArgs(**filtered_data)
+
+
+def create_deforum_output_args_from_dict(data: Dict[str, Any]) -> DeforumOutputArgs:
+    """Create DeforumOutputArgs from legacy dictionary data"""
+    output_fields = {field.name for field in DeforumOutputArgs.__dataclass_fields__.values()}
+    filtered_data = {k: v for k, v in data.items() if k in output_fields}
+    return DeforumOutputArgs(**filtered_data)
 
 
 @dataclass(frozen=True)

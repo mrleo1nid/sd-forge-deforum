@@ -1,4 +1,4 @@
-from ...generate import generate
+from ...core.main_generation_pipeline import generate
 
 
 def call_generate(data, frame: 'DiffusionFrame', redo_seed: int = None):

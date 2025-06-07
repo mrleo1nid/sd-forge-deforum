@@ -21,9 +21,11 @@ from .rendering_pipeline import (
     create_progress_tracker, PipelineConfig
 )
 from .frame_processing import create_frame_state
+from .keyframe_animation import DeformAnimKeys
+from ..integrations.parseq_adapter import ParseqAdapter
 
 # Global flag to enable/disable functional rendering
-_FUNCTIONAL_RENDERING_ENABLED = False
+_FUNCTIONAL_RENDERING_ENABLED = True
 
 
 def enable_functional_rendering(enabled: bool = True) -> None:
@@ -47,7 +49,13 @@ def convert_legacy_args_to_context(
     args: Any,
     anim_args: Any,
     video_args: Any,
-    root: Any
+    parseq_args: Any,
+    loop_args: Any,
+    controlnet_args: Any,
+    root: Any,
+    keys: Any,
+    animation_prompts: Dict[str, str],
+    parseq_adapter: Optional[Any] = None
 ) -> RenderContext:
     """
     Convert legacy argument objects to functional RenderContext.
@@ -56,7 +64,13 @@ def convert_legacy_args_to_context(
         args: Legacy args object
         anim_args: Legacy animation args
         video_args: Legacy video args
+        parseq_args: Legacy parseq_args object
+        loop_args: Legacy loop_args object
+        controlnet_args: Legacy controlnet_args object
         root: Legacy root object
+        keys: DeformAnimKeys object (or from Parseq)
+        animation_prompts: Dictionary of prompts
+        parseq_adapter: Optional[Any] = None
         
     Returns:
         RenderContext for functional rendering
@@ -73,8 +87,6 @@ def convert_legacy_args_to_context(
     animation_mode = getattr(anim_args, 'animation_mode', '2D')
     use_depth_warping = getattr(anim_args, 'use_depth_warping', False)
     save_depth_maps = getattr(anim_args, 'save_depth_maps', False)
-    hybrid_composite = 'None'
-    hybrid_motion = 'None'
     
     # Model configuration
     depth_algorithm = getattr(anim_args, 'depth_algorithm', 'midas')
@@ -95,69 +107,26 @@ def convert_legacy_args_to_context(
         height=height,
         max_frames=max_frames,
         fps=fps,
-        animation_mode=animation_mode,
+        animation_mode=str(animation_mode),
         use_depth_warping=use_depth_warping,
         save_depth_maps=save_depth_maps,
-        hybrid_composite=hybrid_composite,
-        hybrid_motion=hybrid_motion,
         depth_algorithm=depth_algorithm,
         optical_flow_cadence=optical_flow_cadence,
         diffusion_cadence=diffusion_cadence,
         motion_preview_mode=motion_preview_mode,
         device=device,
-        half_precision=half_precision
+        half_precision=half_precision,
+        legacy_args=args,
+        legacy_anim_args=anim_args,
+        legacy_video_args=video_args,
+        legacy_parseq_args=parseq_args,
+        legacy_loop_args=loop_args,
+        legacy_controlnet_args=controlnet_args,
+        legacy_root=root,
+        legacy_keys=keys,
+        legacy_prompts=animation_prompts,
+        legacy_parseq_adapter=parseq_adapter
     )
-
-
-def convert_legacy_frame_args(
-    frame_idx: int,
-    args: Any,
-    keys: Any,
-    prompt_series: Any
-) -> Dict[str, Any]:
-    """
-    Convert legacy frame arguments to metadata dictionary.
-    
-    Args:
-        frame_idx: Frame index
-        args: Legacy args object
-        keys: Legacy keys object
-        prompt_series: Legacy prompt series
-        
-    Returns:
-        Dictionary of frame metadata
-    """
-    metadata = {
-        'frame_idx': frame_idx,
-        'timestamp': frame_idx / 30.0,  # Default FPS
-        'seed': getattr(args, 'seed', 42),
-        'strength': getattr(args, 'strength', 0.75),
-        'cfg_scale': getattr(args, 'cfg_scale', 7.0),
-        'distilled_cfg_scale': getattr(args, 'distilled_cfg_scale', 7.0),
-        'noise_level': 0.0,
-        'prompt': "",
-    }
-    
-    # Extract scheduled values if available
-    if hasattr(keys, 'strength_schedule_series') and frame_idx < len(keys.strength_schedule_series):
-        metadata['strength'] = keys.strength_schedule_series[frame_idx]
-    
-    if hasattr(keys, 'cfg_scale_schedule_series') and frame_idx < len(keys.cfg_scale_schedule_series):
-        metadata['cfg_scale'] = keys.cfg_scale_schedule_series[frame_idx]
-    
-    if hasattr(keys, 'seed_schedule_series') and frame_idx < len(keys.seed_schedule_series):
-        metadata['seed'] = int(keys.seed_schedule_series[frame_idx])
-    
-    if hasattr(keys, 'noise_schedule_series') and frame_idx < len(keys.noise_schedule_series):
-        metadata['noise_level'] = keys.noise_schedule_series[frame_idx]
-    
-    # Extract prompt
-    if hasattr(prompt_series, '__getitem__') and frame_idx < len(prompt_series):
-        metadata['prompt'] = str(prompt_series[frame_idx])
-    elif hasattr(args, 'prompt'):
-        metadata['prompt'] = str(args.prompt)
-    
-    return metadata
 
 
 def functional_render_animation(
@@ -167,8 +136,6 @@ def functional_render_animation(
     parseq_args: Any,
     loop_args: Any,
     controlnet_args: Any,
-    freeu_args: Any,
-    kohya_hrfix_args: Any,
     root: Any
 ) -> None:
     """
@@ -184,23 +151,33 @@ def functional_render_animation(
         parseq_args: Legacy parseq args
         loop_args: Legacy loop args
         controlnet_args: Legacy controlnet args
-        freeu_args: Legacy freeu args
-        kohya_hrfix_args: Legacy kohya hrfix args
         root: Legacy root object
     """
     if not _FUNCTIONAL_RENDERING_ENABLED:
         # Fall back to original implementation
-        from ..render import render_animation as legacy_render_animation
+        # This block should ideally not be reached if _FUNCTIONAL_RENDERING_ENABLED is True
+        print("Attempting to fall back to a legacy render function (this path is problematic due to missing '..render' module)")
+        from ..render import render_animation as legacy_render_animation # This import will likely fail
         return legacy_render_animation(
             args, anim_args, video_args, parseq_args, loop_args,
-            controlnet_args, freeu_args, kohya_hrfix_args, root
+            controlnet_args, # freeu_args, # Removed
+            # kohya_hrfix_args, # Removed
+            root
         )
     
     print("Using functional rendering system...")
     
+    # Instantiate keys and parseq_adapter first
+    # Ensure args.seed is an int if it comes from a UI component that might be float
+    current_seed = int(args.seed) if args.seed is not None else -1
+    keys = DeformAnimKeys(anim_args, current_seed) 
+    parseq_adapter = ParseqAdapter(parseq_args, anim_args, video_args, controlnet_args, loop_args)
+    if parseq_adapter.use_parseq:
+        keys = parseq_adapter.anim_keys # Overwrite keys if Parseq is used and provides its own
+
     try:
-        # Convert legacy arguments to functional format
-        context = convert_legacy_args_to_context(args, anim_args, video_args, root)
+        # Convert legacy arguments to functional format, now including keys and prompts
+        context = convert_legacy_args_to_context(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root, keys, root.animation_prompts, parseq_adapter)
         
         # Create pipeline configuration
         config = PipelineConfig(
@@ -246,7 +223,9 @@ def functional_render_animation(
         from ..render import render_animation as legacy_render_animation
         return legacy_render_animation(
             args, anim_args, video_args, parseq_args, loop_args,
-            controlnet_args, freeu_args, kohya_hrfix_args, root
+            controlnet_args, # freeu_args, # Removed
+            # kohya_hrfix_args, # Removed
+            root
         )
 
 
@@ -284,8 +263,6 @@ def migrate_legacy_settings(legacy_settings: Dict[str, Any]) -> Dict[str, Any]:
         'noise_schedule': 'noise_schedule',
         'use_depth_warping': 'use_depth_warping',
         'save_depth_maps': 'save_depth_maps',
-        'hybrid_composite': 'hybrid_composite',
-        'hybrid_motion': 'hybrid_motion',
     }
     
     for legacy_key, functional_key in setting_mappings.items():

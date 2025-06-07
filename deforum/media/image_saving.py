@@ -10,8 +10,8 @@ def get_output_folder(output_path, batch_folder):
     os.makedirs(out_path, exist_ok=True)
     return out_path
 
-def save_image(image, image_type, filename, args, video_args, root):
-    if video_args.store_frames_in_ram:
+def save_image(image, image_type, filename, args, anim_args, video_args, root):
+    if anim_args.store_frames_in_ram:
         root.frames_cache.append({'path':os.path.join(args.outdir, filename), 'image':image, 'image_type':image_type})
     else:
         image.save(os.path.join(args.outdir, filename))
