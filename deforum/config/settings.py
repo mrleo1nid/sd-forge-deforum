@@ -39,10 +39,10 @@ def validate_and_migrate_settings(settings_path, jdata):
     is_outdated = False
     missing_fields = []
     
-    # Get current expected fields from all argument functions
+    # Get current expected fields from all argument dataclasses
     expected_fields = set()
-    for args_func in [DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, WanArgs]:
-        expected_fields.update(args_func().keys())
+    for args_class in [DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, WanArgs]:
+        expected_fields.update(args_class.__dataclass_fields__.keys())
     
     # Add other expected fields
     expected_fields.update(['prompts', 'animation_prompts_positive', 'animation_prompts_negative'])
@@ -56,7 +56,7 @@ def validate_and_migrate_settings(settings_path, jdata):
     missing_fields = expected_fields - current_fields
     
     # Check for new WanArgs fields specifically (these were added recently)
-    wan_fields = set(WanArgs().keys())
+    wan_fields = set(WanArgs.__dataclass_fields__.keys())
     missing_wan_fields = wan_fields - current_fields
     
     if missing_fields:

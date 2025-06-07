@@ -3,6 +3,7 @@ Argument Transformations - Fixed for Missing Components
 Contains argument processing, transformations, and component management logic
 """
 
+import dataclasses
 import json
 import os
 import time
@@ -443,11 +444,11 @@ def process_args(args_dict, index=0):
             # Construct and set the final outdir on the `args` (DeforumArgs) instance
             final_outdir = os.path.join(p_obj.outpath_samples, str(processed_batch_name))
             final_outdir = os.path.join(os.getcwd(), final_outdir)
-            args.outdir = os.path.realpath(final_outdir) # Modify the outdir on the args instance
+            args = dataclasses.replace(args, outdir=os.path.realpath(final_outdir)) # Create new instance with updated outdir
             
             os.makedirs(args.outdir, exist_ok=True)
         elif not hasattr(args, 'outdir') or not args.outdir: # Fallback if p_obj not available or batch_name missing
-            args.outdir = os.path.join(os.getcwd(), "outputs", "deforum", "fallback")
+            args = dataclasses.replace(args, outdir=os.path.join(os.getcwd(), "outputs", "deforum", "fallback"))
             os.makedirs(args.outdir, exist_ok=True)
 
         log_utils.info(f"Arguments processed successfully with DATACLASSES for index {index}")
