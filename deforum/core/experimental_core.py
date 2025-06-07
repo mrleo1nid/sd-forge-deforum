@@ -49,7 +49,7 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
         image = generate_frame(data, frame_idx)
         
         if image is None:
-            log_utils.warning(f"Failed to generate frame {frame_idx}")
+            log_utils.warn(f"Failed to generate frame {frame_idx}")
             continue
             
         # Save frame

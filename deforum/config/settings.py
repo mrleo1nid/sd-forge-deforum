@@ -333,7 +333,13 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
     settings_path = clean_gradio_path_strings(settings_path)
     settings_path = os.path.realpath(settings_path)
     settings_component_names = get_settings_component_names()
-    data = {settings_component_names[i]: args[i+1] for i in range(len(settings_component_names))}
+    # Ensure we don't go out of bounds - args[0] is the path, so we need len(args)-1 to match components
+    max_components = min(len(settings_component_names), len(args) - 1)
+    data = {settings_component_names[i]: args[i+1] for i in range(max_components)}
+    
+    # Fill in any missing components with None
+    for i in range(max_components, len(settings_component_names)):
+        data[settings_component_names[i]] = None
     
     # First check webui root for deforum_settings.txt if no specific path is provided
     if settings_path == get_default_settings_path() or not os.path.exists(settings_path):

@@ -364,23 +364,31 @@ def process_args(args_dict, index=0):
 
         # DeforumAnimationArgs (aliased as 'anim_args')
         anim_arg_fields = set(DeforumAnimationArgs.__dataclass_fields__.keys())
-        dict_for_anim_args = {k: args_dict[k] for k in anim_arg_fields if k in args_dict and args_dict[k] is not None}
+        dict_for_anim_args = {k: args_dict[k] for k in anim_arg_fields if k in args_dict}
         
-        if 'animation_mode' in dict_for_anim_args and isinstance(dict_for_anim_args['animation_mode'], str):
+        if 'animation_mode' in dict_for_anim_args:
             from ..models.data_models import AnimationMode # Enum from data_models
-            try:
-                dict_for_anim_args['animation_mode'] = AnimationMode(dict_for_anim_args['animation_mode'])
-            except ValueError:
-                log_utils.warning(f"Invalid string for AnimationMode: {dict_for_anim_args['animation_mode']}. Default will be used.")
+            if dict_for_anim_args['animation_mode'] is None:
+                # None value, use default
                 del dict_for_anim_args['animation_mode'] # Let dataclass default apply
+            elif isinstance(dict_for_anim_args['animation_mode'], str):
+                try:
+                    dict_for_anim_args['animation_mode'] = AnimationMode(dict_for_anim_args['animation_mode'])
+                except ValueError:
+                    log_utils.warn(f"Invalid string for AnimationMode: {dict_for_anim_args['animation_mode']}. Default will be used.")
+                    del dict_for_anim_args['animation_mode'] # Let dataclass default apply
 
-        if 'border' in dict_for_anim_args and isinstance(dict_for_anim_args['border'], str):
+        if 'border' in dict_for_anim_args:
             from ..models.data_models import BorderMode # Enum from data_models
-            try:
-                dict_for_anim_args['border'] = BorderMode(dict_for_anim_args['border'])
-            except ValueError:
-                log_utils.warning(f"Invalid string for BorderMode: {dict_for_anim_args['border']}. Default will be used.")
-                del dict_for_anim_args['border']
+            if dict_for_anim_args['border'] is None:
+                # None value, use default
+                del dict_for_anim_args['border'] # Let dataclass default apply
+            elif isinstance(dict_for_anim_args['border'], str):
+                try:
+                    dict_for_anim_args['border'] = BorderMode(dict_for_anim_args['border'])
+                except ValueError:
+                    log_utils.warn(f"Invalid string for BorderMode: {dict_for_anim_args['border']}. Default will be used.")
+                    del dict_for_anim_args['border']
         
         # Add other enum conversions for DeforumAnimationArgs as needed (e.g. color_coherence, noise_type)
 
