@@ -358,7 +358,15 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
             if ui_launch:
                 return ({key: gr.update(value=value) for key, value in data.items()},)
             else:
-                return [settings_path] + list(data.values()) + [""]
+                # Return ordered values matching settings_component_names
+                ordered_values = []
+                for name in settings_component_names:
+                    if name in data:
+                        ordered_values.append(data[name])
+                    else:
+                        ordered_values.append(None)
+                ordered_values.append("")  # Status message
+                return ordered_values
     
     print(f"Reading settings from {settings_path}")
 
@@ -376,7 +384,35 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
             if ui_launch:
                 return ({key: gr.update(value=value) for key, value in data.items()},)
             else:
-                return [settings_path] + list(data.values()) + [""]
+                # Return ordered values matching settings_component_names
+                ordered_values = []
+                for name in settings_component_names:
+                    if name in data:
+                        ordered_values.append(data[name])
+                    else:
+                        ordered_values.append(None)
+                ordered_values.append("")  # Status message
+                return ordered_values
+        
+        # Try to load the default settings file
+        try:
+            with open(settings_path, "r", encoding='utf-8') as f:
+                jdata = json.load(f)
+            print(f"✅ Successfully loaded default settings from {settings_path}")
+        except Exception as e2:
+            print(f"❌ Error loading default settings file: {str(e2)}")
+            if ui_launch:
+                return ({key: gr.update(value=value) for key, value in data.items()},)
+            else:
+                # Return ordered values matching settings_component_names
+                ordered_values = []
+                for name in settings_component_names:
+                    if name in data:
+                        ordered_values.append(data[name])
+                    else:
+                        ordered_values.append(None)
+                ordered_values.append("")  # Status message
+                return ordered_values
     
     # Validate and potentially migrate settings
     is_valid, migrated_data, warnings = validate_and_migrate_settings(settings_path, jdata)
@@ -443,8 +479,26 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
         updates['settings_path'] = gr.update(value=settings_path)
         return (updates,)
     else:
-        # Return values for all components
-        return list(result.values())
+        # Return values for all components - must match settings_component_names order
+        # Create ordered list of values matching settings_component_names
+        ordered_values = []
+        for name in settings_component_names:
+            if name in result:
+                ordered_values.append(result[name])
+            else:
+                # Provide safe defaults for missing components
+                if name == 'settings_path':
+                    ordered_values.append(settings_path)
+                elif name in ['override_settings_with_file']:
+                    ordered_values.append(False)
+                elif name in ['custom_settings_file']:
+                    ordered_values.append(None)
+                else:
+                    ordered_values.append(None)
+        
+        # Add the status message at the end
+        ordered_values.append("")
+        return ordered_values
 
 
 def load_video_settings(*args, **kwargs):
