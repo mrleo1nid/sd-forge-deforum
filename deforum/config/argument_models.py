@@ -121,6 +121,7 @@ class DeforumGenerationArgs:
     
     # Output settings
     batch_name: str = "Deforum_{timestring}"
+    outdir: str = ""
     
     # Error handling
     reroll_blank_frames: RerollBehavior = RerollBehavior.IGNORE

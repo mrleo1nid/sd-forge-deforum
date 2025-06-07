@@ -82,17 +82,14 @@ def validate_and_migrate_settings(settings_path, jdata):
     migrated_data = jdata.copy()
     
     # Fill in missing fields with defaults
-    for args_func in [DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, WanArgs]:
-        defaults = args_func()
-        for field, config in defaults.items():
-            if field not in migrated_data and field not in excluded_fields:
-                # Get the default value from the config
-                if isinstance(config, dict) and 'value' in config:
-                    default_value = config['value']
-                else:
-                    default_value = config
-                migrated_data[field] = default_value
-                warnings.append(f"Added missing field '{field}' with default value")
+    for args_class in [DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, WanArgs]:
+        defaults_instance = args_class()
+        for field_name, field_info in args_class.__dataclass_fields__.items():
+            if field_name not in migrated_data and field_name not in excluded_fields:
+                # Get the default value from the dataclass instance
+                default_value = getattr(defaults_instance, field_name)
+                migrated_data[field_name] = default_value
+                warnings.append(f"Added missing field '{field_name}' with default value")
     
     return not is_outdated, migrated_data, warnings
 
