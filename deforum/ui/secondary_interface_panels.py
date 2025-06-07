@@ -1,4 +1,5 @@
-from deforum.config.args import DeforumOutputArgs, get_component_names, get_settings_component_names
+from deforum.config.args import DeforumOutputArgs
+from deforum.config.arg_transformations import get_component_names, get_settings_component_names
 from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
 from modules.call_queue import wrap_gradio_gpu_call

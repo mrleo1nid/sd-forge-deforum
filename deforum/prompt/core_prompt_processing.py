@@ -1,5 +1,10 @@
 import re
-import numexpr
+try:
+    import numexpr
+    NUMEXPR_AVAILABLE = True
+except ImportError:
+    NUMEXPR_AVAILABLE = False
+    numexpr = None
 from ..utils.color_constants import RED, GREEN, PURPLE, RESET_COLOR
 
 def check_is_number(value):
@@ -18,7 +23,14 @@ def parse_weight(match, frame=0, max_frames=0) -> float:
         if len(w_raw) < 3:
             print('the value inside `-characters cannot represent a math function')
             return 1
-        return float(numexpr.evaluate(w_raw[1:-1]))
+        if NUMEXPR_AVAILABLE:
+            return float(numexpr.evaluate(w_raw[1:-1]))
+        else:
+            # Fallback: try basic eval (less safe but works for simple expressions)
+            try:
+                return float(eval(w_raw[1:-1]))
+            except:
+                return 1.0
 
 def split_weighted_subprompts(text, frame=0, max_frames=0):
     """
@@ -50,7 +62,15 @@ def interpolate_prompts(animation_prompts, max_frames):
         if check_is_number(key):  # default case 0:(1 + t %5), 30:(5-t%2)
             parsed_animation_prompts[key] = value
         else:  # math on the left hand side case 0:(1 + t %5), maxKeyframes/2:(5-t%2)
-            parsed_animation_prompts[int(numexpr.evaluate(key))] = value
+            if NUMEXPR_AVAILABLE:
+                parsed_animation_prompts[int(numexpr.evaluate(key))] = value
+            else:
+                # Fallback: try basic eval
+                try:
+                    parsed_animation_prompts[int(eval(key))] = value
+                except:
+                    print(f"Warning: Could not evaluate key '{key}', skipping")
+                    continue
 
     sorted_prompts = sorted(parsed_animation_prompts.items(), key=lambda item: int(item[0]))
 
@@ -125,7 +145,14 @@ def prepare_prompt(prompt_series, max_frames, seed, frame_idx):
     for match in regex.finditer(prompt_parsed):
         matched_string = match.group(0)
         parsed_string = matched_string.replace('t', f'{frame_idx}').replace("max_f", f"{max_f}").replace('`', '')
-        parsed_value = numexpr.evaluate(parsed_string)
+        if NUMEXPR_AVAILABLE:
+            parsed_value = numexpr.evaluate(parsed_string)
+        else:
+            # Fallback: try basic eval
+            try:
+                parsed_value = eval(parsed_string)
+            except:
+                parsed_value = 0
         prompt_parsed = prompt_parsed.replace(matched_string, str(parsed_value))
 
     prompt_to_print, *after_neg = prompt_parsed.strip().split("--neg")

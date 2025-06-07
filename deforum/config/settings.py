@@ -9,8 +9,8 @@ from types import SimpleNamespace
 import modules.shared as sh
 from modules.sd_models import FakeInitialModel
 
-from .args import DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, get_settings_component_names, \
-    pack_args, WanArgs
+from .args import DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, pack_args, WanArgs
+from .arg_transformations import get_settings_component_names
 from .defaults import mask_fill_choices, get_camera_shake_list
 from ..integrations.controlnet.core_integration import controlnet_component_names
 from ..utils.deprecation_utils import handle_deprecated_settings
@@ -330,13 +330,11 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
     settings_path = clean_gradio_path_strings(settings_path)
     settings_path = os.path.realpath(settings_path)
     settings_component_names = get_settings_component_names()
-    # Ensure we don't go out of bounds - args[0] is the path, so we need len(args)-1 to match components
-    max_components = min(len(settings_component_names), len(args) - 1)
-    data = {settings_component_names[i]: args[i+1] for i in range(max_components)}
     
-    # Fill in any missing components with None
-    for i in range(max_components, len(settings_component_names)):
-        data[settings_component_names[i]] = None
+    # Initialize data with default values for all components
+    data = {}
+    for name in settings_component_names:
+        data[name] = None  # Default value
     
     # First check webui root for deforum_settings.txt if no specific path is provided
     if settings_path == get_default_settings_path() or not os.path.exists(settings_path):
@@ -456,7 +454,9 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
         elif key in {'animation_prompts_positive', 'animation_prompts_negative'}:
             val = jdata.get(key, default_val)
         elif key == 'animation_prompts':
-            val = json.dumps(jdata['prompts'], ensure_ascii=False, indent=4)
+            # Handle prompts with fallback
+            prompts_data = jdata.get('prompts', jdata.get('animation_prompts', {"0": "a beautiful landscape"}))
+            val = json.dumps(prompts_data, ensure_ascii=False, indent=4)
         # Special handling for camera shake
         elif key == 'shake_name':
             # Check if the value is a key in the camera shake list

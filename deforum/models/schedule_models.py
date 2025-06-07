@@ -11,8 +11,16 @@ Replaces patterns like:
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any, Union
-import pandas as pd
-import numpy as np
+
+try:
+    import pandas as pd
+    import numpy as np
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    # Provide minimal stubs for type hints
+    pd = None
+    np = None
 from ..core.keyframe_animation import FrameInterpolater
 
 # Backward compatibility alias for tests

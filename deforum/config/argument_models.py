@@ -82,6 +82,17 @@ class DeforumGenerationArgs:
     width: int = 1280
     height: int = 720
     
+    # Legacy compatibility properties
+    @property
+    def W(self) -> int:
+        """Legacy compatibility: W -> width"""
+        return self.width
+    
+    @property 
+    def H(self) -> int:
+        """Legacy compatibility: H -> height"""
+        return self.height
+    
     # Generation settings
     seed: int = -1
     sampler: SamplerType = SamplerType.EULER

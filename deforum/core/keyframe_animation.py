@@ -5,10 +5,18 @@ Contains classes for handling animation key frames and scheduling.
 Note: FreeU and Kohya HR Fix functionality has been removed.
 """
 
-import numpy as np
-import pandas as pd
-import numexpr
 import re
+try:
+    import numpy as np
+    import pandas as pd
+    import numexpr
+    PANDAS_AVAILABLE = True
+except ImportError:
+    # Create minimal stubs for when pandas is not available
+    PANDAS_AVAILABLE = False
+    np = None
+    pd = None
+    numexpr = None
 from ..prompt.core_prompt_processing import check_is_number
 from modules import scripts, shared
 
@@ -133,6 +141,14 @@ class FrameInterpolater():
         return value.replace("'", "").replace('"', "").replace('(', "").replace(')', "")
 
     def get_inbetweens(self, key_frames, integer=False, interp_method='Linear', is_single_string = False, filename = 'unknown'):
+        if not PANDAS_AVAILABLE:
+            # Fallback: return simple list with default values
+            print(f"Warning: pandas not available, using basic fallback for {filename}")
+            if is_single_string:
+                return [str(list(key_frames.values())[0] if key_frames else "")] * self.max_frames
+            else:
+                return [float(list(key_frames.values())[0] if key_frames else 0.0)] * self.max_frames
+                
         key_frame_series = pd.Series([np.nan for _ in range(self.max_frames)], dtype=object)
 
         for i, key_str_val in key_frames.items():
