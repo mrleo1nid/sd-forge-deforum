@@ -119,78 +119,91 @@ def on_ui_tabs():
                     def create_named_run_wrapper():
                         """
                         Create a wrapper that converts component values to named arguments.
-                        This eliminates the fragile positional argument system.
+                        Uses DYNAMIC COMPONENT DISCOVERY to avoid missing component issues.
                         """
                         def named_run_deforum(*args):
                             # Convert positional args to named kwargs
                             kwargs = {'job_id': 'deforum_job'}
                             
+                            # DYNAMIC DISCOVERY: Only use components that actually exist in the UI
+                            # This eliminates the misalignment caused by missing components
+                            actual_component_order = []
                             component_names = get_component_names()
                             
-                            # CRITICAL FIX: Build ordered component list that matches get_component_names() exactly
-                            ordered_components = []
+                            # Build list of components that actually exist and have valid gradio _id
                             for name in component_names:
                                 if name in components and components[name] is not None:
                                     comp = components[name]
                                     if hasattr(comp, '_id'):
-                                        ordered_components.append((name, comp))
-                                    else:
-                                        ordered_components.append((name, None))
-                                else:
-                                    ordered_components.append((name, None))
+                                        actual_component_order.append(name)
                             
-                            # Map each component value to its name using the corrected order
-                            for i, (name, comp) in enumerate(ordered_components):
+                            debug_print(f"🔧 Dynamic discovery: Found {len(actual_component_order)} valid components out of {len(component_names)} expected")
+                            debug_print(f"🔧 Received {len(args)} arguments from UI")
+                            
+                            # Map each argument to its corresponding component name
+                            for i, name in enumerate(actual_component_order):
                                 if i < len(args):
                                     kwargs[name] = args[i]
                                 else:
                                     kwargs[name] = None
                             
-                            # Debug first few mappings
-                            debug_print(f"🔍 Named args: {list(kwargs.keys())[:10]}...")
+                            # Debug critical mappings with actual discovery
+                            debug_print(f"🔍 Dynamic mapping results:")
                             critical_fields = ['strength', 'animation_prompts', 'W', 'H', 'mask_overlay_blur']
                             for field in critical_fields:
                                 if field in kwargs:
                                     value = kwargs[field]
                                     debug_print(f"   {field} = {str(value)[:50] if isinstance(value, str) else value}")
+                                elif field in actual_component_order:
+                                    pos = actual_component_order.index(field)
+                                    debug_print(f"   {field} at position {pos} (in actual order)")
+                                else:
+                                    debug_print(f"   {field} = NOT FOUND in UI components")
+                            
+                            # Show first 10 actual mappings
+                            debug_print(f"🔍 First 10 dynamic mappings:")
+                            for i, name in enumerate(actual_component_order[:10]):
+                                value = kwargs.get(name, 'None')
+                                debug_print(f"   {i:2d}: {name:20} = {str(value)[:30] if isinstance(value, str) else value}")
                             
                             # Call the new named argument version
                             return run_deforum(**kwargs)
                         
                         return named_run_deforum
                     
-                    # Get all valid components IN THE EXACT ORDER of get_component_names()
+                    # DYNAMIC COMPONENT COLLECTION: Only use components that actually exist
                     input_components = []
                     component_names = get_component_names()
+                    actual_components = []
                     
-                    debug_print(f"Building input components in correct order...")
-                    debug_print(f"Available components: {list(components.keys())[:20]}...")
+                    debug_print(f"Building input components using dynamic discovery...")
+                    debug_print(f"Available UI components: {len(components)} total")
                     
-                    misaligned_count = 0
-                    for i, name in enumerate(component_names):
+                    # Only collect components that actually exist and are valid
+                    for name in component_names:
                         if name in components and components[name] is not None:
                             comp = components[name]
                             if hasattr(comp, '_id'):
                                 input_components.append(comp)
-                                debug_print(f"   {i:3d}: {name:25} -> valid component")
-                            else:
-                                input_components.append(gr.State(value=None))
-                                debug_print(f"   {i:3d}: {name:25} -> dummy (invalid)")
-                                misaligned_count += 1
-                        else:
-                            input_components.append(gr.State(value=None))
-                            debug_print(f"   {i:3d}: {name:25} -> dummy (missing)")
-                            misaligned_count += 1
+                                actual_components.append(name)
+                                debug_print(f"   ✅ {len(actual_components):3d}: {name}")
                     
-                    debug_print(f"⚠️ Found {misaligned_count} missing/invalid components out of {len(component_names)}")
+                    debug_print(f"🔧 Collected {len(actual_components)} valid components out of {len(component_names)} expected")
                     
-                    # Show which critical components are actually available
+                    # Show which critical components are found
                     critical_fields = ['W', 'H', 'strength', 'animation_prompts', 'mask_overlay_blur']
+                    debug_print(f"🔍 Critical component availability:")
                     for field in critical_fields:
-                        if field in components:
-                            debug_print(f"✅ {field} available in components")
+                        if field in actual_components:
+                            pos = actual_components.index(field)
+                            debug_print(f"   ✅ {field:20} at position {pos:3d}")
                         else:
-                            debug_print(f"❌ {field} MISSING from components")
+                            debug_print(f"   ❌ {field:20} -> MISSING from UI")
+                    
+                    # Show first 10 actual components that will be sent to Gradio
+                    debug_print(f"🔍 First 10 components being sent to run_deforum:")
+                    for i, name in enumerate(actual_components[:10]):
+                        debug_print(f"   {i:2d}: {name}")
                     
                     debug_print(f"Prepared {len(input_components)} input components in correct order")
                     
