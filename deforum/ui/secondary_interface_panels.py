@@ -176,11 +176,12 @@ def on_ui_tabs():
                                 else:
                                     debug_print(f"   {field} = NOT FOUND in UI components")
                             
-                            # Show first 10 actual mappings
-                            print(f"🔍 First 10 dynamic mappings:")
+                            # Show first 10 actual mappings with detailed debug
+                            print(f"🔍 First 10 dynamic mappings with args received:")
                             for i, name in enumerate(actual_component_order[:10]):
                                 value = kwargs.get(name, 'None')
-                                print(f"   {i:2d}: {name:20} = {str(value)[:30] if isinstance(value, str) else value}")
+                                raw_arg = args[i] if i < len(args) else 'MISSING'
+                                print(f"   {i:2d}: {name:20} = {str(value)[:30] if isinstance(value, str) else value} (raw: {str(raw_arg)[:20]})")
                             
                             # Show positions of critical components in actual discovery order
                             print(f"🔍 Critical component positions in ACTUAL discovery order:")
@@ -240,7 +241,16 @@ def on_ui_tabs():
                         else:
                             debug_print(f"   ❌ {field:20} -> MISSING from UI")
                     
-                    # Show first 10 actual components that will be sent to Gradio
+                    # Show first 10 actual components that will be sent to Gradio with their current values
+                    print(f"🔍 First 10 components being sent to run_deforum with their CURRENT VALUES:")
+                    for i, name in enumerate(actual_components[:10]):
+                        comp = components.get(name)
+                        try:
+                            current_value = comp.value if hasattr(comp, 'value') else 'NO_VALUE'
+                        except:
+                            current_value = 'ERROR_GETTING_VALUE'
+                        print(f"   {i:2d}: {name:20} = {str(current_value)[:40]}")
+                    
                     debug_print(f"🔍 First 10 components being sent to run_deforum:")
                     for i, name in enumerate(actual_components[:10]):
                         debug_print(f"   {i:2d}: {name}")
