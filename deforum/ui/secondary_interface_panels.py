@@ -177,6 +177,19 @@ def on_ui_tabs():
                                     debug_print(f"   {field} = NOT FOUND in UI components")
                             
                             # Show first 10 actual mappings
+                            print(f"🔍 First 10 dynamic mappings:")
+                            for i, name in enumerate(actual_component_order[:10]):
+                                value = kwargs.get(name, 'None')
+                                print(f"   {i:2d}: {name:20} = {str(value)[:30] if isinstance(value, str) else value}")
+                            
+                            # Show positions of critical components in actual discovery order
+                            print(f"🔍 Critical component positions in ACTUAL discovery order:")
+                            for field in critical_fields:
+                                if field in actual_component_order:
+                                    actual_pos = actual_component_order.index(field)
+                                    expected_pos = component_names.index(field) if field in component_names else -1
+                                    print(f"   {field:20} actual pos {actual_pos:3d}, expected pos {expected_pos:3d} (diff: {actual_pos - expected_pos:+3d})")
+                            
                             debug_print(f"🔍 First 10 dynamic mappings:")
                             for i, name in enumerate(actual_component_order[:10]):
                                 value = kwargs.get(name, 'None')
@@ -210,6 +223,15 @@ def on_ui_tabs():
                     
                     # Show which critical components are found
                     critical_fields = ['W', 'H', 'strength', 'animation_prompts', 'mask_overlay_blur']
+                    print(f"🔍 Critical component availability:")
+                    for field in critical_fields:
+                        if field in actual_components:
+                            pos = actual_components.index(field)
+                            expected_pos = component_names.index(field) if field in component_names else -1
+                            print(f"   ✅ {field:20} at actual pos {pos:3d}, expected pos {expected_pos:3d} (diff: {pos - expected_pos:+3d})")
+                        else:
+                            print(f"   ❌ {field:20} -> MISSING from UI")
+                    
                     debug_print(f"🔍 Critical component availability:")
                     for field in critical_fields:
                         if field in actual_components:
