@@ -128,6 +128,25 @@ def on_ui_tabs():
                             # VERIFICATION: Confirm new dynamic system is running
                             print("🚀 DYNAMIC COMPONENT DISCOVERY SYSTEM ACTIVE 🚀")
                             
+                            # WORKAROUND: Load settings directly to get correct values
+                            # This bypasses the Gradio component caching issue
+                            try:
+                                from ..config.settings import get_webui_settings_path
+                                import json
+                                import os
+                                settings_path = get_webui_settings_path()
+                                if os.path.exists(settings_path):
+                                    with open(settings_path, 'r') as f:
+                                        settings_data = json.load(f)
+                                    print(f"🔧 Loaded settings from {settings_path} as fallback")
+                                    print(f"   Settings W={settings_data.get('W')}, H={settings_data.get('H')}, strength={settings_data.get('strength')}")
+                                else:
+                                    settings_data = {}
+                                    print(f"⚠️ Settings file not found: {settings_path}")
+                            except Exception as e:
+                                settings_data = {}
+                                print(f"⚠️ Error loading settings: {e}")
+                            
                             # DYNAMIC DISCOVERY: Only use components that actually exist in the UI
                             # This eliminates the misalignment caused by missing components
                             actual_component_order = []
@@ -146,9 +165,21 @@ def on_ui_tabs():
                             debug_print(f"🔧 Received {len(args)} arguments from UI")
                             
                             # Map each argument to its corresponding component name
+                            # Use settings file values when available to bypass Gradio caching issues
                             for i, name in enumerate(actual_component_order):
                                 if i < len(args):
-                                    kwargs[name] = args[i]
+                                    gradio_value = args[i]
+                                    # Use settings file value if available and different from default
+                                    if name in settings_data:
+                                        settings_value = settings_data[name]
+                                        # For critical parameters, prefer settings file over Gradio cache
+                                        if name in ['W', 'H', 'strength', 'animation_prompts'] and settings_value != gradio_value:
+                                            print(f"🔧 Using settings value for {name}: {settings_value} (instead of Gradio: {gradio_value})")
+                                            kwargs[name] = settings_value
+                                        else:
+                                            kwargs[name] = gradio_value
+                                    else:
+                                        kwargs[name] = gradio_value
                                 else:
                                     kwargs[name] = None
                             
