@@ -118,6 +118,43 @@ This codebase follows functional programming principles:
 - **Type Safety**: Comprehensive type hints throughout
 - **Modular Design**: Clear separation of concerns
 
+### Development Workflow
+
+#### Git Commit Guidelines
+**IMPORTANT**: Always stage and commit changes regularly during development:
+
+```bash
+# Stage all changes
+git add .
+
+# Commit with descriptive message
+git commit -m "feat: implement feature X
+
+- Add specific functionality Y
+- Fix issue Z
+- Update component A
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# Push to remote when ready
+git push origin dev
+```
+
+**Commit frequently**:
+- After fixing each major issue
+- After implementing each feature component
+- Before major refactoring
+- After successful testing
+
+**Commit message format**:
+- `feat:` for new features
+- `fix:` for bug fixes
+- `refactor:` for code restructuring
+- `test:` for test additions
+- `docs:` for documentation updates
+
 ### Testing Architecture
 - **`tests/unit/`** - Fast unit tests for individual components
 - **`tests/integration/`** - Integration tests for component interaction

@@ -34,7 +34,35 @@ def run_deforum(*args):
 
     f_location, f_crf, f_preset = get_ffmpeg_params()  # get params for ffmpeg exec
     component_names = get_component_names()
-    args_dict = {component_names[i]: args[i+2] for i in range(0, len(component_names))}
+    
+    # Debug component mapping
+    print(f"🔍 Component mapping debug:")
+    print(f"   Expected components: {len(component_names)}")
+    print(f"   Received args: {len(args)}")
+    print(f"   Available for mapping: {len(args) - 2}")
+    
+    if len(args) - 2 != len(component_names):
+        print(f"⚠️ COMPONENT COUNT MISMATCH!")
+        print(f"   This will cause incorrect parameter assignments!")
+        print(f"   First 10 expected components: {component_names[:10]}")
+        print(f"   First 10 received values: {args[2:12] if len(args) > 12 else args[2:]}")
+    
+    # Map args to dict with bounds checking
+    max_components = min(len(component_names), len(args) - 2)
+    args_dict = {component_names[i]: args[i+2] for i in range(0, max_components)}
+    
+    # Fill missing components with None
+    for i in range(max_components, len(component_names)):
+        args_dict[component_names[i]] = None
+        print(f"⚠️ Missing component: {component_names[i]}")
+    
+    # Debug critical mappings that were failing
+    critical_fields = ['mask_overlay_blur', 'mask_file', 'strength', 'animation_prompts']
+    for field in critical_fields:
+        if field in args_dict:
+            print(f"🔍 {field} = {args_dict[field]} (type: {type(args_dict[field])})")
+        else:
+            print(f"⚠️ {field} = NOT FOUND")
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
         outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_img2img_samples
