@@ -125,6 +125,9 @@ def on_ui_tabs():
                             # Convert positional args to named kwargs
                             kwargs = {'job_id': 'deforum_job'}
                             
+                            # VERIFICATION: Confirm new dynamic system is running
+                            print("🚀 DYNAMIC COMPONENT DISCOVERY SYSTEM ACTIVE 🚀")
+                            
                             # DYNAMIC DISCOVERY: Only use components that actually exist in the UI
                             # This eliminates the misalignment caused by missing components
                             actual_component_order = []
