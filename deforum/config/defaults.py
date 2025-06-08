@@ -138,7 +138,7 @@ def get_default_settings_template(template_type="bunny"):
         "steps": 20,
         "batch_name": "Deforum_{timestring}",
         "keyframe_distribution": "Keyframes Only",
-        "seed_behavior": "iter",
+        "seed_behavior": "schedule",
         "seed_iter_N": 1,
         "use_init": False,
         "strength": 0.85,
