@@ -173,7 +173,7 @@ def on_ui_tabs():
                                     if name in settings_data:
                                         settings_value = settings_data[name]
                                         # For critical parameters, prefer settings file over Gradio cache
-                                        if name in ['W', 'H', 'strength', 'animation_prompts'] and settings_value != gradio_value:
+                                        if name in ['W', 'H', 'strength', 'animation_prompts', 'perlin_octaves'] and settings_value != gradio_value:
                                             print(f"🔧 Using settings value for {name}: {settings_value} (instead of Gradio: {gradio_value})")
                                             kwargs[name] = settings_value
                                         else:
