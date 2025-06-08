@@ -127,8 +127,20 @@ def on_ui_tabs():
                             
                             component_names = get_component_names()
                             
-                            # Map each component value to its name
-                            for i, name in enumerate(component_names):
+                            # CRITICAL FIX: Build ordered component list that matches get_component_names() exactly
+                            ordered_components = []
+                            for name in component_names:
+                                if name in components and components[name] is not None:
+                                    comp = components[name]
+                                    if hasattr(comp, '_id'):
+                                        ordered_components.append((name, comp))
+                                    else:
+                                        ordered_components.append((name, None))
+                                else:
+                                    ordered_components.append((name, None))
+                            
+                            # Map each component value to its name using the corrected order
+                            for i, (name, comp) in enumerate(ordered_components):
                                 if i < len(args):
                                     kwargs[name] = args[i]
                                 else:
@@ -136,7 +148,7 @@ def on_ui_tabs():
                             
                             # Debug first few mappings
                             debug_print(f"🔍 Named args: {list(kwargs.keys())[:10]}...")
-                            critical_fields = ['strength', 'animation_prompts', 'W', 'H']
+                            critical_fields = ['strength', 'animation_prompts', 'W', 'H', 'mask_overlay_blur']
                             for field in critical_fields:
                                 if field in kwargs:
                                     value = kwargs[field]
@@ -147,21 +159,47 @@ def on_ui_tabs():
                         
                         return named_run_deforum
                     
-                    # Get all valid components
+                    # Get all valid components IN THE EXACT ORDER of get_component_names()
                     input_components = []
                     component_names = get_component_names()
                     
-                    for name in component_names:
+                    debug_print(f"Building input components in correct order...")
+                    debug_print(f"Available components: {list(components.keys())[:20]}...")
+                    
+                    misaligned_count = 0
+                    for i, name in enumerate(component_names):
                         if name in components and components[name] is not None:
                             comp = components[name]
                             if hasattr(comp, '_id'):
                                 input_components.append(comp)
+                                debug_print(f"   {i:3d}: {name:25} -> valid component")
                             else:
                                 input_components.append(gr.State(value=None))
+                                debug_print(f"   {i:3d}: {name:25} -> dummy (invalid)")
+                                misaligned_count += 1
                         else:
                             input_components.append(gr.State(value=None))
+                            debug_print(f"   {i:3d}: {name:25} -> dummy (missing)")
+                            misaligned_count += 1
                     
-                    debug_print(f"Prepared {len(input_components)} input components")
+                    debug_print(f"⚠️ Found {misaligned_count} missing/invalid components out of {len(component_names)}")
+                    
+                    # Show which critical components are actually available
+                    critical_fields = ['W', 'H', 'strength', 'animation_prompts', 'mask_overlay_blur']
+                    for field in critical_fields:
+                        if field in components:
+                            debug_print(f"✅ {field} available in components")
+                        else:
+                            debug_print(f"❌ {field} MISSING from components")
+                    
+                    debug_print(f"Prepared {len(input_components)} input components in correct order")
+                    
+                    # Verify critical component positions
+                    critical_positions = {}
+                    for i, name in enumerate(component_names):
+                        if name in ['W', 'H', 'strength', 'animation_prompts', 'mask_overlay_blur']:
+                            critical_positions[name] = i
+                    debug_print(f"Critical component positions: {critical_positions}")
                     
                     # Set up the generate button click handler with named argument wrapper
                     submit.click(

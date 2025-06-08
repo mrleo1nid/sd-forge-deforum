@@ -94,45 +94,64 @@ except ImportError as e:
 
 
 def get_component_names():
-    """Get all component names for UI binding - FIXED VERSION."""
-    # Define essential components that should always exist
+    """Get all component names for UI binding - CORRECTED ORDER VERSION."""
+    # Define essential components in the EXACT order they appear in the UI
+    # This order MUST match how components are created in the UI modules
     essential_components = [
-        # Batch mode components (CRITICAL FIX)
+        # Batch mode components (first in UI)
         'override_settings_with_file', 
         'custom_settings_file',
         
-        # Basic generation components
+        # Basic generation components (Run tab order)
         'seed', 'steps', 'sampler', 'scheduler', 'checkpoint', 'clip_skip',
         'W', 'H', 'strength', 'cfg_scale', 'distilled_cfg_scale', 'tiling',
         'restore_faces', 'seed_resize_from_w', 'seed_resize_from_h',
-        'noise_multiplier', 'ddim_eta', 'ancestral_eta', 'overlay_mask',
-        'mask_file', 'init_image', 'init_image_box', 'use_init', 'use_mask',
-        'invert_mask', 'mask_brightness_adjust', 'mask_contrast_adjust',
-        'mask_overlay_blur', 'fill', 'full_res_mask', 'full_res_mask_padding',
-        'reroll_blank_frames', 'prompt', 'negative_prompt', 'subseed',
-        'subseed_strength', 'seed_behavior', 'seed_iter_N', 'use_areas',
-        'save_settings', 'save_sample', 'display_samples', 'save_sample_per_step',
-        'show_sample_per_step', 'override_these_with_webui', 'batch_name',
-        'filename_format', 'animation_mode', 'max_frames', 'border', 
+        'noise_multiplier', 'ddim_eta', 'ancestral_eta', 
+        
+        # Init/Mask components (Init tab order)
+        'use_init', 'use_mask', 'invert_mask', 'overlay_mask',
+        'mask_file', 'mask_overlay_blur', 'mask_brightness_adjust', 'mask_contrast_adjust',
+        'fill', 'full_res_mask', 'full_res_mask_padding',
+        'init_image', 'init_image_box',
+        
+        # Prompt and behavior components
+        'prompt', 'negative_prompt', 'animation_prompts', 
+        'animation_prompts_positive', 'animation_prompts_negative',
+        'seed_behavior', 'seed_iter_N', 'subseed', 'subseed_strength',
+        
+        # Animation components (Animation tab order)
+        'animation_mode', 'max_frames', 'border', 
         'angle', 'zoom', 'translation_x', 'translation_y', 'translation_z', 
         'rotation_3d_x', 'rotation_3d_y', 'rotation_3d_z',
         'flip_2d_perspective', 'perspective_flip_theta', 'perspective_flip_phi',
-        'perspective_flip_gamma', 'perspective_flip_fv', 'noise_schedule',
-        'strength_schedule', 'contrast_schedule', 'cfg_scale_schedule',
-        'distilled_cfg_scale_schedule', 'steps_schedule', 'seed_schedule',
-        'motion_preview_mode', 'motion_preview_length', 'motion_preview_step',
+        'perspective_flip_gamma', 'perspective_flip_fv', 'enable_perspective_flip',
         
-        # Animation prompt components
-        'animation_prompts', 'animation_prompts_positive', 'animation_prompts_negative',
+        # Schedule components (Keyframes tab order)
+        'noise_schedule', 'strength_schedule', 'contrast_schedule', 
+        'cfg_scale_schedule', 'distilled_cfg_scale_schedule', 'steps_schedule', 'seed_schedule',
         
-        # Components that are commonly missing but expected
+        # Advanced animation components
         'optical_flow_cadence', 'cadence_flow_factor_schedule', 
         'optical_flow_redo_generation', 'redo_flow_factor_schedule',
-        'diffusion_redo', 'enable_perspective_flip', 'depth_warp_msg_html',
-        'color_force_grayscale', 'noise_type', 'perlin_octaves', 'perlin_persistence',
-        'color_coherence', 'color_coherence_video_every_N_frames', 'color_coherence_image_path',
-        'depth_algorithm', 'midas_weight', 'make_gif', 'ncnn_upscale_model', 'ncnn_upscale_factor',
-        'skip_video_creation', 'frame_interp_slow_mo_amount', 'frame_interp_x_amount',
+        'diffusion_redo', 'motion_preview_mode', 'motion_preview_length', 'motion_preview_step',
+        
+        # Noise and effects
+        'noise_type', 'perlin_octaves', 'perlin_persistence',
+        'color_force_grayscale', 'color_coherence', 
+        'color_coherence_video_every_N_frames', 'color_coherence_image_path',
+        
+        # Depth and 3D
+        'depth_algorithm', 'midas_weight', 'depth_warp_msg_html',
+        
+        # Output and processing
+        'save_settings', 'save_sample', 'display_samples', 'save_sample_per_step',
+        'show_sample_per_step', 'override_these_with_webui', 'batch_name',
+        'filename_format', 'use_areas', 'reroll_blank_frames',
+        
+        # Video output components
+        'skip_video_creation', 'make_gif', 
+        'frame_interp_slow_mo_amount', 'frame_interp_x_amount',
+        'ncnn_upscale_model', 'ncnn_upscale_factor',
         'aspect_ratio_use_old_formula', 'aspect_ratio_schedule'
     ]
     
@@ -161,6 +180,16 @@ def get_component_names():
         if item not in seen:
             seen.add(item)
             unique_components.append(item)
+    
+    # Debug component count and critical positions
+    critical_components = ['W', 'H', 'strength', 'animation_prompts', 'mask_overlay_blur']
+    print(f"🔧 Component names list: {len(unique_components)} total components")
+    for comp in critical_components:
+        if comp in unique_components:
+            pos = unique_components.index(comp)
+            print(f"   {comp:20} at position {pos:3d}")
+        else:
+            print(f"   {comp:20} -> MISSING!")
     
     return unique_components
 
