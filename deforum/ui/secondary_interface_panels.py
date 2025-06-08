@@ -140,6 +140,8 @@ def on_ui_tabs():
                                     if hasattr(comp, '_id'):
                                         actual_component_order.append(name)
                             
+                            print(f"🔧 Dynamic discovery: Found {len(actual_component_order)} valid components out of {len(component_names)} expected")
+                            print(f"🔧 Received {len(args)} arguments from UI")
                             debug_print(f"🔧 Dynamic discovery: Found {len(actual_component_order)} valid components out of {len(component_names)} expected")
                             debug_print(f"🔧 Received {len(args)} arguments from UI")
                             
@@ -151,8 +153,19 @@ def on_ui_tabs():
                                     kwargs[name] = None
                             
                             # Debug critical mappings with actual discovery
-                            debug_print(f"🔍 Dynamic mapping results:")
+                            print(f"🔍 Dynamic mapping results:")
                             critical_fields = ['strength', 'animation_prompts', 'W', 'H', 'mask_overlay_blur']
+                            for field in critical_fields:
+                                if field in kwargs:
+                                    value = kwargs[field]
+                                    print(f"   {field} = {str(value)[:50] if isinstance(value, str) else value}")
+                                elif field in actual_component_order:
+                                    pos = actual_component_order.index(field)
+                                    print(f"   {field} at position {pos} (in actual order)")
+                                else:
+                                    print(f"   {field} = NOT FOUND in UI components")
+                            
+                            debug_print(f"🔍 Dynamic mapping results:")
                             for field in critical_fields:
                                 if field in kwargs:
                                     value = kwargs[field]
@@ -179,6 +192,8 @@ def on_ui_tabs():
                     component_names = get_component_names()
                     actual_components = []
                     
+                    print(f"🔧 Building input components using dynamic discovery...")
+                    print(f"🔧 Available UI components: {len(components)} total")
                     debug_print(f"Building input components using dynamic discovery...")
                     debug_print(f"Available UI components: {len(components)} total")
                     
