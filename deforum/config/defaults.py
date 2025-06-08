@@ -62,6 +62,295 @@ def DeforumAnimPrompts():
         "324": "An empty space, with a sign that says 'Camera Shake in Deforum', surrounded by intricate mandelbulb fractals on screens"
     }"""  # WARNING: make sure to not add a trailing semicolon after the last prompt, or the run might break.
 
+def DeforumBunnyPrompts():
+    """
+    Bunny prompts template synchronized to amen break at 60 FPS.
+    These are the popular default prompts showcasing cyberpunk bunny progression.
+    """
+    return r"""{
+        "0": "A cute bunny, hopping on grass, photorealistic",
+        "12": "A cute bunny with sunglasses, hopping at a neon-lit construction site",
+        "43": "A cyberpunk bunny with glowing eyes, standing on a digital grid, retrowave aesthetic",
+        "74": "A cool anthropomorphic bunny in a leather jacket, mounting a futuristic motorcycle",
+        "85": "A badass synthwave bunny with neon mohawk, riding a glowing hoverbike through a cyberpunk city",
+        "106": "A cool synthwave bunny in metallic armor, riding a motorcycle with flaming wheels across burning coal",
+        "119": "A synthwave bunny with mirrored visor helmet, riding a cryogenic ice motorcycle across a frozen lake, digital horizon",
+        "126": "A synthwave bunny with laser eyes, motorcycle transforming into a fire-breathing machine, burning coal road, purple horizon",
+        "147": "A neon-outlined synthwave bunny, motorcycle creating ice crystals, racing across a frozen digital wasteland, blue glow",
+        "158": "A synthwave bunny with holographic jacket, riding a dimensional-shifting motorcycle through lava fields, synthwave sunset",
+        "178": "A cool synthwave bunny with robotic arm, hovering motorcycle, holding a neon sign that says 'Deforum & Forge'",
+        "210": "A synthwave bunny DJ with glowing headphones, motorcycle parked nearby, raising a holographic sign that says 'Deforum & Forge'",
+        "241": "A synthwave cyborg bunny with visor shades, futuristic motorcycle morphing into a digital throne, neon sign says 'Deforum & Forge'",
+        "262": "A transcendent synthwave bunny with energy aura, quantum motorcycle, surrounded by mandelbulb fractals, holding a sign that says 'Deforum & Forge'",
+        "272": "A godlike synthwave bunny, digital motorcycle breaking into particle effects, mandelbulb fractals forming reality portals, sign that says 'Deforum & Forge'",
+        "293": "A synthwave bunny in virtual space, motorcycle trails leaving data streams, kaleidoscopic mandelbulb fractals, sign that says 'Deforum & Forge'",
+        "314": "A synthwave bunny becoming one with the digital realm, motorcycle dissolving into the fractal patterns, mandelbulb universe, sign that says 'Deforum & Forge'",
+        "324": "An ascended synthwave bunny deity, motorcycle transformed into throne of light, ruling over an empire of mandelbulb fractals, glowing sign that says 'Deforum & Forge'"
+    }"""
+
+def DeforumWanPrompts():
+    """
+    Wan video prompts template - drip progression theme.
+    """
+    return r"""{
+        "0": "A cute white bunny sitting in a peaceful meadow, soft natural lighting, photorealistic",
+        "12": "A white bunny with slightly glowing fur, sitting in a meadow with subtle magical sparkles",
+        "43": "A bunny with soft neon highlights on its fur, sitting in a meadow with digital aurora effects",
+        "74": "A bunny with cyberpunk fur patterns, glowing blue and purple, in an urban meadow setting",
+        "85": "A bunny with LED-trimmed ears and glowing whiskers, cyberpunk aesthetic, neon city background",
+        "106": "A tech bunny with holographic fur patterns, sitting in a futuristic garden environment",
+        "119": "A bunny wearing sleek chrome accessories, reflective metallic fur highlights, sci-fi setting",
+        "126": "A drip bunny with golden chains and designer accessories, confident pose, luxury environment",
+        "147": "A swag bunny with diamond earrings and platinum fur trim, posing with attitude",
+        "158": "A boss bunny with bling accessories and designer sunglasses, standing confidently",
+        "178": "A supreme drip bunny with ice-cold chains, golden grillz, and designer everything",
+        "210": "A legendary bunny deity with cosmic bling, floating in space with stellar accessories",
+        "241": "An ascended bunny with celestial drip, surrounded by floating diamonds and gold",
+        "262": "A transcendent bunny overlord with reality-bending bling, fractal jewelry patterns",
+        "272": "A hyperdimensional drip bunny with impossible geometry accessories, glowing with power",
+        "293": "An omnipotent bunny god with universal bling, commanding cosmic forces",
+        "314": "A supreme bunny entity with reality-warping drip, existing beyond time and space",
+        "324": "The ultimate drip bunny, transcending all dimensions with infinite swag and cosmic bling"
+    }"""
+
+def get_default_settings_template(template_type="bunny"):
+    """
+    Create default settings with specified prompt template.
+    
+    Args:
+        template_type: "bunny", "sterile", "wan", or "minimal"
+        
+    Returns:
+        dict: Complete default settings dictionary
+    """
+    # Base settings - these are common to all templates
+    base_settings = {
+        "W": 1280,
+        "H": 720,
+        "show_info_on_ui": True,
+        "tiling": False,
+        "restore_faces": False,
+        "seed_resize_from_w": 0,
+        "seed_resize_from_h": 0,
+        "seed": -1,
+        "sampler": "Euler",
+        "scheduler": "Simple",
+        "steps": 20,
+        "batch_name": "Deforum_{timestring}",
+        "keyframe_distribution": "Keyframes Only",
+        "seed_behavior": "iter",
+        "seed_iter_N": 1,
+        "use_init": False,
+        "strength": 0.85,
+        "strength_0_no_init": True,
+        "init_image": None,
+        "use_mask": False,
+        "use_alpha_as_mask": False,
+        "mask_file": "https://deforum.github.io/a1/M1.jpg",
+        "invert_mask": False,
+        "mask_contrast_adjust": 1.0,
+        "mask_brightness_adjust": 1.0,
+        "overlay_mask": True,
+        "mask_overlay_blur": 4,
+        "fill": 0,
+        "full_res_mask": True,
+        "full_res_mask_padding": 4,
+        "reroll_blank_frames": "ignore",
+        "reroll_patience": 10.0,
+        "motion_preview_mode": False,
+        "animation_mode": "3D",
+        "max_frames": 334,
+        "border": "wrap",
+        "angle": "0: (0)",
+        "zoom": "0: (1.0025+0.002*sin(1.25*3.14*t/120))",
+        "translation_x": "0: (0)",
+        "translation_y": "0: (0)",
+        "translation_z": "0: (1.0)",
+        "transform_center_x": "0: (0.5)",
+        "transform_center_y": "0: (0.5)",
+        "rotation_3d_x": "0: (0)",
+        "rotation_3d_y": "0: (0)",
+        "rotation_3d_z": "0: (0)",
+        "shake_name": "INVESTIGATION",
+        "shake_intensity": 1.0,
+        "shake_speed": 1.0,
+        "enable_perspective_flip": False,
+        "perspective_flip_theta": "0: (0)",
+        "perspective_flip_phi": "0: (0)",
+        "perspective_flip_gamma": "0: (0)",
+        "perspective_flip_fv": "0: (53)",
+        "noise_schedule": "0: (0.065)",
+        "strength_schedule": "0: (0.85)",
+        "keyframe_strength_schedule": "0: (0.20)",
+        "contrast_schedule": "0: (1.0)",
+        "cfg_scale_schedule": "0: (1.0)",
+        "distilled_cfg_scale_schedule": "0: (3.5)",
+        "enable_steps_scheduling": False,
+        "steps_schedule": "0: (20)",
+        "fov_schedule": "0: (70)",
+        "aspect_ratio_schedule": "0: (1.0)",
+        "aspect_ratio_use_old_formula": False,
+        "near_schedule": "0: (200)",
+        "far_schedule": "0: (10000)",
+        "seed_schedule": "0:(s), 1:(-1), \"max_f-2\":(-1), \"max_f-1\":(s)",
+        "enable_subseed_scheduling": False,
+        "subseed_schedule": "0: (1)",
+        "subseed_strength_schedule": "0: (0)",
+        "enable_sampler_scheduling": False,
+        "sampler_schedule": "0: (\"Euler\")",
+        "enable_scheduler_scheduling": False,
+        "scheduler_schedule": "0: (\"Simple\")",
+        "use_noise_mask": False,
+        "mask_schedule": "0: (\"{video_mask}\")",
+        "noise_mask_schedule": "0: (\"{video_mask}\")",
+        "enable_checkpoint_scheduling": False,
+        "checkpoint_schedule": "0: (\"model1.ckpt\"), 100: (\"model2.safetensors\")",
+        "enable_clipskip_scheduling": False,
+        "clipskip_schedule": "0: (2)",
+        "enable_noise_multiplier_scheduling": True,
+        "noise_multiplier_schedule": "0: (1.05)",
+        "resume_from_timestring": False,
+        "resume_timestring": "20251111111111",
+        "enable_ddim_eta_scheduling": False,
+        "ddim_eta_schedule": "0: (0)",
+        "enable_ancestral_eta_scheduling": False,
+        "ancestral_eta_schedule": "0: (1.0)",
+        "amount_schedule": "0: (0.1)",
+        "kernel_schedule": "0: (5)",
+        "sigma_schedule": "0: (1)",
+        "threshold_schedule": "0: (0)",
+        "color_coherence": "None",
+        "color_coherence_image_path": "https://upload.wikimedia.org/wikipedia/commons/7/72/Grautoene.png",
+        "color_coherence_video_every_N_frames": 1,
+        "color_force_grayscale": False,
+        "legacy_colormatch": False,
+        "diffusion_cadence": 10,
+        "optical_flow_cadence": "None",
+        "cadence_flow_factor_schedule": "0: (1)",
+        "optical_flow_redo_generation": "None",
+        "redo_flow_factor_schedule": "0: (1)",
+        "diffusion_redo": "0",
+        "noise_type": "perlin",
+        "perlin_octaves": 4,
+        "perlin_persistence": 0.5,
+        "use_depth_warping": True,
+        "depth_algorithm": "Depth-Anything-V2-small",
+        "midas_weight": 0.2,
+        "padding_mode": "border",
+        "sampling_mode": "bicubic",
+        "save_depth_maps": False,
+        "video_init_path": "https://deforum.github.io/a1/V1.mp4",
+        "extract_nth_frame": 1,
+        "extract_from_frame": 0,
+        "extract_to_frame": -1,
+        "overwrite_extracted_frames": False,
+        "use_mask_video": False,
+        "video_mask_path": "https://deforum.github.io/a1/VM1.mp4",
+        "parseq_manifest": "",
+        "parseq_use_deltas": True,
+        "parseq_non_schedule_overrides": True,
+        "use_looper": False,
+        "init_images": get_guided_imgs_default_json(),
+        "image_strength_schedule": "0:(0.85)",
+        "image_keyframe_strength_schedule": "0:(0.20)",
+        "blendFactorMax": "0:(0.35)",
+        "blendFactorSlope": "0:(0.25)",
+        "tweening_frames_schedule": "0:(20)",
+        "color_correction_factor": "0:(0.075)",
+        "positive_prompts": "",
+        "negative_prompts": "",
+        # ControlNet settings
+        **_get_controlnet_defaults(),
+        # Wan settings  
+        **_get_wan_defaults(),
+        # Output settings
+        "skip_video_creation": False,
+        "fps": 60,
+        "make_gif": False,
+        "delete_imgs": False,
+        "delete_input_frames": False,
+        "add_soundtrack": "File",
+        "soundtrack_path": "https://ia801303.us.archive.org/26/items/amen-breaks/cw_amen13_173.mp3",
+        "r_upscale_video": False,
+        "r_upscale_factor": "x2",
+        "r_upscale_model": "realesr-animevideov3",
+        "r_upscale_keep_imgs": True,
+        "store_frames_in_ram": False,
+        "frame_interpolation_engine": "None",
+        "frame_interpolation_x_amount": 2,
+        "frame_interpolation_slow_mo_enabled": False,
+        "frame_interpolation_slow_mo_amount": 2,
+        "frame_interpolation_keep_imgs": True,
+        "frame_interpolation_use_upscaled": False,
+        "sd_model_name": "Flux\\flux1-dev-bnb-nf4-v2.safetensors",
+        "sd_model_hash": "f0770152",
+        "deforum_git_commit_id": "Unknown"
+    }
+    
+    # Add prompts based on template type
+    import json
+    if template_type == "bunny":
+        base_settings["prompts"] = json.loads(DeforumBunnyPrompts())
+        base_settings["wan_prompts"] = json.loads(DeforumWanPrompts())
+    elif template_type == "sterile":
+        base_settings["prompts"] = json.loads(DeforumAnimPrompts())
+        base_settings["wan_prompts"] = {"0": "A sterile environment, minimalist and clean"}
+    elif template_type == "wan":
+        base_settings["prompts"] = {"0": "A simple scene for video generation"}
+        base_settings["wan_prompts"] = json.loads(DeforumWanPrompts())
+    else:  # minimal
+        base_settings["prompts"] = {"0": "A beautiful landscape"}
+        base_settings["wan_prompts"] = {"0": "A simple video scene"}
+    
+    return base_settings
+
+def _get_controlnet_defaults():
+    """Get default ControlNet settings."""
+    defaults = {}
+    for i in range(1, 6):
+        defaults.update({
+            f"cn_{i}_overwrite_frames": True,
+            f"cn_{i}_vid_path": "",
+            f"cn_{i}_mask_vid_path": "",
+            f"cn_{i}_enabled": False,
+            f"cn_{i}_low_vram": False,
+            f"cn_{i}_pixel_perfect": True,
+            f"cn_{i}_module": "none",
+            f"cn_{i}_model": "None",
+            f"cn_{i}_weight": "0:(1)",
+            f"cn_{i}_guidance_start": "0:(0.0)",
+            f"cn_{i}_guidance_end": "0:(1.0)",
+            f"cn_{i}_processor_res": 64,
+            f"cn_{i}_threshold_a": 64,
+            f"cn_{i}_threshold_b": 64,
+            f"cn_{i}_resize_mode": "Inner Fit (Scale to Fit)",
+            f"cn_{i}_control_mode": "Balanced",
+            f"cn_{i}_loopback_mode": True,
+        })
+    return defaults
+
+def _get_wan_defaults():
+    """Get default Wan settings."""
+    return {
+        "wan_t2v_model": "1.3B VACE",
+        "wan_i2v_model": "Use Primary Model",
+        "wan_auto_download": True,
+        "wan_preferred_size": "1.3B VACE (Recommended)",
+        "wan_model_path": "models/wan",
+        "wan_resolution": "864x480",
+        "wan_seed": -1,
+        "wan_inference_steps": 20,
+        "wan_guidance_scale": 7.5,
+        "wan_strength_override": True,
+        "wan_fixed_strength": 1.0,
+        "wan_guidance_override": True,
+        "wan_frame_overlap": 2,
+        "wan_motion_strength": 1.0,
+        "wan_enable_interpolation": True,
+        "wan_interpolation_strength": 0.5,
+        "wan_flash_attention_mode": "Auto (Recommended)",
+    }
+
 # Guided images defaults
 def get_guided_imgs_default_json():
     return '''{

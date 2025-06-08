@@ -11,7 +11,7 @@ from modules.sd_models import FakeInitialModel
 
 from .args import DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, pack_args, WanArgs
 from .arg_transformations import get_settings_component_names
-from .defaults import mask_fill_choices, get_camera_shake_list
+from .defaults import mask_fill_choices, get_camera_shake_list, get_default_settings_template
 from ..integrations.controlnet.core_integration import controlnet_component_names
 from ..utils.deprecation_utils import handle_deprecated_settings
 from .general_utils import get_deforum_version, clean_gradio_path_strings
@@ -23,8 +23,47 @@ def get_extension_base_dir():
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 def get_default_settings_path():
-    """Return the path to the default settings file in the extension directory"""
-    return os.path.join(get_extension_base_dir(), "default_settings.txt")
+    """Return the default settings filename for UI display"""
+    return "deforum_settings.txt"
+
+def get_webui_settings_path():
+    """Return the full path to the default settings file in webui root"""
+    from modules import paths_internal
+    return os.path.join(paths_internal.script_path, "deforum_settings.txt")
+
+def create_default_settings_file(settings_path=None, template_type="bunny"):
+    """
+    Create a default settings file using the template system.
+    
+    Args:
+        settings_path: Where to save the file (defaults to default_settings.txt)
+        template_type: Which template to use ("bunny", "sterile", "wan", "minimal")
+    
+    Returns:
+        bool: True if file was created successfully
+    """
+    if settings_path is None:
+        settings_path = get_webui_settings_path()
+    
+    try:
+        # Get the template data
+        template_data = get_default_settings_template(template_type)
+        
+        # Create directory if it doesn't exist
+        settings_dir = os.path.dirname(settings_path)
+        if settings_dir and not os.path.exists(settings_dir):
+            os.makedirs(settings_dir, exist_ok=True)
+        
+        # Save the template as JSON
+        with open(settings_path, "w", encoding='utf-8') as f:
+            json.dump(template_data, f, ensure_ascii=False, indent=4)
+        
+        print(f"✅ Created default settings file with {template_type} template: {settings_path}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error creating default settings file: {e}")
+        return False
 
 def get_keys_to_exclude():
     # init_image_box is PIL object not string, so ignore.
@@ -246,11 +285,10 @@ def save_settings(*args, **kwargs):
     settings_path = args[0].strip()
     settings_path = clean_gradio_path_strings(settings_path)
     
-    # If path is empty, use a default path in the webui root
-    if not settings_path:
-        from modules import paths_internal
-        settings_path = os.path.join(paths_internal.script_path, "deforum_settings.txt")
-        print(f"No settings path provided, using default path in webui root: {settings_path}")
+    # If path is empty or just the default filename, use full path in the webui root
+    if not settings_path or settings_path == get_default_settings_path():
+        settings_path = get_webui_settings_path()
+        print(f"Using default settings path in webui root: {settings_path}")
     
     settings_path = os.path.realpath(settings_path)
     
@@ -354,34 +392,51 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
         data[name] = None  # Default value
     
     # First check webui root for deforum_settings.txt if no specific path is provided
-    if settings_path == get_default_settings_path() or not os.path.exists(settings_path):
+    # Handle case where user input is just "deforum_settings.txt" or the default filename
+    default_filename = get_default_settings_path()
+    if settings_path == default_filename or os.path.basename(settings_path) == default_filename or not os.path.exists(settings_path):
         # Check for a settings file in webui root
-        from modules import paths_internal
-        webui_root_settings = os.path.join(paths_internal.script_path, "deforum_settings.txt")
+        webui_root_settings = get_webui_settings_path()
         if os.path.isfile(webui_root_settings):
             print(f"Using settings file from webui root: {webui_root_settings}")
             settings_path = webui_root_settings
     
     # Check if the file exists, if not fall back to default settings
     if not os.path.isfile(settings_path):
-        default_path = get_default_settings_path()
-        print(f"The settings file '{settings_path}' does not exist. Using default settings from {default_path}")
-        settings_path = default_path
-        # If default file also doesn't exist, return unchanged data
-        if not os.path.isfile(settings_path):
-            print(f"Default settings file '{default_path}' also not found. The values will be unchanged.")
-            if ui_launch:
-                return ({key: gr.update(value=value) for key, value in data.items()},)
+        default_path = get_webui_settings_path()
+        print(f"The settings file '{settings_path}' does not exist. Checking for default settings at {default_path}")
+        
+        # If default file also doesn't exist, create it using template system
+        if not os.path.isfile(default_path):
+            print(f"Default settings file '{default_path}' also not found. Creating from bunny template...")
+            if create_default_settings_file(default_path, "bunny"):
+                settings_path = default_path
             else:
-                # Return ordered values matching settings_component_names
-                ordered_values = []
-                for name in settings_component_names:
-                    if name in data:
-                        ordered_values.append(data[name])
-                    else:
-                        ordered_values.append(None)
-                ordered_values.append("")  # Status message
-                return ordered_values
+                # Template creation failed, use in-memory template
+                print("❌ Failed to create default settings file, using in-memory template")
+                template_data = get_default_settings_template("bunny")
+                # Convert template data to UI format
+                for key, value in template_data.items():
+                    if key in data:
+                        if key == 'animation_prompts' and isinstance(value, dict):
+                            data[key] = json.dumps(value, ensure_ascii=False, indent=4)
+                        else:
+                            data[key] = value
+                
+                if ui_launch:
+                    return ({key: gr.update(value=value) for key, value in data.items()},)
+                else:
+                    # Return ordered values matching settings_component_names
+                    ordered_values = []
+                    for name in settings_component_names:
+                        if name in data:
+                            ordered_values.append(data[name])
+                        else:
+                            ordered_values.append(None)
+                    ordered_values.append("")  # Status message
+                    return ordered_values
+        else:
+            settings_path = default_path
     
     print(f"Reading settings from {settings_path}")
 
@@ -391,7 +446,7 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
     except Exception as e:
         print(f"❌ Error loading settings file: {str(e)}")
         # If there's an error loading the file, fall back to default settings
-        default_path = get_default_settings_path()
+        default_path = get_webui_settings_path()
         print(f"Falling back to default settings from {default_path}")
         settings_path = default_path
         if not os.path.isfile(settings_path):
@@ -526,23 +581,31 @@ def load_video_settings(*args, **kwargs):
     data = {vid_args_names[i]: args[i+1] for i in range(0, len(vid_args_names))}
     
     # First check webui root for deforum_settings.txt if no specific path is provided
-    if video_settings_path == get_default_settings_path() or not os.path.exists(video_settings_path):
+    # Handle case where user input is just "deforum_settings.txt" or the default filename
+    default_filename = get_default_settings_path()
+    if video_settings_path == default_filename or os.path.basename(video_settings_path) == default_filename or not os.path.exists(video_settings_path):
         # Check for a settings file in webui root
-        from modules import paths_internal
-        webui_root_settings = os.path.join(paths_internal.script_path, "deforum_settings.txt")
+        webui_root_settings = get_webui_settings_path()
         if os.path.isfile(webui_root_settings):
             print(f"Using video settings from webui root file: {webui_root_settings}")
             video_settings_path = webui_root_settings
     
     # Check if the file exists, if not fall back to default settings
     if not os.path.isfile(video_settings_path):
-        default_path = get_default_settings_path()
-        print(f"The video settings file '{video_settings_path}' does not exist. Using default settings from {default_path}")
-        video_settings_path = default_path
-        # If default file also doesn't exist, return unchanged data
-        if not os.path.isfile(video_settings_path):
-            print(f"Default settings file '{default_path}' also not found. The values will be unchanged.")
-            return [data[name] for name in vid_args_names]
+        default_path = get_webui_settings_path()
+        print(f"The video settings file '{video_settings_path}' does not exist. Checking for default settings at {default_path}")
+        
+        # If default file also doesn't exist, create it using template system
+        if not os.path.isfile(default_path):
+            print(f"Default settings file '{default_path}' also not found. Creating from bunny template...")
+            if create_default_settings_file(default_path, "bunny"):
+                video_settings_path = default_path
+            else:
+                # Template creation failed, return unchanged data
+                print("❌ Failed to create default settings file, using unchanged values")
+                return [data[name] for name in vid_args_names]
+        else:
+            video_settings_path = default_path
     
     print(f"Reading video settings from {video_settings_path}")
     
@@ -553,7 +616,7 @@ def load_video_settings(*args, **kwargs):
     except Exception as e:
         print(f"Error loading video settings file: {str(e)}")
         # If there's an error loading the file, fall back to default settings
-        default_path = get_default_settings_path()
+        default_path = get_webui_settings_path()
         print(f"Falling back to default settings from {default_path}")
         video_settings_path = default_path
         if not os.path.isfile(video_settings_path):

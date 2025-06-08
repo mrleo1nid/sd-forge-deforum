@@ -6,7 +6,7 @@ import torch
 import modules.shared as shared
 from modules.sd_models import forge_model_reload, FakeInitialModel
 from modules.processing import Processed, StableDiffusionProcessingImg2Img
-from .args import get_component_names, process_args
+from ..config.arg_transformations import get_component_names, process_args
 from ..utils.deforum_tqdm import DeforumTQDM
 from ..media.image_saving import dump_frames_cache, reset_frames_cache
 from ..media.frame_interpolation_pipeline import process_video_interpolation
@@ -169,7 +169,7 @@ def run_deforum(*args):
             shared.opts.data["eta_ancestral"] = root.initial_ancestral_eta
         
         print(f"{YELLOW}Starting job {job_id}...{RESET_COLOR}")
-        if anim_args.store_frames_in_ram:
+        if video_args.store_frames_in_ram:
             dump_frames_cache(root)
         
         from base64 import b64encode
