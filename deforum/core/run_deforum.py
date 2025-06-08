@@ -25,7 +25,14 @@ from ..models.data_models import AnimationMode
 # this global param will contain the latest generated video HTML-data-URL info (for preview inside the UI when needed)
 last_vid_data = None
 
-def run_deforum(*args):
+def run_deforum(**kwargs):
+    """
+    New run_deforum function using named arguments instead of positional args.
+    This eliminates the fragile positional argument mapping issues.
+    
+    Args:
+        **kwargs: Named arguments from Gradio components
+    """
     print("Starting Deforum...")
 
     if isinstance(shared.sd_model, FakeInitialModel):
@@ -33,94 +40,28 @@ def run_deforum(*args):
         forge_model_reload()
 
     f_location, f_crf, f_preset = get_ffmpeg_params()  # get params for ffmpeg exec
-    component_names = get_component_names()
     
-    # Debug component mapping
-    print(f"🔍 Component mapping debug:")
-    print(f"   Expected components: {len(component_names)}")
-    print(f"   Received args: {len(args)}")
-    print(f"   Available for mapping: {len(args) - 2}")
-    print(f"   Difference: {len(args) - 2 - len(component_names)}")
+    # Extract special args
+    job_id_prefix = kwargs.get('job_id', 'deforum_job')
     
-    # Check first few args to understand structure
-    print(f"   First 5 args: {args[:5]}")
-    print(f"   Args types: {[type(arg).__name__ for arg in args[:5]]}")
+    # Convert kwargs to args_dict for compatibility with existing code
+    args_dict = kwargs.copy()
     
-    if len(args) - 2 != len(component_names):
-        print(f"⚠️ COMPONENT COUNT MISMATCH!")
-        print(f"   This will cause incorrect parameter assignments!")
-        print(f"   First 10 expected components: {component_names[:10]}")
-        print(f"   First 10 received values: {args[2:12] if len(args) > 12 else args[2:]}")
-        
-        # Find the exact mismatch
-        diff = len(args) - 2 - len(component_names)
-        if diff > 0:
-            print(f"   Extra {diff} args received - likely UI sending extra components")
-            print(f"   Last {diff} extra args: {args[-(diff):] if diff < 10 else args[-10:]}")
+    print(f"🔍 Received {len(kwargs)} named arguments")
     
-    # The args array should be: [request, task_id, ...component_values]
-    # But we're receiving 249 args for 247 components, suggesting we need to skip more
-    # Auto-detect the correct offset by looking for expected data patterns
-    
-    def find_correct_offset():
-        # Look for typical UI component values to detect correct alignment
-        for test_offset in [2, 3, 4, 5]:
-            if test_offset >= len(args):
-                continue
-            
-            # Check if we get reasonable values for known fields
-            test_dict = {}
-            max_test = min(len(component_names), len(args) - test_offset)
-            
-            # Create test mapping
-            for i in range(min(20, max_test)):  # Check first 20 components
-                if i < len(component_names):
-                    test_dict[component_names[i]] = args[i + test_offset]
-            
-            # Look for expected patterns:
-            # - W should be a reasonable width (e.g., 512-2048)
-            # - strength should be 0-1 range  
-            # - seed_behavior should be a string like "iter" or "schedule"
-            score = 0
-            
-            if 'W' in test_dict and isinstance(test_dict['W'], int) and 256 <= test_dict['W'] <= 4096:
-                score += 1
-            if 'strength' in test_dict and isinstance(test_dict['strength'], (int, float)) and 0 <= test_dict['strength'] <= 1:
-                score += 1
-            if 'seed_behavior' in test_dict and isinstance(test_dict['seed_behavior'], str):
-                score += 1
-            if 'animation_prompts' in test_dict and (isinstance(test_dict['animation_prompts'], str) and len(test_dict['animation_prompts']) > 10):
-                score += 1
-                
-            print(f"   Testing offset {test_offset}: score={score}, W={test_dict.get('W')}, strength={test_dict.get('strength')}, seed_behavior={test_dict.get('seed_behavior')}")
-            
-            if score >= 3:  # Good alignment found
-                return test_offset
-                
-        return 2  # Fallback to default
-    
-    offset = find_correct_offset()
-    print(f"🔧 Auto-detected offset: {offset}")
-    
-    max_components = min(len(component_names), len(args) - offset)
-    args_dict = {component_names[i]: args[i+offset] for i in range(0, max_components)}
-    
-    # Fill missing components with None
-    for i in range(max_components, len(component_names)):
-        args_dict[component_names[i]] = None
-        print(f"⚠️ Missing component: {component_names[i]}")
-    
-    # Debug critical mappings that were failing
+    # Debug critical mappings
     critical_fields = ['mask_overlay_blur', 'mask_file', 'strength', 'animation_prompts']
     for field in critical_fields:
         if field in args_dict:
-            print(f"🔍 {field} = {args_dict[field]} (type: {type(args_dict[field])})")
+            value = args_dict[field]
+            print(f"🔍 {field} = {str(value)[:80] if isinstance(value, str) else value} (type: {type(value)})")
         else:
             print(f"⚠️ {field} = NOT FOUND")
     
-    # Try to identify where the shift occurs
-    for i, (name, value) in enumerate(list(args_dict.items())[:20]):
-        print(f"   {i:2d}: {name:20} = {str(value)[:50]}")
+    # Show first few mappings for debugging
+    print(f"🔍 First 10 arguments:")
+    for i, (key, value) in enumerate(list(args_dict.items())[:10]):
+        print(f"   {i:2d}: {key:20} = {str(value)[:50] if isinstance(value, str) else value}")
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
         outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_img2img_samples
@@ -145,9 +86,8 @@ def run_deforum(*args):
         times_to_run = 1
 
     print(f"times_to_run: {times_to_run}")
-    # extract the job_id_prefix before entering the loop. Why? Because once we're in the loop, args gets turned into a SimpleNamespace
-    # so if we're in batch mode, the 2nd time we come into the loop, args[0] throws an exception
-    job_id_prefix = f"{args[0]}"
+    # Extract job_id_prefix from kwargs
+    job_id_prefix = str(job_id_prefix)
     for i in range(times_to_run): # run for as many times as we need
         job_id = f"{job_id_prefix}-{i}"
         print(f"{UNDERLINE}{YELLOW}Zirteqs Fluxabled Fork of the Deforum Fork for WebUI Forge{RESET_COLOR}")

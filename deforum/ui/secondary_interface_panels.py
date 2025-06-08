@@ -112,43 +112,60 @@ def on_ui_tabs():
                 except Exception as e:
                     print(f"⚠️ Could not connect skip handler: {e}")
                 
-                # CRITICAL FIX: Connect the Generate button to run_deforum
+                # FIXED: Connect the Generate button to run_deforum using named arguments
                 try:
-                    debug_print("Setting up Generate button...")
+                    debug_print("Setting up Generate button with named arguments...")
                     
-                    # Get all component names for input collection
-                    component_names = get_component_names()
-                    debug_print(f"Component names: {component_names[:10]}...")  # Show first 10
+                    def create_named_run_wrapper():
+                        """
+                        Create a wrapper that converts component values to named arguments.
+                        This eliminates the fragile positional argument system.
+                        """
+                        def named_run_deforum(*args):
+                            # Convert positional args to named kwargs
+                            kwargs = {'job_id': 'deforum_job'}
+                            
+                            component_names = get_component_names()
+                            
+                            # Map each component value to its name
+                            for i, name in enumerate(component_names):
+                                if i < len(args):
+                                    kwargs[name] = args[i]
+                                else:
+                                    kwargs[name] = None
+                            
+                            # Debug first few mappings
+                            debug_print(f"🔍 Named args: {list(kwargs.keys())[:10]}...")
+                            critical_fields = ['strength', 'animation_prompts', 'W', 'H']
+                            for field in critical_fields:
+                                if field in kwargs:
+                                    value = kwargs[field]
+                                    debug_print(f"   {field} = {str(value)[:50] if isinstance(value, str) else value}")
+                            
+                            # Call the new named argument version
+                            return run_deforum(**kwargs)
+                        
+                        return named_run_deforum
                     
-                    # Create input list matching run_deforum expectations exactly
+                    # Get all valid components
                     input_components = []
+                    component_names = get_component_names()
                     
-                    # Add fixed inputs that run_deforum expects (args[0] and args[1])
-                    input_components.append(gr.State(value="deforum_job"))  # job_id 
-                    input_components.append(gr.State(value="placeholder"))  # second placeholder
-                    
-                    # Add ALL components from component_names in exact order (args[2] onwards)
-                    for i, name in enumerate(component_names):
+                    for name in component_names:
                         if name in components and components[name] is not None:
                             comp = components[name]
                             if hasattr(comp, '_id'):
                                 input_components.append(comp)
-                                debug_print(f"Added component {name} at position {i+2}")
                             else:
-                                # Add a dummy component for invalid ones
                                 input_components.append(gr.State(value=None))
-                                debug_print(f"Added dummy for invalid component {name} at position {i+2}")
                         else:
-                            # Add a dummy component for missing ones
                             input_components.append(gr.State(value=None))
-                            debug_print(f"Added dummy for missing component {name} at position {i+2}")
                     
-                    debug_print(f"Prepared {len(input_components)} input components for Generate button")
-                    debug_print(f"Expected {len(component_names) + 2} total inputs")
+                    debug_print(f"Prepared {len(input_components)} input components")
                     
-                    # Set up the generate button click handler
+                    # Set up the generate button click handler with named argument wrapper
                     submit.click(
-                        fn=wrap_gradio_gpu_call(run_deforum, extra_outputs=[None, '', '']),
+                        fn=wrap_gradio_gpu_call(create_named_run_wrapper(), extra_outputs=[None, '', '']),
                         inputs=input_components,
                         outputs=[
                             deforum_gallery,
@@ -159,7 +176,7 @@ def on_ui_tabs():
                         show_progress=True
                     )
                     
-                    debug_print("✅ Generate button connected successfully!")
+                    debug_print("✅ Generate button connected with named arguments!")
                     
                 except Exception as e:
                     print(f"⚠️ Failed to connect Generate button: {e}")
@@ -178,23 +195,23 @@ def on_ui_tabs():
                         if all_components_list:
                             # Save settings
                             save_settings_btn.click(
-                                fn=lambda *args: save_settings(settings_path.value, *args),
+                                fn=save_settings,
                                 inputs=[settings_path] + all_components_list,
                                 outputs=[html_info]
                             )
                             
                             # Load all settings
                             load_settings_btn.click(
-                                fn=lambda path: load_all_settings(path),
+                                fn=load_all_settings,
                                 inputs=[settings_path],
                                 outputs=all_components_list + [html_info]
                             )
                             
                             # Load video settings
                             load_video_settings_btn.click(
-                                fn=lambda path: load_video_settings(path),
+                                fn=load_video_settings,
                                 inputs=[settings_path],
-                                outputs=all_components_list + [html_info]
+                                outputs=all_components_list[:len(DeforumOutputArgs().keys())] + [html_info]
                             )
                             
                             debug_print("Settings buttons connected")
