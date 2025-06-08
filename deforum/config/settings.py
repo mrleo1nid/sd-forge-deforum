@@ -281,10 +281,21 @@ def save_settings(*args, **kwargs):
     
     # Handle animation prompts with proper error checking
     try:
-        args_dict["prompts"] = json.loads(data['animation_prompts'])
+        animation_prompts_value = data.get('animation_prompts', '{}')
+        # Check if it's already a string, otherwise convert to JSON
+        if isinstance(animation_prompts_value, str):
+            args_dict["prompts"] = json.loads(animation_prompts_value)
+        elif isinstance(animation_prompts_value, dict):
+            args_dict["prompts"] = animation_prompts_value
+        else:
+            print(f"⚠️ Invalid animation_prompts type: {type(animation_prompts_value)}, using empty prompts")
+            args_dict["prompts"] = {}
     except json.JSONDecodeError as e:
         print(f"Error parsing animation prompts JSON: {str(e)}")
         # Use empty prompts as fallback if JSON is invalid
+        args_dict["prompts"] = {}
+    except Exception as e:
+        print(f"Error processing animation prompts: {str(e)}")
         args_dict["prompts"] = {}
     
     args_dict["animation_prompts_positive"] = data['animation_prompts_positive']

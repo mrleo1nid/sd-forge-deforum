@@ -373,11 +373,16 @@ def process_args(args_dict, index=0):
         gen_arg_fields = set(DeforumGenerationArgs.__dataclass_fields__.keys())
         dict_for_gen_args = {k: args_dict[k] for k in gen_arg_fields if k in args_dict and args_dict[k] is not None}
         
-        # Fix: Validate strength is in correct range (prevents ControlNet values from corrupting strength)
+        # Fix: Validate critical generation args to prevent component mapping errors
         if 'strength' in dict_for_gen_args:
             if not isinstance(dict_for_gen_args['strength'], (int, float)) or dict_for_gen_args['strength'] < 0.0 or dict_for_gen_args['strength'] > 1.0:
                 print(f"⚠️ Invalid strength value {dict_for_gen_args['strength']}, using default 0.85")
                 dict_for_gen_args['strength'] = 0.85
+                
+        if 'cfg_scale' in dict_for_gen_args:
+            if not isinstance(dict_for_gen_args['cfg_scale'], (int, float)) or dict_for_gen_args['cfg_scale'] < 1.0 or dict_for_gen_args['cfg_scale'] > 30.0:
+                print(f"⚠️ Invalid cfg_scale value {dict_for_gen_args['cfg_scale']}, using default 7.0")
+                dict_for_gen_args['cfg_scale'] = 7.0
         
         # TODO: Handle Enum conversions for DeforumGenerationArgs if any field needs it
         args = DeforumGenerationArgs(**dict_for_gen_args) # Instantiated 'args'

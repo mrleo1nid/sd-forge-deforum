@@ -238,6 +238,8 @@ def change_perlin_visibility(choice):
     return gr.update(visible=choice == "perlin")
 
 def legacy_3d_mode(choice):
+    if choice is None:
+        return gr.update(visible=False)
     return gr.update(visible=choice.lower() in ["midas+adabins (old)", 'zoe+adabins (old)'])
 
 def change_color_coherence_image_path_visibility(choice):
@@ -304,7 +306,7 @@ def hide_interp_by_interp_status(choice):
 def change_interp_x_max_limit(engine_name, current_value):
     if engine_name == 'FILM':
         return gr.update(maximum=300)
-    elif current_value > 10:
+    elif current_value is not None and current_value > 10:
         return gr.update(maximum=10, value=2)
     return gr.update(maximum=10)
 
@@ -312,12 +314,18 @@ def hide_interp_stats(choice):
     return gr.update(visible=True) if choice is not None else gr.update(visible=False)
 
 def show_leres_html_msg(choice):
+    if choice is None:
+        return gr.update(visible=False)
     return gr.update(visible=True) if choice.lower() == 'leres' else gr.update(visible=False)
 
 def show_when_ddim(sampler_name):
+    if sampler_name is None:
+        return gr.update(visible=False)
     return gr.update(visible=True) if sampler_name.lower() == 'ddim' else gr.update(visible=False)
 
 def show_when_ancestral_samplers(sampler_name):
+    if sampler_name is None:
+        return gr.update(visible=False)
     return gr.update(visible=True) if sampler_name.lower() in ['euler a', 'dpm++ 2s a', 'dpm2 a', 'dpm2 a karras', 'dpm++ 2s a karras'] else gr.update(visible=False)
 
 def change_css(checkbox_status):
