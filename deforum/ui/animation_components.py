@@ -121,10 +121,13 @@ def get_tab_animation(da, dloopArgs):
                 resume_timestring = create_gr_elem(da.resume_timestring)
         
     # Return only the actual UI components created in this function
+    # NOTE: animation_prompts, animation_prompts_positive, animation_prompts_negative 
+    # are returned by get_tab_prompts() to avoid conflicts
     return {
         'animation_mode': animation_mode,
         'max_frames': max_frames,
         'border': border,
+        'diffusion_cadence': diffusion_cadence,
         'video_init_path': video_init_path,
         'extract_from_frame': extract_from_frame,
         'extract_to_frame': extract_to_frame,

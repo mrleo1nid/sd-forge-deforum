@@ -87,6 +87,30 @@ pip install -r requirements.txt
 - **`deforum/ui/`** - Gradio interface components
 - **`deforum/ui/wan_components.py`** - Wan-specific UI elements
 
+### Removed Features (Refactoring)
+During the extensive refactoring to functional programming patterns, the following features were **completely removed**:
+
+#### Removed Video Features
+- **Hybrid Video Mode** - All `hybrid_*` settings and functionality removed
+- **Optical Flow** - Complex optical flow processing removed for simplicity
+- **Advanced Video Compositing** - Hybrid compositing and flow consistency removed
+
+#### Removed AI Enhancement Features  
+- **FreeU** - All `freeu_*` settings and FreeU model enhancement removed
+- **Kohya HRFix** - All `kohya_hrfix_*` settings and high-resolution fix removed
+- **Advanced ControlNet** - Complex ControlNet scheduling removed (basic ControlNet remains)
+
+#### Settings Migration
+- Any settings files containing these removed features will be automatically migrated
+- Missing fields are filled with safe defaults or removed entirely
+- The extension will display warnings for outdated settings files
+
+**Important**: Do not attempt to restore these features - they were intentionally removed to:
+1. Simplify the codebase architecture
+2. Focus on core animation functionality + Wan 2.1 integration
+3. Reduce maintenance burden and complexity
+4. Improve stability and performance
+
 ### Functional Programming Patterns
 This codebase follows functional programming principles:
 - **Immutable Data**: All data models use frozen dataclasses

@@ -372,12 +372,31 @@ def process_args(args_dict, index=0):
         # DeforumGenerationArgs (aliased as 'args' in original return tuple)
         gen_arg_fields = set(DeforumGenerationArgs.__dataclass_fields__.keys())
         dict_for_gen_args = {k: args_dict[k] for k in gen_arg_fields if k in args_dict and args_dict[k] is not None}
+        
+        # Fix: Validate strength is in correct range (prevents ControlNet values from corrupting strength)
+        if 'strength' in dict_for_gen_args:
+            if not isinstance(dict_for_gen_args['strength'], (int, float)) or dict_for_gen_args['strength'] < 0.0 or dict_for_gen_args['strength'] > 1.0:
+                print(f"⚠️ Invalid strength value {dict_for_gen_args['strength']}, using default 0.85")
+                dict_for_gen_args['strength'] = 0.85
+        
         # TODO: Handle Enum conversions for DeforumGenerationArgs if any field needs it
         args = DeforumGenerationArgs(**dict_for_gen_args) # Instantiated 'args'
 
         # DeforumAnimationArgs (aliased as 'anim_args')
         anim_arg_fields = set(DeforumAnimationArgs.__dataclass_fields__.keys())
         dict_for_anim_args = {k: args_dict[k] for k in anim_arg_fields if k in args_dict}
+        
+        # Fix: Validate critical animation args to prevent component mapping errors
+        if 'max_frames' in dict_for_anim_args:
+            if not isinstance(dict_for_anim_args['max_frames'], int) or dict_for_anim_args['max_frames'] <= 0:
+                print(f"⚠️ Invalid max_frames value '{dict_for_anim_args['max_frames']}' (type: {type(dict_for_anim_args['max_frames'])}), using default 334")
+                dict_for_anim_args['max_frames'] = 334
+        
+        # Add validation for other common mismatched fields
+        if 'diffusion_cadence' in dict_for_anim_args:
+            if not isinstance(dict_for_anim_args['diffusion_cadence'], int) or dict_for_anim_args['diffusion_cadence'] <= 0:
+                print(f"⚠️ Invalid diffusion_cadence value '{dict_for_anim_args['diffusion_cadence']}', using default 10")
+                dict_for_anim_args['diffusion_cadence'] = 10
         
         if 'animation_mode' in dict_for_anim_args:
             from ..models.data_models import AnimationMode # Enum from data_models
@@ -423,6 +442,28 @@ def process_args(args_dict, index=0):
         loop_args = LoopArgs_Dataclass(**raw_loop_args) if DATACLASSES_AVAILABLE and hasattr(LoopArgs_Dataclass, '__dataclass_fields__') else create_loop_args_from_dict(args_dict.get('loop_args', {}))
 
         raw_controlnet_args = {k: args_dict[k] for k in ControlnetArgs_Dataclass.__dataclass_fields__ if k in args_dict and args_dict[k] is not None} if DATACLASSES_AVAILABLE and hasattr(ControlnetArgs_Dataclass, '__dataclass_fields__') else args_dict.get('controlnet_args', {})
+        
+        # Fix: Validate ControlNet schedule fields to prevent component mapping errors
+        if DATACLASSES_AVAILABLE and hasattr(ControlnetArgs_Dataclass, '__dataclass_fields__'):
+            schedule_fields = ['cn_1_guidance_start', 'cn_1_guidance_end', 'cn_1_weight', 
+                              'cn_2_guidance_start', 'cn_2_guidance_end', 'cn_2_weight',
+                              'cn_3_guidance_start', 'cn_3_guidance_end', 'cn_3_weight',
+                              'cn_4_guidance_start', 'cn_4_guidance_end', 'cn_4_weight',
+                              'cn_5_guidance_start', 'cn_5_guidance_end', 'cn_5_weight']
+            
+            for field in schedule_fields:
+                if field in raw_controlnet_args:
+                    val = raw_controlnet_args[field]
+                    # Check if it looks like a valid schedule format
+                    if not isinstance(val, str) or not ('(' in val and ')' in val and ':' in val):
+                        print(f"⚠️ Invalid ControlNet schedule '{field}' = '{val}', using default")
+                        if 'start' in field:
+                            raw_controlnet_args[field] = "0:(0.0)"
+                        elif 'end' in field:
+                            raw_controlnet_args[field] = "0:(1.0)"
+                        elif 'weight' in field:
+                            raw_controlnet_args[field] = "0:(1)"
+        
         controlnet_args = ControlnetArgs_Dataclass(**raw_controlnet_args) if DATACLASSES_AVAILABLE and hasattr(ControlnetArgs_Dataclass, '__dataclass_fields__') else create_controlnet_args_from_dict(args_dict.get('controlnet_args', {}))
 
         raw_wan_args = {k: args_dict[k] for k in WanArgs_Config.__dataclass_fields__ if k in args_dict and args_dict[k] is not None} if DATACLASSES_AVAILABLE and hasattr(WanArgs_Config, '__dataclass_fields__') else args_dict.get('wan_args', {}) # Assuming WanArgs_Config is the one from .argument_models
