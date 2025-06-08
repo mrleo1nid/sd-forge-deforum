@@ -451,6 +451,11 @@ def process_args(args_dict, index=0):
                               'cn_4_guidance_start', 'cn_4_guidance_end', 'cn_4_weight',
                               'cn_5_guidance_start', 'cn_5_guidance_end', 'cn_5_weight']
             
+            processor_res_fields = ['cn_1_processor_res', 'cn_2_processor_res', 'cn_3_processor_res', 'cn_4_processor_res', 'cn_5_processor_res']
+            threshold_fields = ['cn_1_threshold_a', 'cn_1_threshold_b', 'cn_2_threshold_a', 'cn_2_threshold_b', 
+                               'cn_3_threshold_a', 'cn_3_threshold_b', 'cn_4_threshold_a', 'cn_4_threshold_b',
+                               'cn_5_threshold_a', 'cn_5_threshold_b']
+            
             for field in schedule_fields:
                 if field in raw_controlnet_args:
                     val = raw_controlnet_args[field]
@@ -463,6 +468,22 @@ def process_args(args_dict, index=0):
                             raw_controlnet_args[field] = "0:(1.0)"
                         elif 'weight' in field:
                             raw_controlnet_args[field] = "0:(1)"
+            
+            # Fix processor_res fields
+            for field in processor_res_fields:
+                if field in raw_controlnet_args:
+                    val = raw_controlnet_args[field]
+                    if not isinstance(val, int) or val < 64 or val > 2048:
+                        print(f"⚠️ Invalid ControlNet processor_res '{field}' = '{val}', using default 64")
+                        raw_controlnet_args[field] = 64
+            
+            # Fix threshold fields  
+            for field in threshold_fields:
+                if field in raw_controlnet_args:
+                    val = raw_controlnet_args[field]
+                    if not isinstance(val, int) or val < 0 or val > 255:
+                        print(f"⚠️ Invalid ControlNet threshold '{field}' = '{val}', using default 64")
+                        raw_controlnet_args[field] = 64
         
         controlnet_args = ControlnetArgs_Dataclass(**raw_controlnet_args) if DATACLASSES_AVAILABLE and hasattr(ControlnetArgs_Dataclass, '__dataclass_fields__') else create_controlnet_args_from_dict(args_dict.get('controlnet_args', {}))
 

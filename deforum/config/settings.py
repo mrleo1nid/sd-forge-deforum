@@ -446,11 +446,8 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
         jdata['prompts'] = jdata['animation_prompts']
 
     result = {}
-    print(f"DEBUG: Processing {len(data)} components. Keys containing 'prompts': {[k for k in data.keys() if 'prompt' in k]}")
     for key, default_val in data.items():
         val = jdata.get(key, default_val)
-        if 'prompt' in key:
-            print(f"DEBUG: Processing key '{key}' - raw val: {val}")
         if key == 'sampler' and isinstance(val, int):
             from modules.sd_samplers import samplers_for_img2img
             val = samplers_for_img2img[val].name
@@ -465,9 +462,7 @@ def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
         elif key == 'animation_prompts':
             # Handle prompts with fallback
             prompts_data = jdata.get('prompts', jdata.get('animation_prompts', {"0": "a beautiful landscape"}))
-            print(f"DEBUG: animation_prompts processing - prompts_data type: {type(prompts_data)}, value: {str(prompts_data)[:100]}...")
             val = json.dumps(prompts_data, ensure_ascii=False, indent=4)
-            print(f"DEBUG: animation_prompts final val: {val[:100]}...")
         # Special handling for camera shake
         elif key == 'shake_name':
             # Check if the value is a key in the camera shake list
