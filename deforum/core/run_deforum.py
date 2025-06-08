@@ -40,14 +40,26 @@ def run_deforum(*args):
     print(f"   Expected components: {len(component_names)}")
     print(f"   Received args: {len(args)}")
     print(f"   Available for mapping: {len(args) - 2}")
+    print(f"   Difference: {len(args) - 2 - len(component_names)}")
+    
+    # Check first few args to understand structure
+    print(f"   First 5 args: {args[:5]}")
+    print(f"   Args types: {[type(arg).__name__ for arg in args[:5]]}")
     
     if len(args) - 2 != len(component_names):
         print(f"⚠️ COMPONENT COUNT MISMATCH!")
         print(f"   This will cause incorrect parameter assignments!")
         print(f"   First 10 expected components: {component_names[:10]}")
         print(f"   First 10 received values: {args[2:12] if len(args) > 12 else args[2:]}")
+        
+        # Find the exact mismatch
+        diff = len(args) - 2 - len(component_names)
+        if diff > 0:
+            print(f"   Extra {diff} args received - likely UI sending extra components")
+            print(f"   Last {diff} extra args: {args[-(diff):] if diff < 10 else args[-10:]}")
     
-    # Map args to dict with bounds checking
+    # The args array should be: [request, task_id, ...component_values]
+    # So we start mapping from args[2]
     max_components = min(len(component_names), len(args) - 2)
     args_dict = {component_names[i]: args[i+2] for i in range(0, max_components)}
     
@@ -63,6 +75,10 @@ def run_deforum(*args):
             print(f"🔍 {field} = {args_dict[field]} (type: {type(args_dict[field])})")
         else:
             print(f"⚠️ {field} = NOT FOUND")
+    
+    # Try to identify where the shift occurs
+    for i, (name, value) in enumerate(list(args_dict.items())[:20]):
+        print(f"   {i:2d}: {name:20} = {str(value)[:50]}")
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
         outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_img2img_samples

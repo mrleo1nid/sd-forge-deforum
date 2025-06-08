@@ -27,9 +27,8 @@ def get_default_settings_path():
     return "deforum_settings.txt"
 
 def get_webui_settings_path():
-    """Return the full path to the default settings file in webui root"""
-    from modules import paths_internal
-    return os.path.join(paths_internal.script_path, "deforum_settings.txt")
+    """Return the full path to the default settings file in extension directory"""
+    return os.path.join(get_extension_base_dir(), "deforum_settings.txt")
 
 def create_default_settings_file(settings_path=None, template_type="bunny"):
     """
