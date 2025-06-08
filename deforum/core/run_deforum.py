@@ -59,9 +59,51 @@ def run_deforum(*args):
             print(f"   Last {diff} extra args: {args[-(diff):] if diff < 10 else args[-10:]}")
     
     # The args array should be: [request, task_id, ...component_values]
-    # So we start mapping from args[2]
-    max_components = min(len(component_names), len(args) - 2)
-    args_dict = {component_names[i]: args[i+2] for i in range(0, max_components)}
+    # But we're receiving 249 args for 247 components, suggesting we need to skip more
+    # Auto-detect the correct offset by looking for expected data patterns
+    
+    def find_correct_offset():
+        # Look for typical UI component values to detect correct alignment
+        for test_offset in [2, 3, 4, 5]:
+            if test_offset >= len(args):
+                continue
+            
+            # Check if we get reasonable values for known fields
+            test_dict = {}
+            max_test = min(len(component_names), len(args) - test_offset)
+            
+            # Create test mapping
+            for i in range(min(20, max_test)):  # Check first 20 components
+                if i < len(component_names):
+                    test_dict[component_names[i]] = args[i + test_offset]
+            
+            # Look for expected patterns:
+            # - W should be a reasonable width (e.g., 512-2048)
+            # - strength should be 0-1 range  
+            # - seed_behavior should be a string like "iter" or "schedule"
+            score = 0
+            
+            if 'W' in test_dict and isinstance(test_dict['W'], int) and 256 <= test_dict['W'] <= 4096:
+                score += 1
+            if 'strength' in test_dict and isinstance(test_dict['strength'], (int, float)) and 0 <= test_dict['strength'] <= 1:
+                score += 1
+            if 'seed_behavior' in test_dict and isinstance(test_dict['seed_behavior'], str):
+                score += 1
+            if 'animation_prompts' in test_dict and (isinstance(test_dict['animation_prompts'], str) and len(test_dict['animation_prompts']) > 10):
+                score += 1
+                
+            print(f"   Testing offset {test_offset}: score={score}, W={test_dict.get('W')}, strength={test_dict.get('strength')}, seed_behavior={test_dict.get('seed_behavior')}")
+            
+            if score >= 3:  # Good alignment found
+                return test_offset
+                
+        return 2  # Fallback to default
+    
+    offset = find_correct_offset()
+    print(f"🔧 Auto-detected offset: {offset}")
+    
+    max_components = min(len(component_names), len(args) - offset)
+    args_dict = {component_names[i]: args[i+offset] for i in range(0, max_components)}
     
     # Fill missing components with None
     for i in range(max_components, len(component_names)):
