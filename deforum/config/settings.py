@@ -272,12 +272,19 @@ def save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, co
         dicts_to_merge = [args.__dict__, anim_args.__dict__, parseq_args.__dict__, loop_args.__dict__, controlnet_args.__dict__, video_args.__dict__]
         if wan_args is not None:
             dicts_to_merge.append(wan_args.__dict__)
-        
+
         for d in dicts_to_merge:
             s.update({k: v for k, v in d.items() if k not in exclude_keys})
         s["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name
         s["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash
         s["deforum_git_commit_id"] = get_deforum_version()
+
+        # Convert enum values to strings for JSON serialization
+        from enum import Enum
+        for key, value in s.items():
+            if isinstance(value, Enum):
+                s[key] = value.value
+
         json.dump(s, f, ensure_ascii=False, indent=4)
 
 # In gradio gui settings save/ load funcs:
