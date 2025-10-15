@@ -34,31 +34,19 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
     Note: FreeU and Kohya HR Fix functionality has been removed.
     """
     log_utils.info("Using experimental render core.", log_utils.BLUE)
-    
+
     # Create render data
     data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args, root)
-    
-    # Create output directory
-    os.makedirs(args.outdir, exist_ok=True)
-    
-    # Main rendering loop
-    for frame_idx in range(anim_args.max_frames):
-        log_utils.info(f"Rendering frame {frame_idx + 1}/{anim_args.max_frames}")
-        
-        # Generate frame
-        image = generate_frame(data, frame_idx)
-        
-        if image is None:
-            log_utils.warn(f"Failed to generate frame {frame_idx}")
-            continue
-            
-        # Save frame
-        save_frame(data, image, frame_idx)
-    
-    # Create video if requested
-    if not video_args.skip_video_creation:
-        create_video(data)
-    
+
+    # Check render conditions and print warnings
+    check_render_conditions(data)
+
+    # Create diffusion frames with keyframe distribution
+    frames = KeyFrameDistribution.create(data)
+
+    # Run the actual rendering
+    run_render_animation(data, frames)
+
     log_utils.info("Experimental rendering completed")
 
 
