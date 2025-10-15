@@ -99,7 +99,8 @@ class DeforumGenerationArgs:
     scheduler: SchedulerType = SchedulerType.SIMPLE
     steps: int = 20
     cfg_scale: float = 7.0
-    
+    distilled_cfg_scale: Optional[float] = None
+
     # Advanced settings
     tiling: bool = False
     restore_faces: bool = False

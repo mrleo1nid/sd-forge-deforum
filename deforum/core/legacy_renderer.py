@@ -25,7 +25,8 @@ from .keyframe_animation import DeformAnimKeys
 from ..integrations.parseq_adapter import ParseqAdapter
 
 # Global flag to enable/disable functional rendering
-_FUNCTIONAL_RENDERING_ENABLED = True
+# NOTE: Disabled because functional rendering doesn't save frames yet
+_FUNCTIONAL_RENDERING_ENABLED = False
 
 
 def enable_functional_rendering(enabled: bool = True) -> None:
@@ -154,17 +155,12 @@ def functional_render_animation(
         root: Legacy root object
     """
     if not _FUNCTIONAL_RENDERING_ENABLED:
-        import traceback
-        print("Attempting to fall back to a legacy render function (this path is problematic due to missing '..render' module)")
-        # from ..render import render_animation as legacy_render_animation # This import will likely fail - Commented out
-        # return legacy_render_animation( # Commented out
-        #     args, anim_args, video_args, parseq_args, loop_args,
-        #     controlnet_args, # freeu_args, # Removed
-        #     # kohya_hrfix_args, # Removed
-        #     root
-        # )
-        # Instead, raise an error indicating this path is deprecated or non-functional
-        raise NotImplementedError("Fallback to non-existent '..render' module is not supported. Functional rendering was disabled.")
+        print("Functional rendering disabled, using stable render core...")
+        from .rendering_engine import render_animation as stable_render_animation
+        return stable_render_animation(
+            args, anim_args, video_args, parseq_args, loop_args,
+            controlnet_args, root
+        )
 
     print("Using functional rendering system...")
     
