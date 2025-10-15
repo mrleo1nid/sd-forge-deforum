@@ -431,7 +431,19 @@ def process_args(args_dict, index=0):
             if not isinstance(dict_for_anim_args['diffusion_cadence'], int) or dict_for_anim_args['diffusion_cadence'] <= 0:
                 print(f"⚠️ Invalid diffusion_cadence value '{dict_for_anim_args['diffusion_cadence']}', using default 10")
                 dict_for_anim_args['diffusion_cadence'] = 10
-        
+
+        # Fix: Validate perlin_persistence (must be 0.0-1.0 float)
+        if 'perlin_persistence' in dict_for_anim_args:
+            if not isinstance(dict_for_anim_args['perlin_persistence'], (int, float)) or dict_for_anim_args['perlin_persistence'] < 0.0 or dict_for_anim_args['perlin_persistence'] > 1.0:
+                print(f"⚠️ Invalid perlin_persistence value '{dict_for_anim_args['perlin_persistence']}', using default 0.5")
+                dict_for_anim_args['perlin_persistence'] = 0.5
+
+        # Fix: Validate perlin_octaves (must be positive int)
+        if 'perlin_octaves' in dict_for_anim_args:
+            if not isinstance(dict_for_anim_args['perlin_octaves'], int) or dict_for_anim_args['perlin_octaves'] <= 0:
+                print(f"⚠️ Invalid perlin_octaves value '{dict_for_anim_args['perlin_octaves']}', using default 4")
+                dict_for_anim_args['perlin_octaves'] = 4
+
         if 'animation_mode' in dict_for_anim_args:
             from ..models.data_models import AnimationMode # Enum from data_models
             if dict_for_anim_args['animation_mode'] is None:
