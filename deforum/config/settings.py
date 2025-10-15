@@ -378,12 +378,13 @@ def update_settings_path(path):
     return path
 
 
-def load_all_settings(*args, ui_launch=False, update_path=False, **kwargs):
+def load_all_settings(*args, ui_launch=False, update_path=False, component_filter=None, **kwargs):
     import gradio as gr
     settings_path = args[0].strip()
     settings_path = clean_gradio_path_strings(settings_path)
     settings_path = os.path.realpath(settings_path)
-    settings_component_names = get_settings_component_names()
+    # Use component_filter if provided (only components that exist in UI), otherwise use all
+    settings_component_names = component_filter if component_filter is not None else get_settings_component_names()
     
     # Initialize data with default values for all components
     data = {}

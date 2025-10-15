@@ -541,9 +541,20 @@ def process_args(args_dict, index=0):
                                                                                                                                                                        # This line might be complex, simplifying for now, but ideally all should use direct instantiation of config.argument_models classes.
         
         # RootArgs handling (remains the same for now, using data_models.RootArgs)
+        # Parse animation_prompts from JSON string if needed
+        animation_prompts_raw = args_dict.get('animation_prompts', '{"0": "a beautiful landscape"}')
+        try:
+            if isinstance(animation_prompts_raw, str):
+                animation_prompts = json.loads(animation_prompts_raw)
+            else:
+                animation_prompts = animation_prompts_raw if animation_prompts_raw else {"0": "a beautiful landscape"}
+        except (json.JSONDecodeError, TypeError):
+            print("⚠️ Warning: Invalid animation prompts JSON, using default")
+            animation_prompts = {"0": "a beautiful landscape"}
+
         root_data = {
             'timestring': args_dict.get('timestring', time.strftime('%Y%m%d_%H%M%S')),
-            'animation_prompts': args_dict.get('animation_prompts', {"0": "a beautiful landscape"}),
+            'animation_prompts': animation_prompts,
             'models_path': args_dict.get('models_path', 'models'),
             'device': args_dict.get('device', 'cuda'),
             'half_precision': args_dict.get('half_precision', True)

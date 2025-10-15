@@ -139,8 +139,17 @@ def on_ui_tabs():
                                 if os.path.exists(settings_path):
                                     with open(settings_path, 'r') as f:
                                         settings_data = json.load(f)
+                                    # Map 'prompts' to 'animation_prompts' for compatibility
+                                    if 'prompts' in settings_data:
+                                        settings_data['animation_prompts'] = settings_data['prompts']
                                     print(f"🔧 Loaded settings from {settings_path} as fallback")
-                                    print(f"   Settings W={settings_data.get('W')}, H={settings_data.get('H')}, strength={settings_data.get('strength')}")
+                                    # Show prompt preview
+                                    prompts_data = settings_data.get('animation_prompts', {})
+                                    if isinstance(prompts_data, dict) and '0' in prompts_data:
+                                        prompts_preview = prompts_data['0'][:50]
+                                    else:
+                                        prompts_preview = 'N/A'
+                                    print(f"   Settings W={settings_data.get('W')}, H={settings_data.get('H')}, strength={settings_data.get('strength')}, prompts={prompts_preview}")
                                 else:
                                     settings_data = {}
                                     print(f"⚠️ Settings file not found: {settings_path}")
@@ -320,11 +329,14 @@ def on_ui_tabs():
                 try:
                     if components:
                         # Create a simple list of all components for settings operations
+                        # IMPORTANT: Track component names in the same order as components list
                         all_components_list = []
+                        all_components_names = []
                         for name in get_component_names():
                             if name in components and components[name] is not None:
                                 all_components_list.append(components[name])
-                        
+                                all_components_names.append(name)
+
                         if all_components_list:
                             # Save settings
                             save_settings_btn.click(
@@ -332,10 +344,13 @@ def on_ui_tabs():
                                 inputs=[settings_path] + all_components_list,
                                 outputs=[html_info]
                             )
-                            
-                            # Load all settings
+
+                            # Load all settings - pass component names so it returns values in correct order
+                            def load_settings_wrapper(settings_path_value):
+                                return load_all_settings(settings_path_value, component_filter=all_components_names)
+
                             load_settings_btn.click(
-                                fn=load_all_settings,
+                                fn=load_settings_wrapper,
                                 inputs=[settings_path],
                                 outputs=all_components_list + [html_info]
                             )
