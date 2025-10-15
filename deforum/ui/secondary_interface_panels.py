@@ -9,6 +9,7 @@ from deforum.utils.core_utilities import get_deforum_version, get_commit_date, d
 from .main_interface_panels import setup_deforum_left_side_ui
 from deforum_extend_paths import deforum_sys_extend
 import gradio as gr
+import dataclasses
 
 def on_ui_tabs():
     # extend paths using sys.path.extend so we can access all of our files and folders
@@ -340,10 +341,12 @@ def on_ui_tabs():
                             )
                             
                             # Load video settings
+                            # Use dataclasses.fields() to get field count since DeforumOutputArgs is a dataclass
+                            video_settings_field_count = len(dataclasses.fields(DeforumOutputArgs)) if hasattr(DeforumOutputArgs, '__dataclass_fields__') else len(all_components_list)
                             load_video_settings_btn.click(
                                 fn=load_video_settings,
                                 inputs=[settings_path],
-                                outputs=all_components_list[:len(DeforumOutputArgs().keys())] + [html_info]
+                                outputs=all_components_list[:video_settings_field_count] + [html_info]
                             )
                             
                             debug_print("Settings buttons connected")

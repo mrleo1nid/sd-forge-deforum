@@ -446,14 +446,16 @@ def process_args(args_dict, index=0):
 
         if 'animation_mode' in dict_for_anim_args:
             from ..models.data_models import AnimationMode # Enum from data_models
-            if dict_for_anim_args['animation_mode'] is None:
-                # None value, use default
+            if dict_for_anim_args['animation_mode'] is None or dict_for_anim_args['animation_mode'] == 'None':
+                # None value or "None" string, use default (silently)
                 del dict_for_anim_args['animation_mode'] # Let dataclass default apply
             elif isinstance(dict_for_anim_args['animation_mode'], str):
                 try:
                     dict_for_anim_args['animation_mode'] = AnimationMode(dict_for_anim_args['animation_mode'])
                 except ValueError:
-                    log_utils.warn(f"Invalid string for AnimationMode: {dict_for_anim_args['animation_mode']}. Default will be used.")
+                    # Only warn for unexpected invalid values, not "None"
+                    if dict_for_anim_args['animation_mode'] != 'None':
+                        log_utils.warn(f"Invalid string for AnimationMode: {dict_for_anim_args['animation_mode']}. Default will be used.")
                     del dict_for_anim_args['animation_mode'] # Let dataclass default apply
 
         if 'border' in dict_for_anim_args:
