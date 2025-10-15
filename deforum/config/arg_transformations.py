@@ -542,15 +542,18 @@ def process_args(args_dict, index=0):
         
         # RootArgs handling (remains the same for now, using data_models.RootArgs)
         # Parse animation_prompts from JSON string if needed
-        animation_prompts_raw = args_dict.get('animation_prompts', '{"0": "a beautiful landscape"}')
+        # Use hardcoded bunny default as fallback (only when no prompts provided)
+        default_prompts = {"0": "A cute bunny, hopping on grass, photorealistic"}
+
+        animation_prompts_raw = args_dict.get('animation_prompts', default_prompts)
         try:
             if isinstance(animation_prompts_raw, str):
                 animation_prompts = json.loads(animation_prompts_raw)
             else:
-                animation_prompts = animation_prompts_raw if animation_prompts_raw else {"0": "a beautiful landscape"}
+                animation_prompts = animation_prompts_raw if animation_prompts_raw else default_prompts
         except (json.JSONDecodeError, TypeError):
-            print("⚠️ Warning: Invalid animation prompts JSON, using default")
-            animation_prompts = {"0": "a beautiful landscape"}
+            print("⚠️ Warning: Invalid animation prompts JSON, using default bunny prompt")
+            animation_prompts = default_prompts
 
         root_data = {
             'timestring': args_dict.get('timestring', time.strftime('%Y%m%d_%H%M%S')),
