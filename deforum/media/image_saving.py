@@ -23,7 +23,16 @@ def reset_frames_cache(root):
 def dump_frames_cache(root):
     for image_cache in root.frames_cache:
         if image_cache['image_type'] == 'cv2':
-            cv2.imwrite(image_cache['path'], image_cache['image'])
+            img = image_cache['image']
+            # Validate image before saving to prevent OpenCV assertion errors
+            if img is not None and hasattr(img, 'shape') and img.size > 0:
+                cv2.imwrite(image_cache['path'], img)
+            else:
+                print(f"Warning: Skipping save for {image_cache['path']} - invalid or empty image")
         elif image_cache['image_type'] == 'PIL':
-            image_cache['image'].save(image_cache['path'])
+            img = image_cache['image']
+            if img is not None:
+                img.save(image_cache['path'])
+            else:
+                print(f"Warning: Skipping save for {image_cache['path']} - invalid or empty image")
     # do not reset the cache since we're going to add frame erasing later function #TODO 

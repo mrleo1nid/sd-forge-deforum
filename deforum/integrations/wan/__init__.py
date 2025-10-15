@@ -37,7 +37,7 @@ from pathlib import Path
 
 # Add the external Wan 2.1 repository to Python path for imports
 _current_dir = Path(__file__).parent
-_external_wan_path = _current_dir / "external_repos" / "wan2.1"
+_external_wan_path = _current_dir.parent / "external_repos" / "wan2.1"
 
 if _external_wan_path.exists():
     sys.path.insert(0, str(_external_wan_path))

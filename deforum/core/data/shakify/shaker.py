@@ -37,7 +37,7 @@ class Shaker:
     @staticmethod
     def is_enabled(data: 'RenderData'):
         aa = data.args.anim_args
-        return aa.shake_name and aa.shake_name != 'None'
+        return aa.shake_name and aa.shake_name != 'None' and aa.shake_name != '' and aa.shake_name is not None
 
     @staticmethod
     def create(data: 'RenderData') -> 'Shaker':
@@ -52,10 +52,10 @@ class Shaker:
 
         log_utils.info(f"Calculating shake '{shake_name}' at intensity {intensity} with speed {speed}.")
         shake_key = Shaker.shake_name_to_key(shake_name)
-        if shake_key is None:
+        if shake_key is None or shake_key not in SHAKE_LIST:
             log_utils.warn(f"Camera shake name '{shake_name}' not found! Defaulting to 'None'. Valid options are: {list(get_camera_shake_list().values())}")
             return Shaker('None', 1.0, 1.0, {}, False)
-        
+
         name, source_fps, shake_data = SHAKE_LIST[shake_key]
 
         def _proc(key, xyz):
