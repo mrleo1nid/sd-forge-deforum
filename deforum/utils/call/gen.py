@@ -9,8 +9,9 @@ def call_generate(data, frame: 'DiffusionFrame', redo_seed: int = None):
     ia.root.subseed = frame.subseed
     ia.root.subseed_strength = frame.subseed_strength
     index = frame.i - 1
+    # Note: freeu_args and kohya_hrfix_args removed during refactoring
     return generate(ia.args, data.animation_keys.deform_keys, ia.anim_args, ia.loop_args, ia.controlnet_args,
-                    ia.freeu_args, ia.kohya_hrfix_args, ia.root, data.parseq_adapter, index,
+                    ia.root, data.parseq_adapter, index,
                     sampler_name=frame.schedule.sampler_name, scheduler_name=frame.schedule.scheduler_name)
 
 
@@ -22,22 +23,21 @@ def generate_frame(data, frame_idx):
     # For experimental core, we need to implement frame generation
     # This is a placeholder that would need proper frame object creation
     # For now, we'll use the basic generate function with minimal parameters
-    
+
     # TODO: Implement proper frame object creation and management
     # This is experimental code and needs proper DiffusionFrame object
     import warnings
     warnings.warn("generate_frame is experimental and not fully implemented")
-    
+
     ia = data.args
+    # Note: freeu_args and kohya_hrfix_args removed during refactoring
     return generate(
-        ia.args, 
+        ia.args,
         data.animation_keys.deform_keys if hasattr(data, 'animation_keys') else None,
-        ia.anim_args, 
-        ia.loop_args, 
+        ia.anim_args,
+        ia.loop_args,
         ia.controlnet_args,
-        ia.freeu_args if hasattr(ia, 'freeu_args') else None,
-        ia.kohya_hrfix_args if hasattr(ia, 'kohya_hrfix_args') else None,
-        ia.root, 
+        ia.root,
         data.parseq_adapter if hasattr(data, 'parseq_adapter') else None,
         frame_idx
     )
