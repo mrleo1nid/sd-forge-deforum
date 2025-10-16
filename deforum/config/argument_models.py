@@ -74,9 +74,9 @@ class MaskFill(Enum):
     LATENT_NOTHING = "latent nothing"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class DeforumGenerationArgs:
-    """Immutable core generation arguments with validation"""
+    """Core generation arguments with validation (mutable for rendering compatibility)"""
     
     # Image dimensions
     width: int = 1280
@@ -94,12 +94,15 @@ class DeforumGenerationArgs:
         return self.height
     
     # Generation settings
+    prompt: str = ""
+    negative_prompt: str = ""
     seed: int = -1
     sampler: SamplerType = SamplerType.EULER
     scheduler: SchedulerType = SchedulerType.SIMPLE
     steps: int = 20
     cfg_scale: float = 7.0
     distilled_cfg_scale: Optional[float] = None
+    checkpoint: Optional[str] = None
 
     # Advanced settings
     tiling: bool = False
@@ -122,6 +125,7 @@ class DeforumGenerationArgs:
     use_mask: bool = False
     use_alpha_as_mask: bool = False
     mask_file: str = "https://deforum.github.io/a1/M1.jpg"
+    mask_image: Optional[Any] = None
     invert_mask: bool = False
     mask_contrast_adjust: float = 1.0
     mask_brightness_adjust: float = 1.0
@@ -166,9 +170,9 @@ class DeforumGenerationArgs:
             raise ValueError(f"Height must be multiple of 8, got {self.height}")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class DeforumAnimationArgs:
-    """Immutable animation arguments with validation"""
+    """Animation arguments with validation (mutable for rendering compatibility)"""
     
     # Core animation settings
     animation_mode: AnimationMode = AnimationMode.THREE_D
@@ -435,9 +439,9 @@ class WanArgs:
         validate_range(self.wan_interpolation_strength, 0.0, 1.0, "wan_interpolation_strength")
 
 
-@dataclass(frozen=True) 
+@dataclass(frozen=False)
 class RootArgs:
-    """Immutable root arguments - runtime state and shared data"""
+    """Root arguments - runtime state and shared data (mutable for rendering)"""
     
     # System settings
     device: Optional[str] = None
