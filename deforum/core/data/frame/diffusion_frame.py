@@ -364,9 +364,18 @@ class DiffusionFrame:
             # Ensure the frame index is within bounds for schedule creation
             i = diffusion_frame.i
             keys = data.animation_keys.deform_keys
-            if i >= len(keys.steps_schedule_series):
-                log_utils.warn(f"Frame index {i} exceeds max_frames length, using safe index for schedule creation.")
-                safe_i = min(i, len(keys.steps_schedule_series)-1)
+
+            # Safety check for None keys
+            if keys is None:
+                log_utils.error("deform_keys is None - animation keys not properly initialized!")
+                raise RuntimeError("Animation keys not initialized. Check parseq configuration and settings.")
+
+            if keys.steps_schedule_series is None:
+                log_utils.warn("steps_schedule_series is None, using frame index directly.")
+                diffusion_frame.schedule = Schedule.create(data, diffusion_frame.seed, i)
+            elif i >= len(keys.steps_schedule_series):
+                log_utils.warn(f"Frame index {i} exceeds max_frames length ({len(keys.steps_schedule_series)}), using safe index for schedule creation.")
+                safe_i = max(0, min(i, len(keys.steps_schedule_series)-1))
                 diffusion_frame.schedule = Schedule.create(data, diffusion_frame.seed, safe_i)
             else:
                 diffusion_frame.schedule = Schedule.create(data, diffusion_frame.seed, diffusion_frame.i)
