@@ -62,9 +62,10 @@ def run_deforum(**kwargs):
     print(f"🔍 First 10 arguments:")
     for i, (key, value) in enumerate(list(args_dict.items())[:10]):
         print(f"   {i:2d}: {key:20} = {str(value)[:50] if isinstance(value, str) else value}")
+    # Create processing object - outpath will be set properly after args are processed
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
-        outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_img2img_samples
+        outpath_samples = "outputs/deforum"  # Temporary, will be overridden by args.outdir
     )  # we'll set up the rest later
 
     times_to_run = 1
@@ -97,6 +98,10 @@ def run_deforum(**kwargs):
         args_dict['p'] = p
         try:
             args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args = process_args(args_dict, i)
+            # Update processing object with correct output directory after args are processed
+            if args_loaded_ok:
+                p.outpath_samples = args.outdir
+                print(f"✅ Output directory set to: {args.outdir}")
         except Exception as e:
             print("\n*START OF TRACEBACK*")
             traceback.print_exc()
