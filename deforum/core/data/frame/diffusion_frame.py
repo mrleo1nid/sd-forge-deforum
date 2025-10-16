@@ -152,7 +152,7 @@ class DiffusionFrame:
             # but we only save the frames that were processed tough the flows to keep the output consistent.
             # However, it may be preferable to use them for the 1st and for the last frame, or as thumbnails.
             # TODO? add option to save original frames in a different sub dir.
-            save_image(image, 'PIL', filename, data.args.args, data.args.video_args, data.args.root)
+            save_image(image, 'PIL', filename, data.args.args, data.args.anim_args, data.args.video_args, data.args.root)
         self.depth = depth_utils.generate_and_save_depth_map_if_active(data, opencv_image, self.i)
 
     def update_render_preview(self, data: RenderData):
