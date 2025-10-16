@@ -43,6 +43,8 @@ class Schedule:
     @staticmethod
     def _has_schedule(keys, i):
         # Ensure i is within bounds of the series
+        if keys.steps_schedule_series is None:
+            return False
         if i >= len(keys.steps_schedule_series):
             return False
         return keys.steps_schedule_series[i] is not None
@@ -50,6 +52,8 @@ class Schedule:
     @staticmethod
     def _has_mask_schedule(keys, i):
         # Ensure i is within bounds of the series
+        if keys.mask_schedule_series is None:
+            return False
         if i >= len(keys.mask_schedule_series):
             return False
         return keys.mask_schedule_series[i] is not None
@@ -57,6 +61,8 @@ class Schedule:
     @staticmethod
     def _has_noise_mask_schedule(keys, i):
         # Ensure i is within bounds of the series
+        if keys.noise_mask_schedule_series is None:
+            return False
         if i >= len(keys.noise_mask_schedule_series):
             return False
         return keys.noise_mask_schedule_series[i] is not None
@@ -67,10 +73,10 @@ class Schedule:
 
     @staticmethod
     def schedule_steps(keys, i, anim_args, deforum_args):
-        # Ensure i is within bounds of the series
-        if i >= len(keys.steps_schedule_series):
+        # Ensure series exists and i is within bounds
+        if keys.steps_schedule_series is None or i >= len(keys.steps_schedule_series):
             return deforum_args.steps
-        
+
         steps = Schedule._use_on_cond_if_scheduled(keys, i, int(keys.steps_schedule_series[i]),
                                                    anim_args.enable_steps_scheduling)
         if steps is None:
@@ -79,31 +85,43 @@ class Schedule:
 
     @staticmethod
     def schedule_sampler(keys, i, anim_args):
+        if keys.sampler_schedule_series is None or i >= len(keys.sampler_schedule_series):
+            return None
         return Schedule._use_on_cond_if_scheduled(keys, i, keys.sampler_schedule_series[i].casefold(),
                                                   anim_args.enable_sampler_scheduling)
 
     @staticmethod
     def schedule_scheduler(keys, i, anim_args):
+        if keys.scheduler_schedule_series is None or i >= len(keys.scheduler_schedule_series):
+            return None
         return Schedule._use_on_cond_if_scheduled(keys, i, keys.scheduler_schedule_series[i].casefold(),
                                                   anim_args.enable_scheduler_scheduling)
 
     @staticmethod
     def schedule_clipskip(keys, i, anim_args):
+        if keys.clipskip_schedule_series is None or i >= len(keys.clipskip_schedule_series):
+            return None
         return Schedule._use_on_cond_if_scheduled(keys, i, int(keys.clipskip_schedule_series[i]),
                                                   anim_args.enable_clipskip_scheduling)
 
     @staticmethod
     def schedule_noise_multiplier(keys, i, anim_args):
+        if keys.noise_multiplier_schedule_series is None or i >= len(keys.noise_multiplier_schedule_series):
+            return None
         return Schedule._use_on_cond_if_scheduled(keys, i, float(keys.noise_multiplier_schedule_series[i]),
                                                   anim_args.enable_noise_multiplier_scheduling)
 
     @staticmethod
     def schedule_ddim_eta(keys, i, anim_args):
+        if keys.ddim_eta_schedule_series is None or i >= len(keys.ddim_eta_schedule_series):
+            return None
         return Schedule._use_on_cond_if_scheduled(keys, i, float(keys.ddim_eta_schedule_series[i]),
                                                   anim_args.enable_ddim_eta_scheduling)
 
     @staticmethod
     def schedule_ancestral_eta(keys, i, anim_args):
+        if keys.ancestral_eta_schedule_series is None or i >= len(keys.ancestral_eta_schedule_series):
+            return None
         return Schedule._use_on_cond_if_scheduled(keys, i, float(keys.ancestral_eta_schedule_series[i]),
                                                   anim_args.enable_ancestral_eta_scheduling)
 
