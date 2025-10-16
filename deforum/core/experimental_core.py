@@ -45,8 +45,20 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
     keyframe_dist = KeyFrameDistribution.from_UI_tab(data)
     frames = DiffusionFrame.create_all_frames(data, keyframe_dist)
 
-    # Run the actual rendering
-    run_render_animation(data, frames)
+    # Initialize Taqaddumat progress tracker for experimental core
+    taqaddumat = Taqaddumat()
+    taqaddumat.reset(data, frames)
+
+    # Temporarily replace shared.total_tqdm with our Taqaddumat instance
+    tqdm_backup = shared.total_tqdm
+    shared.total_tqdm = taqaddumat
+
+    try:
+        # Run the actual rendering
+        run_render_animation(data, frames)
+    finally:
+        # Restore original total_tqdm
+        shared.total_tqdm = tqdm_backup
 
     log_utils.info("Experimental rendering completed")
 
