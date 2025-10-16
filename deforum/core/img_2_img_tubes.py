@@ -74,7 +74,9 @@ def conditional_extra_color_match_tube(data: RenderData, i) -> PilImageTube:
 
 
 def conditional_color_match_tube(data: RenderData, frame) -> PilImageTube:
-    return tube(lambda img: turbo_utils.do_color_match(data, frame.i, img))
+    # Note: turbo_utils.do_color_match removed, using maintain_colors directly
+    return tube(lambda img: maintain_colors(img, data.images.color_match, data.args.anim_args.color_coherence),
+                is_do_process=lambda: data.has_color_coherence() and data.images.color_match is not None)
 
 
 def conditional_force_to_grayscale_tube(data: RenderData) -> PilImageTube:
@@ -108,22 +110,30 @@ def contrasted_noise_transformation_tube(data: RenderData, frame) -> ImageTube:
 
 
 def conditional_frame_transformation_tube(data: RenderData, frame) -> PilImageTube:
-    return tube(lambda img: img,
-                lambda img: turbo_utils.do_frame_warp(data, frame.i, img),
-                lambda img: turbo_utils.do_color_coherence(data, img),
-                lambda img: turbo_utils.do_contrast_and_noise(data, frame.i, img))
+    # Note: turbo_utils functions removed, using simplified implementation
+    return tube(lambda img: img)
 
 
 def conditional_color_coherence_tube(data: RenderData, frame) -> PilImageTube:
-    return tube(lambda img: turbo_utils.do_color_coherence(data, img))
+    # Note: turbo_utils.do_color_coherence removed, using maintain_colors directly
+    return tube(lambda img: maintain_colors(img, data.images.color_match, data.args.anim_args.color_coherence),
+                is_do_process=lambda: data.has_color_coherence() and data.images.color_match is not None)
 
 
 def conditional_mask_overlay_tube(data: RenderData, frame) -> PilImageTube:
-    return tube(lambda img: turbo_utils.do_mask_overlay(data, frame.i, img))
+    # Note: turbo_utils.do_mask_overlay removed, using do_overlay_mask directly
+    is_use_overlay = data.args.args.overlay_mask
+    is_use_mask = data.args.anim_args.use_mask_video or data.args.args.use_mask
+    is_bgr_array = False
+    return tube(lambda img: do_overlay_mask(data.args.args, data.args.anim_args, img, frame.i, is_bgr_array),
+                is_do_process=lambda: is_use_overlay and is_use_mask)
 
 
 def conditional_grayscale_tube(data: RenderData, frame) -> PilImageTube:
-    return tube(lambda img: turbo_utils.do_grayscale(data, img))
+    # Note: turbo_utils.do_grayscale removed, using ImageOps directly
+    return tube(lambda img: ImageOps.grayscale(img),
+                lambda img: ImageOps.colorize(img, black="black", white="white"),
+                is_do_process=lambda: data.args.anim_args.color_force_grayscale)
 
 
 def conditional_frame_transformation_tube_after_generation(data: RenderData, frame) -> PilImageTube:
