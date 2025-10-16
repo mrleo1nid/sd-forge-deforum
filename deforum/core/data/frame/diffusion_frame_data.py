@@ -14,6 +14,9 @@ class DiffusionFrameData:
     threshold: float
     cadence_flow_factor: float
     redo_flow_factor: float
+    cfg_scale: float
+    distilled_cfg_scale: float
+    strength: float
     # Note: hybrid_comp_schedules removed
     
     def flow_factor(self):
@@ -30,6 +33,9 @@ class DiffusionFrameData:
             sigma=keys.sigma_schedule_series[i],
             threshold=keys.threshold_schedule_series[i],
             cadence_flow_factor=keys.cadence_flow_factor_schedule_series[i],
-            redo_flow_factor=keys.redo_flow_factor_schedule_series[i]
+            redo_flow_factor=keys.redo_flow_factor_schedule_series[i],
+            cfg_scale=keys.cfg_scale_schedule_series[i],
+            distilled_cfg_scale=keys.distilled_cfg_scale_schedule_series[i],
+            strength=keys.strength_schedule_series[i]
             # Note: hybrid schedules removed
         )
