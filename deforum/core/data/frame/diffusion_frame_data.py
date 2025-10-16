@@ -22,7 +22,7 @@ class DiffusionFrameData:
 
     @staticmethod
     def create(data: RenderData, i):
-        keys = data.keys
+        keys = data.animation_keys.deform_keys
         return DiffusionFrameData(
             contrast=keys.contrast_schedule_series[i],
             amount=keys.amount_schedule_series[i],

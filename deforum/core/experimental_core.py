@@ -41,8 +41,9 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
     # Check render conditions and print warnings
     check_render_conditions(data)
 
-    # Create diffusion frames with keyframe distribution
-    frames = KeyFrameDistribution.create(data)
+    # Get keyframe distribution setting from UI and create diffusion frames
+    keyframe_dist = KeyFrameDistribution.from_UI_tab(data)
+    frames = DiffusionFrame.create_all_frames(data, keyframe_dist)
 
     # Run the actual rendering
     run_render_animation(data, frames)
