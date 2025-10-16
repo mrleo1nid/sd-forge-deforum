@@ -108,6 +108,12 @@ def post_process(data: RenderData, frame: DiffusionFrame, image):
     if not image_utils.is_PIL(image):  # check is required when resuming from timestring
         image = img_2_img_tubes.conditional_frame_transformation_tube(data, df)(image)
     shared.state.assign_current_image(image)
+
+    # Capture first frame for final Processed object
+    if data.args.root.first_frame is None:
+        data.args.root.first_frame = image
+        log_utils.info("Captured first frame for output", log_utils.GREEN)
+
     df.after_diffusion(data, image)
     web_ui_utils.update_status_tracker(data, frame.i)
 
