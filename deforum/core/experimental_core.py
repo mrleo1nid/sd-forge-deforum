@@ -17,6 +17,7 @@ from .data.render_data import RenderData
 from .data.taqaddumat import Taqaddumat
 from ..utils import filename_utils, image_utils, log_utils, memory_utils, subtitle_utils, web_ui_utils
 from ..media.video_audio_pipeline import download_audio
+from ..media.image_saving import dump_frames_cache
 from ..utils.call.gen import generate_frame
 from ..utils.call.save import save_frame
 from ..utils.call.video import create_video
@@ -56,6 +57,12 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
     try:
         # Run the actual rendering
         run_render_animation(data, frames)
+
+        # Dump frames from cache to disk if they were stored in RAM
+        if data.args.video_args.store_frames_in_ram:
+            log_utils.info("Writing frames from RAM to disk...", log_utils.BLUE)
+            dump_frames_cache(data.args.root)
+            log_utils.info("Frames written to disk", log_utils.GREEN)
     finally:
         # Restore original total_tqdm
         shared.total_tqdm = tqdm_backup

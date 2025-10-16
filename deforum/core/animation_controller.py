@@ -202,6 +202,10 @@ def anim_frame_warp_2d(prev_img_cv2, args, anim_args, keys, frame_idx):
 
 
 def anim_frame_warp_3d(device, prev_img_cv2, depth, anim_args, keys, frame_idx, shaker=None):
+    # Ensure device is a torch.device object (can be passed as string or torch.device)
+    if isinstance(device, str):
+        device = torch.device(device)
+
     is_shake = shaker is not None and shaker.is_enabled
 
     def _maybe_shake(series, transform_type, axis):
