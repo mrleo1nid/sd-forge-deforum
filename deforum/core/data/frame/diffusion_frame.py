@@ -190,7 +190,8 @@ class DiffusionFrame:
     @staticmethod
     def create(data: RenderData, i):
         initial_index = i  # replaced once keyframes are arranged.
-        frame_data = DiffusionFrameData.create(data, initial_index)
+        # Create placeholder frame_data with index 0 - will be updated after actual index is assigned
+        frame_data = DiffusionFrameData.create(data, 0)
         return DiffusionFrame(initial_index, False, -1, -1, 1.0, 0.0, frame_data, None, "", 0, list())
 
     @staticmethod
@@ -267,6 +268,9 @@ class DiffusionFrame:
             diffusion_frames[i].i = key_i
             diffusion_frames[i].is_keyframe = is_kf
             diffusion_frames[i].strength = DiffusionFrame._select_keyframe_or_cadence_strength(data, key_i, is_kf)
+            # Recreate frame_data with actual frame index
+            safe_index = max(0, min(key_i - 1, len(data.animation_keys.deform_keys.contrast_schedule_series) - 1))
+            diffusion_frames[i].frame_data = DiffusionFrameData.create(data, safe_index)
 
         diffusion_frames = DiffusionFrame.add_tweens_to_diffusion_frames(diffusion_frames)
         log_utils.print_key_frame_debug_info_if_verbose(diffusion_frames)
