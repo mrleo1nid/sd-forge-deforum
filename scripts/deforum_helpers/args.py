@@ -837,7 +837,7 @@ def DeforumArgs():
             "label": "Batch name",
             "type": "textbox",
             "value": "Deforum_{timestring}",
-            "info": "output images will be placed in a folder with this name ({timestring} token will be replaced) inside the img2img output folder. Supports params placeholders. e.g {seed}, {w}, {h}, {prompts}"
+            "info": "output images will be placed in a folder with this name ({timestring} token will be replaced) inside the outputs/deforum folder. Supports params placeholders. e.g {seed}, {w}, {h}, {prompts}"
         },
         "seed_behavior": {
             "label": "Seed behavior",
@@ -1532,11 +1532,13 @@ def process_args(args_dict_main, run_id):
 
     additional_substitutions = SimpleNamespace(date=time.strftime('%Y%m%d'), time=time.strftime('%H%M%S'))
     current_arg_list = [args, anim_args, video_args, parseq_args, root, additional_substitutions]
-    full_base_folder_path = os.path.join(os.getcwd(), p.outpath_samples)
+
+    # Use dedicated Deforum output directory instead of img2img folder
+    deforum_outpath = os.path.join(os.getcwd(), 'outputs', 'deforum')
+    full_base_folder_path = deforum_outpath
     root.raw_batch_name = args.batch_name
     args.batch_name = substitute_placeholders(args.batch_name, current_arg_list, full_base_folder_path)
-    args.outdir = os.path.join(p.outpath_samples, str(args.batch_name))
-    args.outdir = os.path.join(os.getcwd(), args.outdir)
+    args.outdir = os.path.join(deforum_outpath, str(args.batch_name))
     args.outdir = os.path.realpath(args.outdir)
     os.makedirs(args.outdir, exist_ok=True)
 
