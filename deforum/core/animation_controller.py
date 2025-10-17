@@ -282,11 +282,16 @@ def transform_image_3d_legacy(device, prev_img_cv2, depth_tensor, rot_mat, trans
     offset_coords_2d = coords_2d - torch.reshape(offset_xy, (h,w,2)).unsqueeze(0)
 
     image_tensor = rearrange(torch.from_numpy(prev_img_cv2.astype(np.float32)), 'h w c -> c h w').to(device)
+
+    # Convert enum to string if necessary (e.g., SamplingMode.BICUBIC -> 'bicubic')
+    sampling_mode_str = str(anim_args.sampling_mode).split('.')[-1].lower() if hasattr(anim_args.sampling_mode, 'name') else str(anim_args.sampling_mode).lower()
+    padding_mode_str = str(anim_args.padding_mode).split('.')[-1].lower() if hasattr(anim_args.padding_mode, 'name') else str(anim_args.padding_mode).lower()
+
     new_image = torch.nn.functional.grid_sample(
-        image_tensor.add(1/512 - 0.0001).unsqueeze(0), 
-        offset_coords_2d, 
-        mode=anim_args.sampling_mode, 
-        padding_mode=anim_args.padding_mode, 
+        image_tensor.add(1/512 - 0.0001).unsqueeze(0),
+        offset_coords_2d,
+        mode=sampling_mode_str,
+        padding_mode=padding_mode_str,
         align_corners=False
     )
 
@@ -396,11 +401,16 @@ def transform_image_3d_new(device, prev_img_cv2, depth_tensor, rot_mat, translat
 
     # do the hyperdimensional remap
     image_tensor = rearrange(torch.from_numpy(prev_img_cv2.astype(np.float32)), 'h w c -> c h w').to(device)
+
+    # Convert enum to string if necessary (e.g., SamplingMode.BICUBIC -> 'bicubic')
+    sampling_mode_str = str(anim_args.sampling_mode).split('.')[-1].lower() if hasattr(anim_args.sampling_mode, 'name') else str(anim_args.sampling_mode).lower()
+    padding_mode_str = str(anim_args.padding_mode).split('.')[-1].lower() if hasattr(anim_args.padding_mode, 'name') else str(anim_args.padding_mode).lower()
+
     new_image = torch.nn.functional.grid_sample(
-        image_tensor.unsqueeze(0),  # image_tensor.add(1/512 - 0.0001).unsqueeze(0), 
-        offset_coords_2d, 
-        mode=anim_args.sampling_mode, 
-        padding_mode=anim_args.padding_mode, 
+        image_tensor.unsqueeze(0),  # image_tensor.add(1/512 - 0.0001).unsqueeze(0),
+        offset_coords_2d,
+        mode=sampling_mode_str,
+        padding_mode=padding_mode_str,
         align_corners=False
     )
 
