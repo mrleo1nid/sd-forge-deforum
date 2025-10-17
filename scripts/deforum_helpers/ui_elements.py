@@ -757,7 +757,13 @@ The auto-discovery will find your models automatically!
             
         print(f"🎯 Selected model: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
         print(f"📁 Model path: {selected_model['path']}")
-        
+
+        # Load the pipeline before generation
+        print("🔄 Loading Wan pipeline...")
+        if not integration.load_simple_wan_pipeline(selected_model, wan_args):
+            raise RuntimeError(f"Failed to load Wan pipeline for {selected_model['name']}")
+        print("✅ Wan pipeline loaded successfully")
+
         # Prepare output directory (let Deforum handle directory creation)
         output_directory = args.outdir if hasattr(args, 'outdir') else root.outdir 
         
