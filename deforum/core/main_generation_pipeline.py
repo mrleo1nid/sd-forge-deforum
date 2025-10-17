@@ -313,20 +313,15 @@ def max_script_num_from_shared():
 
 def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sampler_name, scheduler_name):
     """
-    Generate image using A1111/Forge pipeline with img2img.
-    This is the main generation function that was missing after refactoring.
+    Generate image using A1111/Forge pipeline.
+    Handles both txt2img (first frame) and img2img (subsequent frames).
     """
-    # Setup the processing object
-    p = model_wrap
-
-    # Process prompts - this is CRITICAL and was missing!
+    # Process prompts - this is CRITICAL!
     from ..prompt.prompt_processing import split_weighted_subprompts
-    p.prompt, p.negative_prompt = split_weighted_subprompts(args.prompt, frame, anim_args.max_frames)
+    prompt, negative_prompt = split_weighted_subprompts(args.prompt, frame, anim_args.max_frames)
 
-    # Handle init image setup
+    # Check if we have an init image (img2img) or need txt2img
     init_image = None
-    mask = None
-
     if root.init_sample is not None:
         init_image = root.init_sample
         debug_print(f"Using root.init_sample for frame {frame}")
@@ -340,7 +335,62 @@ def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sam
         )
         debug_print(f"Loaded init_image from args for frame {frame}")
 
+    # If no init image and not using init, do txt2img for first frame
+    if init_image is None and not args.use_init:
+        debug_print(f"Frame {frame}: No init image, doing txt2img")
+
+        if args.motion_preview_mode:
+            state.assign_current_image(root.default_img)
+            return root.default_img
+
+        # Create txt2img processing object
+        p_txt = processing.StableDiffusionProcessingTxt2Img(
+            sd_model=sd_model,
+            outpath_samples=root.tmp_deforum_run_duplicated_folder,
+            outpath_grids=root.tmp_deforum_run_duplicated_folder,
+            prompt=prompt,
+            styles=model_wrap.styles,
+            negative_prompt=negative_prompt,
+            seed=model_wrap.seed,
+            subseed=model_wrap.subseed,
+            subseed_strength=model_wrap.subseed_strength,
+            seed_resize_from_h=model_wrap.seed_resize_from_h,
+            seed_resize_from_w=model_wrap.seed_resize_from_w,
+            sampler_name=model_wrap.sampler_name,
+            scheduler=model_wrap.scheduler_name,
+            batch_size=model_wrap.batch_size,
+            n_iter=model_wrap.n_iter,
+            steps=model_wrap.steps,
+            cfg_scale=model_wrap.cfg_scale,
+            distilled_cfg_scale=model_wrap.distilled_cfg_scale,
+            width=model_wrap.width,
+            height=model_wrap.height,
+            restore_faces=model_wrap.restore_faces,
+            tiling=model_wrap.tiling,
+            enable_hr=False,
+            denoising_strength=0,
+        )
+
+        initialise_forge_scripts(p_txt)
+
+        with A1111OptionsOverrider({"control_net_detectedmap_dir": os.path.join(args.outdir, "controlnet_detected_map")}):
+            processed = processing.process_images(p_txt)
+
+        if root.initial_info is None:
+            root.initial_info = processed.info
+        if root.first_frame is None and processed and processed.images:
+            root.first_frame = processed.images[0]
+
+        return processed.images[0] if processed and processed.images else None
+
+    # Otherwise do img2img
+    debug_print(f"Frame {frame}: Doing img2img")
+    p = model_wrap
+    p.prompt = prompt
+    p.negative_prompt = negative_prompt
+
     # Handle mask if needed
+    mask = None
     if args.use_mask:
         from ..media.image_loading import prepare_mask, check_mask_for_errors
         mask_image = args.mask_image
@@ -358,33 +408,20 @@ def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sam
         root.noise_mask = mask
 
     # Setup processing parameters
-    p.init_images = [init_image] if init_image is not None else None
+    p.init_images = [init_image]
     p.image_mask = mask
     p.image_cfg_scale = args.cfg_scale
     p.image_distilled_cfg_scale = args.distilled_cfg_scale
 
-    # Print generation parameters table
-    from ..animation.animation_keys import DeformAnimKeys
-    try:
-        print_combined_table(args, anim_args, p, keys=getattr(root, 'animation_keys', None) or DeformAnimKeys(), frame_idx=frame)
-    except Exception as e:
-        debug_print(f"Could not print table: {e}")
-
     # Handle motion preview mode
-    if args.motion_preview_mode and init_image is not None:
+    if args.motion_preview_mode:
         return mock_process_images(args, p, init_image)
 
     # Initialize Forge scripts
     initialise_forge_scripts(p)
 
-    # Add script args - FIXED: use script_args directly, not as indexed array
-    # The script_args array is already prepared correctly in generate_inner
-    if isinstance(script_args, list) and len(script_args) > 0:
-        # script_args is already in the right format from generate_inner
-        pass
-
     # Run the actual processing
-    debug_print(f"Processing frame {frame} with prompt: {p.prompt[:50]}...")
+    debug_print(f"Processing frame {frame} with prompt: {p.prompt[:50] if p.prompt else 'empty'}...")
     with A1111OptionsOverrider({"control_net_detectedmap_dir": os.path.join(args.outdir, "controlnet_detected_map")}):
         processed = processing.process_images(p)
 
