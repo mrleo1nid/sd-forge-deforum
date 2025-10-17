@@ -57,45 +57,18 @@ class DeformAnimKeys():
         self.cadence_flow_factor_schedule_series = self.fi.parse_inbetweens(anim_args.cadence_flow_factor_schedule, 'cadence_flow_factor_schedule')
         self.redo_flow_factor_schedule_series = self.fi.parse_inbetweens(anim_args.redo_flow_factor_schedule, 'redo_flow_factor_schedule')
         
-        # Only enable scheduling features that don't depend on obsolete extensions
-        if anim_args.enable_steps_scheduling:
-            self.steps_schedule_series = self.fi.parse_inbetweens(anim_args.steps_schedule, 'steps_schedule')
-        else:
-            self.steps_schedule_series = None
-        if anim_args.enable_sampler_scheduling:
-            self.sampler_schedule_series = self.fi.parse_inbetweens(anim_args.sampler_schedule, 'sampler_schedule', is_single_string=True)
-        else:
-            self.sampler_schedule_series = None
-        if anim_args.enable_scheduler_scheduling:
-            self.scheduler_schedule_series = self.fi.parse_inbetweens(anim_args.scheduler_schedule, 'scheduler_schedule', is_single_string=True)
-        else:
-            self.scheduler_schedule_series = None
-        if anim_args.enable_checkpoint_scheduling:
-            self.checkpoint_schedule_series = self.fi.parse_inbetweens(anim_args.checkpoint_schedule, 'checkpoint_schedule', is_single_string=True)
-        else:
-            self.checkpoint_schedule_series = None
-        if anim_args.enable_clipskip_scheduling:
-            self.clipskip_schedule_series = self.fi.parse_inbetweens(anim_args.clipskip_schedule, 'clipskip_schedule')
-        else:
-            self.clipskip_schedule_series = None
-        if anim_args.enable_noise_multiplier_scheduling:
-            self.noise_multiplier_schedule_series = self.fi.parse_inbetweens(anim_args.noise_multiplier_schedule, 'noise_multiplier_schedule')
-        else:
-            self.noise_multiplier_schedule_series = None
-        if anim_args.enable_ddim_eta_scheduling:
-            self.ddim_eta_schedule_series = self.fi.parse_inbetweens(anim_args.ddim_eta_schedule, 'ddim_eta_schedule')
-        else:
-            self.ddim_eta_schedule_series = None
-        if anim_args.enable_ancestral_eta_scheduling:
-            self.ancestral_eta_schedule_series = self.fi.parse_inbetweens(anim_args.ancestral_eta_schedule, 'ancestral_eta_schedule')
-        else:
-            self.ancestral_eta_schedule_series = None
-        if anim_args.enable_subseed_scheduling:
-            self.subseed_schedule_series = self.fi.parse_inbetweens(anim_args.subseed_schedule, 'subseed_schedule')
-            self.subseed_strength_schedule_series = self.fi.parse_inbetweens(anim_args.subseed_strength_schedule, 'subseed_strength_schedule')
-        else:
-            self.subseed_schedule_series = None
-            self.subseed_strength_schedule_series = None
+        # CRITICAL: Always parse schedules even when "disabled" - the code depends on them existing!
+        # The "enable" flags just control UI/display, but the schedule data must always be present.
+        self.steps_schedule_series = self.fi.parse_inbetweens(anim_args.steps_schedule, 'steps_schedule')
+        self.sampler_schedule_series = self.fi.parse_inbetweens(anim_args.sampler_schedule, 'sampler_schedule', is_single_string=True)
+        self.scheduler_schedule_series = self.fi.parse_inbetweens(anim_args.scheduler_schedule, 'scheduler_schedule', is_single_string=True)
+        self.checkpoint_schedule_series = self.fi.parse_inbetweens(anim_args.checkpoint_schedule, 'checkpoint_schedule', is_single_string=True)
+        self.clipskip_schedule_series = self.fi.parse_inbetweens(anim_args.clipskip_schedule, 'clipskip_schedule')
+        self.noise_multiplier_schedule_series = self.fi.parse_inbetweens(anim_args.noise_multiplier_schedule, 'noise_multiplier_schedule')
+        self.ddim_eta_schedule_series = self.fi.parse_inbetweens(anim_args.ddim_eta_schedule, 'ddim_eta_schedule')
+        self.ancestral_eta_schedule_series = self.fi.parse_inbetweens(anim_args.ancestral_eta_schedule, 'ancestral_eta_schedule')
+        self.subseed_schedule_series = self.fi.parse_inbetweens(anim_args.subseed_schedule, 'subseed_schedule')
+        self.subseed_strength_schedule_series = self.fi.parse_inbetweens(anim_args.subseed_strength_schedule, 'subseed_strength_schedule')
 
 class ControlNetKeys():
     def __init__(self, anim_args, controlnet_args):
