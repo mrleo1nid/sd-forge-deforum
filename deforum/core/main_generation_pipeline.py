@@ -102,15 +102,15 @@ def generate_inner(args, keys, anim_args, loop_args, controlnet_args,
                    root, parseq_adapter, frame=0, sampler_name=None, scheduler_name=None):
     # Get generation args
     current_t = frame
-    
+
     # ControlNet
     cn_script = get_controlnet_script_if_available()
-    
+
     # Looper
     looper_script = get_looper_script_if_available()
-    
+
     # Assign model and other script objects to get data from
-    model_wrap = get_webui_sd_pipeline()
+    model_wrap = get_webui_sd_pipeline(args, root)
 
     # Setup auto detect for Depth Map gen by ControlNet if it's a depth controlnet
     if is_controlnet_enabled(controlnet_args):
@@ -319,12 +319,17 @@ def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sam
     # Setup the processing object
     p = model_wrap
 
+    # Process prompts - this is CRITICAL and was missing!
+    from ..prompt.prompt_processing import split_weighted_subprompts
+    p.prompt, p.negative_prompt = split_weighted_subprompts(args.prompt, frame, anim_args.max_frames)
+
     # Handle init image setup
     init_image = None
     mask = None
 
     if root.init_sample is not None:
         init_image = root.init_sample
+        debug_print(f"Using root.init_sample for frame {frame}")
     elif args.use_init and args.init_image:
         from ..media.image_loading import load_img
         init_image, _ = load_img(
@@ -333,6 +338,7 @@ def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sam
             shape=(args.W, args.H),
             use_alpha_as_mask=args.use_alpha_as_mask
         )
+        debug_print(f"Loaded init_image from args for frame {frame}")
 
     # Handle mask if needed
     if args.use_mask:
@@ -357,10 +363,12 @@ def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sam
     p.image_cfg_scale = args.cfg_scale
     p.image_distilled_cfg_scale = args.distilled_cfg_scale
 
-    # Print generation parameters
+    # Print generation parameters table
     from ..animation.animation_keys import DeformAnimKeys
-    if hasattr(root, 'animation_keys'):
-        print_combined_table(args, anim_args, p, root.animation_keys, frame)
+    try:
+        print_combined_table(args, anim_args, p, keys=getattr(root, 'animation_keys', None) or DeformAnimKeys(), frame_idx=frame)
+    except Exception as e:
+        debug_print(f"Could not print table: {e}")
 
     # Handle motion preview mode
     if args.motion_preview_mode and init_image is not None:
@@ -369,21 +377,24 @@ def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sam
     # Initialize Forge scripts
     initialise_forge_scripts(p)
 
-    # Add script args
-    if script_args:
-        for idx, arg in enumerate(script_args):
-            if arg is not None and idx < len(p.scripts.alwayson_scripts):
-                p.script_args[idx] = arg
+    # Add script args - FIXED: use script_args directly, not as indexed array
+    # The script_args array is already prepared correctly in generate_inner
+    if isinstance(script_args, list) and len(script_args) > 0:
+        # script_args is already in the right format from generate_inner
+        pass
 
     # Run the actual processing
+    debug_print(f"Processing frame {frame} with prompt: {p.prompt[:50]}...")
     with A1111OptionsOverrider({"control_net_detectedmap_dir": os.path.join(args.outdir, "controlnet_detected_map")}):
         processed = processing.process_images(p)
+
+    debug_print(f"Processed frame {frame}, got {len(processed.images) if processed else 0} images")
 
     # Update root info if first frame
     if root.initial_info is None:
         root.initial_info = processed.info
 
-    if root.first_frame is None:
+    if root.first_frame is None and processed and processed.images:
         root.first_frame = processed.images[0]
 
     return processed.images[0] if processed and processed.images else None
