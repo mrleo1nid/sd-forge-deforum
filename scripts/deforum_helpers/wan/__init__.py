@@ -32,7 +32,7 @@ from .pipelines.procedural_pipeline import WanProceduralPipeline
 from . import utils
 from . import pipelines
 from . import configs
-from . import models
+# Note: models module not yet implemented - imports are local in pipelines
 from . import integration
 
 # Try to import unified integration, fallback if dependencies missing
