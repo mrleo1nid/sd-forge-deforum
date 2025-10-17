@@ -257,7 +257,10 @@ def transform_image_3d_legacy(device, prev_img_cv2, depth_tensor, rot_mat, trans
     near = keys.near_series[frame_idx]
     far = keys.far_series[frame_idx]
     fov_deg = keys.fov_series[frame_idx]
-    persp_cam_old = p3d.FoVPerspectiveCameras(near, far, aspect_ratio, fov=fov_deg, degrees=True, device=device)
+    # Create identity rotation and zero translation for old camera, ensuring they're on the correct device
+    identity_R = torch.eye(3, device=device).unsqueeze(0)
+    zero_T = torch.zeros((1, 3), device=device)
+    persp_cam_old = p3d.FoVPerspectiveCameras(near, far, aspect_ratio, fov=fov_deg, degrees=True, R=identity_R, T=zero_T, device=device)
     persp_cam_new = p3d.FoVPerspectiveCameras(near, far, aspect_ratio, fov=fov_deg, degrees=True, R=rot_mat, T=torch.tensor([translate], device=device), device=device)
 
     # range of [-1,1] is important to torch grid_sample's padding handling
@@ -334,7 +337,10 @@ def transform_image_3d_new(device, prev_img_cv2, depth_tensor, rot_mat, translat
     fov_deg = keys.fov_series[frame_idx]
 
     # get perspective cams old (still) and new (transformed)
-    persp_cam_old = p3d.FoVPerspectiveCameras(near, far, aspect_ratio, fov=fov_deg, degrees=True, device=device)
+    # Create identity rotation and zero translation for old camera, ensuring they're on the correct device
+    identity_R = torch.eye(3, device=device).unsqueeze(0)
+    zero_T = torch.zeros((1, 3), device=device)
+    persp_cam_old = p3d.FoVPerspectiveCameras(near, far, aspect_ratio, fov=fov_deg, degrees=True, R=identity_R, T=zero_T, device=device)
     persp_cam_new = p3d.FoVPerspectiveCameras(near, far, aspect_ratio, fov=fov_deg, degrees=True, R=rot_mat, T=torch.tensor([translate], device=device), device=device)
 
     # make xy meshgrid - range of [-1,1] is important to torch grid_sample's padding handling
