@@ -1055,6 +1055,15 @@ def ParseqArgs():
 
 
 def FreeUArgs():
+    """
+    DEPRECATED: FreeU feature removed as of 2025-01-17
+
+    This feature has been removed to simplify the codebase and focus on core
+    animation functionality. The function remains for backwards compatibility
+    with existing settings files, but all values are ignored during processing.
+
+    FreeU was a UNet enhancement technique that is no longer supported.
+    """
     return {
         "freeu_enabled": {
             "label": "Enabled",
@@ -1090,6 +1099,15 @@ def FreeUArgs():
 
 
 def KohyaHRFixArgs():
+    """
+    DEPRECATED: Kohya HR Fix feature removed as of 2025-01-17
+
+    This feature has been removed to simplify the codebase and focus on core
+    animation functionality. The function remains for backwards compatibility
+    with existing settings files, but all values are ignored during processing.
+
+    Kohya HR Fix was a high-resolution enhancement technique that is no longer supported.
+    """
     return {
         "kohya_hrfix_enabled": {
             "label": "Enabled",

@@ -385,25 +385,37 @@ def get_tab_init(d, da, dp):
 
 
 def get_tab_freeu(dfu: SimpleNamespace):
-    with gr.TabItem('FreeU'):
-        freeu_enabled = create_row(dfu.freeu_enabled)
-        freeu_b1 = create_row(dfu.freeu_b1)
-        freeu_b2 = create_row(dfu.freeu_b2)
-        freeu_s1 = create_row(dfu.freeu_s1)
-        freeu_s2 = create_row(dfu.freeu_s2)
+    """
+    DEPRECATED: FreeU tab removed as of 2025-01-17
+    This feature has been removed to simplify the codebase.
+    Kept for backwards compatibility with settings files.
+    """
+    # Create hidden components with default values for backwards compatibility
+    with gr.TabItem('FreeU (Deprecated)', visible=False):
+        freeu_enabled = gr.Checkbox(value=False, visible=False)
+        freeu_b1 = gr.Textbox(value="0:(1.3)", visible=False)
+        freeu_b2 = gr.Textbox(value="0:(1.4)", visible=False)
+        freeu_s1 = gr.Textbox(value="0:(0.9)", visible=False)
+        freeu_s2 = gr.Textbox(value="0:(0.2)", visible=False)
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
 def get_tab_kohya_hrfix(dku: SimpleNamespace):
-    with gr.TabItem('Kohya HR Fix'):
-        kohya_hrfix_enabled = create_row(dku.kohya_hrfix_enabled)
-        kohya_hrfix_block_number = create_row(dku.kohya_hrfix_block_number)
-        kohya_hrfix_downscale_factor = create_row(dku.kohya_hrfix_downscale_factor)
-        kohya_hrfix_start_percent = create_row(dku.kohya_hrfix_start_percent)
-        kohya_hrfix_end_percent = create_row(dku.kohya_hrfix_end_percent)
-        kohya_hrfix_downscale_after_skip = create_row(dku.kohya_hrfix_downscale_after_skip)
-        kohya_hrfix_downscale_method = create_row(dku.kohya_hrfix_downscale_method)
-        kohya_hrfix_upscale_method = create_row(dku.kohya_hrfix_upscale_method)
+    """
+    DEPRECATED: Kohya HR Fix tab removed as of 2025-01-17
+    This feature has been removed to simplify the codebase.
+    Kept for backwards compatibility with settings files.
+    """
+    # Create hidden components with default values for backwards compatibility
+    with gr.TabItem('Kohya HR Fix (Deprecated)', visible=False):
+        kohya_hrfix_enabled = gr.Checkbox(value=False, visible=False)
+        kohya_hrfix_block_number = gr.Textbox(value="0:(1)", visible=False)
+        kohya_hrfix_downscale_factor = gr.Textbox(value="0:(2.0)", visible=False)
+        kohya_hrfix_start_percent = gr.Textbox(value="0:(0.0)", visible=False)
+        kohya_hrfix_end_percent = gr.Textbox(value="0:(0.35)", visible=False)
+        kohya_hrfix_downscale_after_skip = gr.Checkbox(value=True, visible=False)
+        kohya_hrfix_downscale_method = gr.Radio(choices=["bicubic"], value="bicubic", visible=False)
+        kohya_hrfix_upscale_method = gr.Radio(choices=["bicubic"], value="bicubic", visible=False)
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
