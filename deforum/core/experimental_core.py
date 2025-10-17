@@ -94,12 +94,13 @@ def run_render_animation(data: RenderData, frames: List[DiffusionFrame]):
 
 def process_frame(data, frame):
     prepare_generation(data, frame)
-    emit_tweens(data, frame)
     pre_process(data, frame)
     image = frame.generate(data, shared.total_tqdm)
     if image is None:
         raise NoImageGenerated()
     post_process(data, frame, image)
+    # Emit tweens AFTER generation, so they have the generated image to interpolate from
+    emit_tweens(data, frame)
 
 
 def prepare_generation(data: RenderData, frame: DiffusionFrame):
