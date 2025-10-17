@@ -248,7 +248,8 @@ class RenderData:
             return
         self.update_some_args_for_current_step(frame, i)
         self.update_checkpoint_for_current_step(i)
-        self.prompt_for_current_step(frame, i)
+        # CRITICAL FIX: Actually use the prepared prompt instead of throwing it away!
+        self.args.args.prompt = self.prompt_for_current_step(frame, i)
         self.update_video_data_for_current_frame(i, frame)
         self.update_mask_image(frame, data.mask)
         opt_utils.setup(frame.schedule)
