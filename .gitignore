@@ -266,3 +266,4 @@ docker-compose.*.yml
 # Keep documentation assets
 !docs/assets/
 !docs/images/
+deforum_settings.txt.backup_*
