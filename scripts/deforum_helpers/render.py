@@ -426,7 +426,11 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
 
                 # saving cadence frames
                 filename = f"{root.timestring}_{tween_frame_idx:09}.png"
-                cv2.imwrite(os.path.join(args.outdir, filename), img)
+                # Validate image before saving to prevent OpenCV assertion errors
+                if img is not None and hasattr(img, 'shape') and img.size > 0:
+                    cv2.imwrite(os.path.join(args.outdir, filename), img)
+                else:
+                    print(f"Warning: Skipping save for frame {tween_frame_idx} - invalid or empty image")
                 if anim_args.save_depth_maps:
                     depth_model.save(os.path.join(args.outdir, f"{root.timestring}_depth_{tween_frame_idx:09}.png"), depth)
 
