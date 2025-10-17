@@ -245,3 +245,155 @@ def print_combined_table(args, anim_args, p, keys, frame_idx):
 
     table.add_row(*rows1, *rows2)
     console.print(table)
+
+
+# Helper functions for generate_inner
+def get_controlnet_script_if_available():
+    """Get ControlNet script if available."""
+    try:
+        from modules import scripts
+        for script in scripts.scripts_txt2img.alwayson_scripts:
+            if "controlnet" in script.title().lower():
+                return script
+    except:
+        pass
+    return None
+
+
+def get_looper_script_if_available():
+    """Get Looper script if available."""
+    try:
+        from modules import scripts
+        for script in scripts.scripts_txt2img.alwayson_scripts:
+            if "looper" in script.title().lower():
+                return script
+    except:
+        pass
+    return None
+
+
+def get_adetailer_script():
+    """Get ADetailer script if available."""
+    try:
+        from modules import scripts
+        for script in scripts.scripts_txt2img.alwayson_scripts:
+            if "adetailer" in script.title().lower():
+                return script
+    except:
+        pass
+    return None
+
+
+def get_adetailer_script_args():
+    """Get ADetailer script args if available."""
+    # TODO: Implement ADetailer support
+    return None
+
+
+def get_looper_script_args(loop_args, anim_args, frame, keys, current_t):
+    """Get Looper script args."""
+    # TODO: Implement Looper support
+    return None
+
+
+def get_inpaint_mode_cn_mask(args, anim_args, controlnet_args, root, frame):
+    """Setup inpaint mode ControlNet mask."""
+    # TODO: Implement ControlNet inpaint mask setup
+    return controlnet_args
+
+
+def max_script_num_from_shared():
+    """Get maximum script number from shared."""
+    try:
+        from modules import scripts
+        return len(scripts.scripts_txt2img.alwayson_scripts) + len(scripts.scripts_txt2img.selectable_scripts) + 10
+    except:
+        return 100
+
+
+def do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sampler_name, scheduler_name):
+    """
+    Generate image using A1111/Forge pipeline with img2img.
+    This is the main generation function that was missing after refactoring.
+    """
+    # Setup the processing object
+    p = model_wrap
+
+    # Handle init image setup
+    init_image = None
+    mask = None
+
+    if root.init_sample is not None:
+        init_image = root.init_sample
+    elif args.use_init and args.init_image:
+        from ..media.image_loading import load_img
+        init_image, _ = load_img(
+            args.init_image,
+            args.init_image_box,
+            shape=(args.W, args.H),
+            use_alpha_as_mask=args.use_alpha_as_mask
+        )
+
+    # Handle mask if needed
+    if args.use_mask:
+        from ..media.image_loading import prepare_mask, check_mask_for_errors
+        mask_image = args.mask_image
+        mask = prepare_mask(
+            args.mask_file if mask_image is None else mask_image,
+            (args.W, args.H),
+            args.mask_contrast_adjust,
+            args.mask_brightness_adjust
+        )
+        p.inpainting_mask_invert = args.invert_mask
+        p.inpainting_fill = args.fill
+        p.inpaint_full_res = args.full_res_mask
+        p.inpaint_full_res_padding = args.full_res_mask_padding
+        mask = check_mask_for_errors(mask, args.invert_mask)
+        root.noise_mask = mask
+
+    # Setup processing parameters
+    p.init_images = [init_image] if init_image is not None else None
+    p.image_mask = mask
+    p.image_cfg_scale = args.cfg_scale
+    p.image_distilled_cfg_scale = args.distilled_cfg_scale
+
+    # Print generation parameters
+    from ..animation.animation_keys import DeformAnimKeys
+    if hasattr(root, 'animation_keys'):
+        print_combined_table(args, anim_args, p, root.animation_keys, frame)
+
+    # Handle motion preview mode
+    if args.motion_preview_mode and init_image is not None:
+        return mock_process_images(args, p, init_image)
+
+    # Initialize Forge scripts
+    initialise_forge_scripts(p)
+
+    # Add script args
+    if script_args:
+        for idx, arg in enumerate(script_args):
+            if arg is not None and idx < len(p.scripts.alwayson_scripts):
+                p.script_args[idx] = arg
+
+    # Run the actual processing
+    with A1111OptionsOverrider({"control_net_detectedmap_dir": os.path.join(args.outdir, "controlnet_detected_map")}):
+        processed = processing.process_images(p)
+
+    # Update root info if first frame
+    if root.initial_info is None:
+        root.initial_info = processed.info
+
+    if root.first_frame is None:
+        root.first_frame = processed.images[0]
+
+    return processed.images[0] if processed and processed.images else None
+
+
+def do_generate_comfyui(args, anim_args, frame, script_args, root, model_wrap, sampler_name, scheduler_name):
+    """
+    Generate image using ComfyUI pipeline.
+    Note: ComfyUI support is experimental and may not be fully functional.
+    """
+    # For now, fall back to A1111 pipeline
+    # TODO: Implement proper ComfyUI support
+    return do_generate_a1111(args, anim_args, frame, script_args, root, model_wrap, sampler_name, scheduler_name)
