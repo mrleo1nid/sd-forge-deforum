@@ -76,7 +76,78 @@ def patch_flow_match_scheduler():
         return False
 
 
+def patch_torch_rmsnorm():
+    """
+    Add RMSNorm to torch.nn if not present (PyTorch < 2.4.0)
+
+    Wan 2.2 models require RMSNorm which was added in PyTorch 2.4.0
+    WebUI Forge uses PyTorch 2.3.1, so we need to provide a compatible implementation
+    """
+    import torch
+    import torch.nn as nn
+
+    if hasattr(nn, 'RMSNorm'):
+        print("✅ torch.nn.RMSNorm already available (PyTorch 2.4.0+)")
+        return True
+
+    try:
+        print("🔧 Adding RMSNorm compatibility for PyTorch < 2.4.0...")
+
+        class RMSNorm(nn.Module):
+            """
+            Root Mean Square Layer Normalization
+            Compatible implementation for PyTorch < 2.4.0
+            """
+            def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, bias=False, device=None, dtype=None):
+                super().__init__()
+                factory_kwargs = {'device': device, 'dtype': dtype}
+
+                if isinstance(normalized_shape, int):
+                    normalized_shape = (normalized_shape,)
+                self.normalized_shape = tuple(normalized_shape)
+                self.eps = eps
+                self.elementwise_affine = elementwise_affine
+
+                if self.elementwise_affine:
+                    self.weight = nn.Parameter(torch.ones(normalized_shape, **factory_kwargs))
+                    if bias:
+                        self.bias = nn.Parameter(torch.zeros(normalized_shape, **factory_kwargs))
+                    else:
+                        self.register_parameter('bias', None)
+                else:
+                    self.register_parameter('weight', None)
+                    self.register_parameter('bias', None)
+
+            def forward(self, input):
+                # Compute RMS
+                variance = input.pow(2).mean(-1, keepdim=True)
+                input = input * torch.rsqrt(variance + self.eps)
+
+                # Apply weight and bias if enabled
+                if self.elementwise_affine:
+                    input = input * self.weight
+                    if self.bias is not None:
+                        input = input + self.bias
+
+                return input
+
+            def extra_repr(self):
+                return f'{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}'
+
+        # Add to torch.nn module
+        nn.RMSNorm = RMSNorm
+        torch.nn.RMSNorm = RMSNorm
+
+        print("✅ RMSNorm compatibility patch applied successfully")
+        return True
+
+    except Exception as e:
+        print(f"⚠️ Failed to apply RMSNorm patch: {e}")
+        return False
+
+
 def apply_all_patches():
     """Apply all compatibility patches"""
     print("🔧 Applying diffusers compatibility patches for Forge + Wan 2.2...")
+    patch_torch_rmsnorm()
     patch_flow_match_scheduler()
