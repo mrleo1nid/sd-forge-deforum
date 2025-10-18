@@ -1476,11 +1476,13 @@ def DeforumOutputArgs():
 
 
 def get_component_names():
+    # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
     # Re-enable Wan components (UI level, imports still isolated)
     return ['override_settings_with_file', 'custom_settings_file', *DeforumAnimArgs().keys(), 'animation_prompts',
             'animation_prompts_positive', 'animation_prompts_negative',
             *DeforumArgs().keys(), *DeforumOutputArgs().keys(), *ParseqArgs().keys(), *LoopArgs().keys(),
-            *controlnet_component_names(), *FreeUArgs().keys(), *KohyaHRFixArgs().keys(), *WanArgs().keys()]
+            # *controlnet_component_names(),  # Disabled - ControlNet temporarily removed
+            *FreeUArgs().keys(), *KohyaHRFixArgs().keys(), *WanArgs().keys()]
 
 
 def get_settings_component_names():
