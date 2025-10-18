@@ -57,12 +57,26 @@ def patch_flow_match_scheduler():
                 sigma = sigma_or_t
 
             # Static version for Forge compatibility (default "exponential" behavior)
-            if isinstance(t if t is not None else sigma_or_t, torch.Tensor):
-                time_val = t if t is not None else sigma_or_t
+            time_val = t if t is not None else sigma_or_t
+
+            # Handle mixed scalar/tensor inputs - convert to match time_val's type
+            if isinstance(time_val, torch.Tensor):
+                # Convert mu and sigma to tensors if they aren't already
+                if not isinstance(mu, torch.Tensor):
+                    mu = torch.tensor(mu, dtype=time_val.dtype, device=time_val.device)
+                if not isinstance(sigma, torch.Tensor):
+                    sigma = torch.tensor(sigma, dtype=time_val.dtype, device=time_val.device)
                 return torch.exp(mu) / (torch.exp(mu) + (1 / time_val - 1) ** sigma)
             else:
+                # Use numpy for scalar inputs
                 import numpy as np
-                time_val = t if t is not None else sigma_or_t
+                # Convert any tensors to numpy
+                if isinstance(mu, torch.Tensor):
+                    mu = mu.cpu().numpy()
+                if isinstance(sigma, torch.Tensor):
+                    sigma = sigma.cpu().numpy()
+                if isinstance(time_val, torch.Tensor):
+                    time_val = time_val.cpu().numpy()
                 return np.exp(mu) / (np.exp(mu) + (1 / time_val - 1) ** sigma)
 
         # Replace the method

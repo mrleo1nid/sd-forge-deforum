@@ -401,16 +401,16 @@ Error: {diffusers_e}
             os.makedirs(output_dir, exist_ok=True)
             
             # Generate timestring for consistent file naming
-            timestring = kwargs.get('timestring', str(int(time.time())))
-            
+            timestring = kwargs.pop('timestring', str(int(time.time())))
+
             # Handle audio download early if provided
             audio_url = kwargs.get('soundtrack_path') or kwargs.get('audio_url')
             cached_audio_path = None
             if audio_url:
                 cached_audio_path = self.download_and_cache_audio(audio_url, output_dir, timestring)
                 kwargs['cached_audio_path'] = cached_audio_path
-            
-            # Save settings file before generation
+
+            # Save settings file before generation (timestring removed from kwargs to avoid duplicate)
             settings_file = self.save_wan_settings_and_metadata(
                 output_dir, timestring, clips, model_info, wan_args, **kwargs
             )
