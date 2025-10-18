@@ -296,6 +296,16 @@ class WanSimpleIntegration:
 
                 if is_wan22_diffusers:
                     print("🔄 Loading Wan 2.2 Diffusers pipeline...")
+
+                    # Apply compatibility patches BEFORE importing diffusers
+                    # This ensures patches are active even if diffusers was imported elsewhere
+                    try:
+                        from ...deforum_helpers.diffusers_compat_patch import apply_all_patches
+                        print("🔧 Applying diffusers compatibility patches before pipeline load...")
+                        apply_all_patches()
+                    except Exception as patch_e:
+                        print(f"⚠️ Warning: Compatibility patches failed: {patch_e}")
+
                     from diffusers import WanPipeline, AutoencoderKLWan
 
                     # Load VAE separately for better compatibility (keep on CPU initially)
