@@ -455,17 +455,17 @@ def wan_generate_video(*component_args):
                 from .wan.wan_model_downloader import WanModelDownloader
                 downloader = WanModelDownloader()
                 
-                # Try to download 1.3B VACE first (most user-friendly)
-                print("📥 Downloading Wan 1.3B VACE model (recommended: 8GB VRAM, consumer-friendly)...")
-                if downloader.download_model("1.3B VACE"):
-                    print("✅ 1.3B VACE model download completed!")
+                # Try to download TI2V-5B (Wan 2.2 unified text/image-to-video)
+                print("📥 Downloading Wan 2.2 TI2V-5B model (recommended: 24GB VRAM, RTX 4090)...")
+                if downloader.download_model("TI2V-5B"):
+                    print("✅ TI2V-5B model download completed!")
                     # Re-discover models after download
                     models = integration.discover_models()
                 else:
-                    print("❌ 1.3B VACE download failed, trying 14B VACE...")
-                    # Fallback to 14B VACE
-                    if downloader.download_model("14B VACE"):
-                        print("✅ 14B VACE model download completed!")
+                    print("❌ TI2V-5B download failed, trying A14B (MoE)...")
+                    # Fallback to A14B MoE
+                    if downloader.download_model("A14B"):
+                        print("✅ A14B MoE model download completed!")
                         models = integration.discover_models()
                     else:
                         print("❌ All model downloads failed")
@@ -480,16 +480,7 @@ def wan_generate_video(*component_args):
             corrupted_models = []
             
             for model in models:
-                if model['type'] == 'VACE':
-                    # Check if VACE model has required I2V components
-                    is_valid = integration._validate_vace_weights(Path(model['path']))
-                    if is_valid:
-                        valid_models.append(model)
-                        print(f"✅ {model['name']}: Valid VACE model")
-                    else:
-                        corrupted_models.append(model)
-                        print(f"❌ {model['name']}: Corrupted/incomplete VACE model")
-                elif model['type'] in ['T2V', 'I2V']:
+                if model['type'] in ['TI2V', 'T2V', 'I2V']:
                     # Legacy T2V/I2V models - check for basic structure
                     model_path = Path(model['path'])
                     if (model_path / "model_index.json").exists():
@@ -536,18 +527,10 @@ def wan_generate_video(*component_args):
                 print("📥 To re-download models:")
                 for corrupted_model in corrupted_models:
                     model_name = corrupted_model['name'].lower()
-                    if '1.3b' in model_name and 'vace' in model_name:
-                        print(f"   huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan/Wan2.1-VACE-1.3B")
-                    elif '14b' in model_name and 'vace' in model_name:
-                        print(f"   huggingface-cli download Wan-AI/Wan2.1-VACE-14B --local-dir models/wan/Wan2.1-VACE-14B")
-                    elif '1.3b' in model_name and 't2v' in model_name:
-                        print(f"   huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir models/wan/Wan2.1-T2V-1.3B")
-                    elif '14b' in model_name and 't2v' in model_name:
-                        print(f"   huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir models/wan/Wan2.1-T2V-14B")
-                    elif '1.3b' in model_name and 'i2v' in model_name:
-                        print(f"   huggingface-cli download Wan-AI/Wan2.1-I2V-1.3B --local-dir models/wan/Wan2.1-I2V-1.3B")
-                    elif '14b' in model_name and 'i2v' in model_name:
-                        print(f"   huggingface-cli download Wan-AI/Wan2.1-I2V-14B --local-dir models/wan/Wan2.1-I2V-14B")
+                    if 'ti2v' in model_name and '5b' in model_name:
+                        print(f"   huggingface-cli download Wan-AI/Wan2.2-TI2V-5B-Diffusers --local-dir models/wan/Wan2.2-TI2V-5B")
+                    elif 'a14b' in model_name or '14b' in model_name:
+                        print(f"   huggingface-cli download Wan-AI/Wan2.2-TI2V-A14B-Diffusers --local-dir models/wan/Wan2.2-TI2V-A14B")
                 
                 print()
                 print("💡 TIP: Enable 'Auto-Download Models' for automatic downloading of missing models")
@@ -562,12 +545,12 @@ def wan_generate_video(*component_args):
 🔧 AUTO-DOWNLOAD OPTIONS:
 1. ✅ Enable "Auto-Download Models" in the Wan tab (recommended)
 2. 📥 Manual download with HuggingFace CLI:
-   
-   **For 1.3B VACE (Recommended - 8GB VRAM):**
-   huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan/Wan2.1-VACE-1.3B
-   
-   **For 14B VACE (High Quality - 480P+720P):**
-   huggingface-cli download Wan-AI/Wan2.1-VACE-14B --local-dir models/wan/Wan2.1-VACE-14B
+
+   **For TI2V-5B (Recommended - Wan 2.2, 24GB VRAM, RTX 4090):**
+   huggingface-cli download Wan-AI/Wan2.2-TI2V-5B-Diffusers --local-dir models/wan/Wan2.2-TI2V-5B
+
+   **For TI2V-A14B (Highest Quality - Wan 2.2 MoE, 32GB+ VRAM):**
+   huggingface-cli download Wan-AI/Wan2.2-TI2V-A14B-Diffusers --local-dir models/wan/Wan2.2-TI2V-A14B
 
 3. ✅ Restart generation after downloading
 
@@ -575,25 +558,21 @@ def wan_generate_video(*component_args):
 
 🔧 TROUBLESHOOTING:
 1. 📶 Check internet connection for downloads
-2. 💾 Ensure enough disk space (1.3B: ~17GB, 14B: ~75GB)
+2. 💾 Ensure enough disk space (TI2V-5B: ~30GB, TI2V-A14B: ~60GB)
 3. 🔄 Try manual download with HuggingFace CLI (see Auto-Discovery tab)
 4. 🔧 Corrupted models are detected - follow manual cleanup instructions"""
 
             return f"""❌ No Wan models found!
 
 💡 QUICK SETUP:
-VACE models are all-in-one (T2V + I2V) - recommended for I2V chaining!
+TI2V models are unified text/image-to-video (Wan 2.2) - recommended!
 
-• **1.3B VACE**: 8GB VRAM, 480P, fast (perfect for most users)
-• **14B VACE**: 480P+720P, slower, higher quality (for power users)
+• **TI2V-5B**: 24GB VRAM, 720P@24fps, RTX 4090 compatible (best for most users)
+• **TI2V-A14B**: 32GB+ VRAM, Mixture-of-Experts, highest quality (for power users)
 
 {auto_download_help}
 
-💡 VACE models handle both text-to-video and image-to-video in one model, perfect for seamless I2V chaining!
-
-🔧 **If you have T2V models but want I2V chaining:**
-Set I2V Model to "Use T2V Model (No Continuity)" for independent clips, 
-or download a VACE model for seamless transitions."""
+💡 TI2V models handle both text-to-video and image-to-video in one unified model!"""
         
         print(f"✅ Found {len(models)} Wan model(s):")
         for i, model in enumerate(models, 1):
@@ -919,30 +898,24 @@ The auto-discovery will find your models automatically!
         print(f"   📐 Resolution: {width}x{height} ({'720p' if is_720p else '480p' if is_480p else 'Custom'})")
         
         # Check for resolution/model mismatches and warn
-        if "1.3B" in model_size and is_720p:
-            print(f"\n⚠️  WARNING: VACE 1.3B + 720p Resolution Mismatch")
-            print(f"   📦 Model: {model_name} (optimized for 480p)")
+        if "5B" in model_size and is_720p:
+            print(f"\n✅ Perfect Match: TI2V-5B + 720p")
+            print(f"   📦 Model: {model_name} (optimized for 720p@24fps)")
             print(f"   📐 Resolution: {width}x{height} (720p)")
-            print(f"   💡 RECOMMENDATION: Use 864x480 for better performance with VACE 1.3B")
-            print(f"   🚀 Continuing anyway - VACE 1.3B may struggle with 720p...")
-            
-        elif "14B" in model_size and is_480p:
-            print(f"\n💡 INFO: VACE 14B + 480p Resolution")
-            print(f"   📦 Model: {model_name} (supports both 480p and 720p)")
+            print(f"   🎯 Optimal configuration for TI2V-5B!")
+
+        elif "5B" in model_size and is_480p:
+            print(f"\n💡 INFO: TI2V-5B + 480p Resolution")
+            print(f"   📦 Model: {model_name} (optimized for 720p)")
             print(f"   📐 Resolution: {width}x{height} (480p)")
-            print(f"   ✅ This combination works well, but you could use 1280x720 for higher quality")
-            
-        elif "1.3B" in model_size and is_480p:
-            print(f"\n✅ Perfect Match: VACE 1.3B + 480p")
-            print(f"   📦 Model: {model_name} (optimized for 480p)")
-            print(f"   📐 Resolution: {width}x{height} (480p)")
-            print(f"   🎯 Optimal configuration for VACE 1.3B!")
-            
-        elif "14B" in model_size and is_720p:
-            print(f"\n✅ Perfect Match: VACE 14B + 720p")
-            print(f"   📦 Model: {model_name} (supports 720p)")
+            print(f"   ✅ This works, but you could use 1280x720 for better quality")
+
+        elif "A14B" in model_size and is_720p:
+            print(f"\n✅ Perfect Match: TI2V-A14B + 720p")
+            print(f"   📦 Model: {model_name} (MoE architecture, highest quality)")
             print(f"   📐 Resolution: {width}x{height} (720p)")
-            print(f"   🎯 High quality configuration!")
+            print(f"   🎯 Maximum quality configuration!")
+
         
         # Prepare clips data for generation
         clips_data = []
@@ -1338,25 +1311,23 @@ def get_tab_wan(dw: SimpleNamespace):
             - `models/video/wan/`
             - Custom paths you specify
             
-            **✨ VACE Models (Recommended)**
-            
-            VACE models handle both T2V and I2V in one model:
-            - **1.3B VACE**: 480p, 8GB VRAM, fast generation
-            - **14B VACE**: 480p+720p, 16GB+ VRAM, highest quality
-            
+            **✨ Wan 2.2 TI2V Models (Recommended)**
+
+            TI2V models are unified text/image-to-video with diffusers format:
+            - **TI2V-5B**: 720p@24fps, 24GB VRAM, RTX 4090 compatible (recommended)
+            - **TI2V-A14B**: Mixture-of-Experts, 32GB+ VRAM, highest quality
+
             **📥 Easy Download Commands:**
             ```bash
-            # Download 1.3B VACE (recommended default)
-            huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan/Wan2.1-VACE-1.3B
-            
-            # Or download 14B VACE (high quality)
-            huggingface-cli download Wan-AI/Wan2.1-VACE-14B --local-dir models/wan/Wan2.1-VACE-14B
+            # Download TI2V-5B (recommended default)
+            huggingface-cli download Wan-AI/Wan2.2-TI2V-5B-Diffusers --local-dir models/wan/Wan2.2-TI2V-5B
+
+            # Or download TI2V-A14B (highest quality)
+            huggingface-cli download Wan-AI/Wan2.2-TI2V-A14B-Diffusers --local-dir models/wan/Wan2.2-TI2V-A14B
             ```
-            
-            **⚠️ Legacy Models** (for compatibility):
-            - T2V models: Text-to-video only
-            - I2V models: Separate models for image-to-video
-            - Less convenient than VACE, but still supported
+
+            **Note**: This extension supports Wan 2.2 TI2V models only.
+            Legacy Wan 2.1 models (T2V, I2V, VACE) are no longer supported.
             """)
         
         # Hidden model path for compatibility (auto-populated by discovery)

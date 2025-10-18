@@ -18,42 +18,17 @@ class WanModelDownloader:
         # Dynamically detect the models directory
         self.models_dir = self._detect_models_directory()
         self.available_models = {
-            "1.3B VACE": {
-                "repo_id": "Wan-AI/Wan2.1-VACE-1.3B",
-                "local_dir": str(self.models_dir / "Wan2.1-VACE-1.3B"),
-                "description": "1.3B All-in-One Video Creation & Editing (T2V + I2V, 480P)",
-                "size_gb": 8
+            "TI2V-5B": {
+                "repo_id": "Wan-AI/Wan2.2-TI2V-5B-Diffusers",
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-5B"),
+                "description": "Wan 2.2 TI2V-5B (Unified T2V + I2V, 720P@24fps, RTX 4090)",
+                "size_gb": 30
             },
-            "14B VACE": {
-                "repo_id": "Wan-AI/Wan2.1-VACE-14B", 
-                "local_dir": str(self.models_dir / "Wan2.1-VACE-14B"),
-                "description": "14B All-in-One Video Creation & Editing (T2V + I2V, 480P/720P)",
-                "size_gb": 75
-            },
-            # Legacy models (keep for backwards compatibility)
-            "1.3B T2V (Legacy)": {
-                "repo_id": "Wan-AI/Wan2.1-T2V-1.3B",
-                "local_dir": str(self.models_dir / "Wan2.1-T2V-1.3B"),
-                "description": "1.3B Text-to-Video model (480P) - Legacy",
-                "size_gb": 8
-            },
-            "14B T2V (Legacy)": {
-                "repo_id": "Wan-AI/Wan2.1-T2V-14B", 
-                "local_dir": str(self.models_dir / "Wan2.1-T2V-14B"),
-                "description": "14B Text-to-Video model (480P/720P) - Legacy",
-                "size_gb": 75
-            },
-            "14B I2V 720P (Legacy)": {
-                "repo_id": "Wan-AI/Wan2.1-I2V-14B-720P",
-                "local_dir": str(self.models_dir / "Wan2.1-I2V-14B-720P"),
-                "description": "14B Image-to-Video model (720P) - Legacy",
-                "size_gb": 75
-            },
-            "14B I2V 480P (Legacy)": {
-                "repo_id": "Wan-AI/Wan2.1-I2V-14B-480P", 
-                "local_dir": str(self.models_dir / "Wan2.1-I2V-14B-480P"),
-                "description": "14B Image-to-Video model (480P) - Legacy",
-                "size_gb": 75
+            "TI2V-A14B": {
+                "repo_id": "Wan-AI/Wan2.2-TI2V-A14B-Diffusers",
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-A14B"),
+                "description": "Wan 2.2 TI2V-A14B (MoE, Unified T2V + I2V, Highest Quality)",
+                "size_gb": 60
             }
         }
     
@@ -245,86 +220,44 @@ class WanModelDownloader:
         return models
     
     def auto_download_recommended(self) -> Dict[str, str]:
-        """Auto-download recommended models (14B VACE)"""
+        """Auto-download recommended model (TI2V-5B)"""
         results = {}
-        
-        # Download 14B VACE as the new recommended model
-        print("🎯 Auto-downloading recommended model: 14B VACE (All-in-One)")
-        if self.download_model("14B VACE"):
-            model_path = self.get_model_path("14B VACE")
+
+        # Download TI2V-5B (Wan 2.2 only)
+        print("🎯 Auto-downloading Wan 2.2 TI2V-5B (Unified T2V+I2V, 720p@24fps)")
+        if self.download_model("TI2V-5B"):
+            model_path = self.get_model_path("TI2V-5B")
             results["t2v"] = model_path
-            results["i2v"] = model_path  # VACE handles both T2V and I2V
-            print("✅ VACE model ready for both T2V and I2V generation")
+            results["i2v"] = model_path  # TI2V handles both T2V and I2V
+            print("✅ TI2V-5B ready for unified T2V and I2V generation")
         else:
-            print("❌ Failed to download VACE model, trying legacy fallback...")
-            # Fallback to legacy models
-            if self.download_model("1.3B T2V (Legacy)"):
-                results["t2v"] = self.get_model_path("1.3B T2V (Legacy)")
-                results["i2v"] = results["t2v"]
-                print("⚠️ Warning: Using legacy T2V model for I2V. This will break continuity.")
-            else:
-                print("❌ Failed to download any models")
-        
+            print("❌ Failed to download TI2V-5B model")
+
         return results
     
-    def download_by_preference(self, prefer_size: str = "14B", download_i2v: bool = False) -> Dict[str, str]:
-        """Download models based on size preference - VACE models are all-in-one"""
+    def download_by_preference(self, prefer_size: str = "TI2V-5B", download_i2v: bool = False) -> Dict[str, str]:
+        """Download Wan 2.2 TI2V model based on size preference"""
         results = {}
-        
-        # Determine which VACE model to download based on preference
-        if prefer_size.startswith("14B") or "14B VACE" in prefer_size:
-            primary_model = "14B VACE"
-            print("✅ Using 14B VACE - All-in-One model (T2V + I2V, 480P + 720P)")
-        elif prefer_size.startswith("1.3B") or "1.3B VACE" in prefer_size:
-            primary_model = "1.3B VACE" 
-            print("✅ Using 1.3B VACE - All-in-One model (T2V + I2V, 480P)")
-        elif "Legacy" in prefer_size:
-            # Fallback to legacy models for backwards compatibility
-            return self._download_legacy_models(download_i2v)
+
+        # Determine which TI2V model to download (Wan 2.2 only)
+        if "A14B" in prefer_size or "14B" in prefer_size:
+            primary_model = "TI2V-A14B"
+            print("✅ Wan 2.2 TI2V-A14B: MoE, unified T2V+I2V, 720p, highest quality")
         else:
-            # Default to 14B VACE
-            primary_model = "14B VACE"
-            print("✅ Defaulting to 14B VACE - All-in-One model (T2V + I2V)")
-        
-        # Download the VACE model
-        print(f"📥 Downloading VACE model: {primary_model}")
+            # Default to TI2V-5B (recommended)
+            primary_model = "TI2V-5B"
+            print("✅ Wan 2.2 TI2V-5B: Unified T2V+I2V, 720p@24fps, RTX 4090")
+
+        # Download the TI2V model
+        print(f"📥 Downloading {primary_model}...")
         if self.download_model(primary_model):
             model_path = self.get_model_path(primary_model)
             results["t2v"] = model_path
-            results["i2v"] = model_path  # VACE handles both T2V and I2V
-            print(f"✅ VACE model downloaded and ready for both T2V and I2V")
+            results["i2v"] = model_path  # TI2V handles both T2V and I2V
+            print(f"✅ {primary_model} ready for unified T2V and I2V generation")
         else:
-            print(f"❌ Failed to download {primary_model}, trying legacy fallback...")
-            return self._download_legacy_models(download_i2v)
-        
-        return results
-    
-    def _download_legacy_models(self, download_i2v: bool = False) -> Dict[str, str]:
-        """Fallback to legacy separate T2V/I2V models"""
-        results = {}
-        print("🔄 Using legacy separate T2V/I2V models...")
-        
-        # Download legacy T2V
-        t2v_model = "14B T2V (Legacy)"
-        print(f"📥 Downloading legacy T2V model: {t2v_model}")
-        if self.download_model(t2v_model):
-            results["t2v"] = self.get_model_path(t2v_model)
-        
-        # Download legacy I2V if requested
-        if download_i2v:
-            i2v_model = "14B I2V 720P (Legacy)"
-            print(f"📥 Downloading legacy I2V model: {i2v_model}")
-            if self.download_model(i2v_model):
-                results["i2v"] = self.get_model_path(i2v_model)
-            else:
-                print("❌ Failed to download legacy I2V, using T2V for I2V")
-                results["i2v"] = results.get("t2v")
-        
-        # Use T2V for I2V if no separate I2V downloaded
-        if "i2v" not in results and "t2v" in results:
-            results["i2v"] = results["t2v"]
-            print("⚠️ Using legacy T2V model for I2V - may break continuity")
-        
+            print(f"❌ Failed to download {primary_model}")
+
         return results
 
 def download_wan_model(model_key: str) -> bool:
@@ -332,7 +265,7 @@ def download_wan_model(model_key: str) -> bool:
     downloader = WanModelDownloader()
     return downloader.download_model(model_key)
 
-def auto_setup_wan_models(prefer_size: str = "1.3B") -> Dict[str, str]:
+def auto_setup_wan_models(prefer_size: str = "TI2V-5B") -> Dict[str, str]:
     """Auto-setup Wan models with size preference"""
     downloader = WanModelDownloader()
     return downloader.download_by_preference(prefer_size)

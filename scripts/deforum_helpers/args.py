@@ -1162,18 +1162,11 @@ def WanArgs():
     """Wan 2.1 video generation arguments - Updated to integrate with Deforum schedules"""
     return {
         "wan_t2v_model": {
-            "label": "Primary Model",
+            "label": "TI2V Model (Wan 2.2)",
             "type": "dropdown",
-            "choices": ["Auto-Detect", "1.3B VACE", "14B VACE", "1.3B T2V (Legacy)", "14B T2V (Legacy)", "Custom Path"],
-            "value": "1.3B VACE",
-            "info": "Primary Wan model. VACE 1.3B: 480p, 8GB VRAM. VACE 14B: 480p+720p, 16GB+ VRAM. VACE models handle both T2V and I2V."
-        },
-        "wan_i2v_model": {
-            "label": "I2V Model (Legacy)", 
-            "type": "dropdown",
-            "choices": ["Auto-Detect", "Use Primary Model", "Use T2V Model (No Continuity)", "14B I2V 720P (Legacy)", "14B I2V 480P (Legacy)", "Custom Path"],
-            "value": "Use Primary Model",
-            "info": "I2V chaining mode. 'Use Primary Model' uses VACE for seamless transitions (recommended). 'Use T2V Model' = independent clips."
+            "choices": ["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
+            "value": "TI2V-5B",
+            "info": "Wan 2.2 unified text/image-to-video model. TI2V-5B: 720p@24fps, 24GB VRAM (recommended). TI2V-A14B: MoE, 32GB+ VRAM (highest quality)."
         },
         "wan_auto_download": {
             "label": "Auto-Download Models",
@@ -1182,11 +1175,11 @@ def WanArgs():
             "info": "Automatically download missing models from HuggingFace (recommended for first-time setup)"
         },
         "wan_preferred_size": {
-            "label": "Preferred Model Size",
+            "label": "Preferred Model",
             "type": "dropdown",
-            "choices": ["1.3B VACE (Recommended)", "14B VACE (High Quality)", "Legacy Models"],
-            "value": "1.3B VACE (Recommended)",
-            "info": "VACE 1.3B: 480p, 8GB VRAM, fast. VACE 14B: 480p+720p, 16GB+ VRAM, better quality."
+            "choices": ["TI2V-5B (Recommended)", "TI2V-A14B (Highest Quality)"],
+            "value": "TI2V-5B (Recommended)",
+            "info": "Wan 2.2 only. TI2V-5B: 720p@24fps, 24GB VRAM, RTX 4090. TI2V-A14B: MoE, 32GB+ VRAM, highest quality."
         },
         "wan_model_path": {
             "label": "Custom Model Path",
@@ -1197,9 +1190,9 @@ def WanArgs():
         "wan_resolution": {
             "label": "Wan Resolution",
             "type": "dropdown",
-            "choices": ["864x480 (Landscape)", "480x864 (Portrait)", "1280x720 (Landscape)", "720x1280 (Portrait)"],
-            "value": "864x480 (Landscape)",  # Explicit default with label
-            "info": "Resolution for Wan video generation. 480p for VACE 1.3B, 720p for VACE 14B. Will warn if mismatched."
+            "choices": ["1280x720 (Landscape)", "720x1280 (Portrait)"],
+            "value": "1280x720 (Landscape)",
+            "info": "Wan 2.2 TI2V models support 720p resolution. Landscape or portrait orientation."
         },
         "wan_seed": {
             "label": "Wan Seed",
