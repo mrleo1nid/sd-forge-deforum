@@ -34,8 +34,8 @@ class WanSimpleIntegration:
         self.models = []
         self.pipeline = None
         self.model_size = None
-        self.optimal_width = 720
-        self.optimal_height = 480
+        self.optimal_width = 1280  # Wan 2.2 TI2V default: 720p landscape
+        self.optimal_height = 720
         self.flash_attention_mode = "auto"  # auto, enabled, disabled
         print_wan_info(f"Simple Integration initialized on {self.device}")
     

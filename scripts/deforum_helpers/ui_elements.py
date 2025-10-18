@@ -1136,29 +1136,12 @@ def get_tab_wan(dw: SimpleNamespace):
             with FormRow():
                 wan_auto_download = create_gr_elem(dw.wan_auto_download)
                 wan_preferred_size = create_gr_elem(dw.wan_preferred_size)
-                # Fix resolution dropdown to handle old format values
-                wan_resolution_elem = create_gr_elem(dw.wan_resolution)
-                
-                # Update resolution value to handle old format (e.g., "864x480" -> "864x480 (Landscape)")
-                def update_resolution_format(current_value):
-                    """Convert old resolution format to new format with labels"""
-                    if current_value and '(' not in current_value:
-                        # Old format detected, convert to new format
-                        if current_value == "864x480":
-                            return "864x480 (Landscape)"
-                        elif current_value == "480x864":
-                            return "480x864 (Portrait)"
-                        elif current_value == "1280x720":
-                            return "1280x720 (Landscape)"
-                        elif current_value == "720x1280":
-                            return "720x1280 (Portrait)"
-                    return current_value
-                
-                # Apply format update on component creation
-                if hasattr(wan_resolution_elem, 'value'):
-                    wan_resolution_elem.value = update_resolution_format(wan_resolution_elem.value)
-                
-                wan_resolution = wan_resolution_elem
+                wan_resolution = gr.Dropdown(
+                    label="Wan Resolution",
+                    choices=["1280x720 (Landscape)", "720x1280 (Portrait)"],
+                    value="1280x720 (Landscape)",
+                    info="Wan 2.2 TI2V models support 720p resolution. Landscape or portrait orientation."
+                )
                 
             with FormRow():
                 wan_inference_steps = gr.Slider(
@@ -1187,7 +1170,12 @@ def get_tab_wan(dw: SimpleNamespace):
         
         # MODEL SETTINGS - Collapsed by default
         with gr.Accordion("🔧 Model Settings", open=False):
-            wan_t2v_model = create_gr_elem(dw.wan_t2v_model)
+            wan_t2v_model = gr.Dropdown(
+                label="TI2V Model (Wan 2.2)",
+                choices=["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
+                value="Auto-Detect",
+                info="Wan 2.2 unified text/image-to-video model. TI2V-5B: 720p@24fps, 24GB VRAM (recommended). TI2V-A14B: MoE, 32GB+ VRAM (highest quality)."
+            )
             wan_model_path = create_gr_elem(dw.wan_model_path)
         
         # OVERRIDES SECTION - Movement sensitivity moved here
