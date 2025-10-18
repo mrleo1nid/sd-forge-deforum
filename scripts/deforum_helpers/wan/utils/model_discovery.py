@@ -137,14 +137,25 @@ class WanModelDiscovery:
         return models
     
     def _is_wan_model_directory(self, directory: Path) -> bool:
-        """Check if a directory contains WAN model files"""
-        required_files = [
+        """Check if a directory contains WAN model files (2.1 or 2.2 format)"""
+
+        # Check for Wan 2.2 Diffusers format (standard diffusers structure)
+        is_wan22_diffusers = (
+            (directory / 'vae').exists() and
+            (directory / 'text_encoder').exists() and
+            (directory / 'model_index.json').exists()
+        )
+        if is_wan22_diffusers:
+            return True
+
+        # Check for Wan 2.1 format (flat directory with .pth files)
+        required_files_21 = [
             'diffusion_pytorch_model.safetensors',
             'Wan2.1_VAE.pth',
             'models_t5_umt5-xxl-enc-bf16.pth'
         ]
-        
-        for required_file in required_files:
+
+        for required_file in required_files_21:
             if not (directory / required_file).exists():
                 # Check for multi-part models (14B)
                 if required_file == 'diffusion_pytorch_model.safetensors':
@@ -156,7 +167,7 @@ class WanModelDiscovery:
                         return False
                 else:
                     return False
-                    
+
         return True
     
     def _analyze_model_directory(self, directory: Path) -> Optional[Dict]:
@@ -184,49 +195,93 @@ class WanModelDiscovery:
             return None
     
     def _detect_model_type(self, directory: Path) -> str:
-        """Detect if model is VACE, T2V, I2V, etc."""
+        """Detect if model is TI2V, VACE, T2V, I2V, S2V, etc."""
         dir_name = directory.name.lower()
-        
-        # Check directory name for type indicators
-        if 'vace' in dir_name:
-            return 'VACE (All-in-One)'
+
+        # Check directory name for type indicators (Wan 2.2 first, then 2.1)
+        if 'ti2v' in dir_name:
+            return 'TI2V'  # Wan 2.2 unified text/image-to-video
+        elif 's2v' in dir_name:
+            return 'S2V'   # Wan 2.2 speech-to-video
+        elif 'animate' in dir_name:
+            return 'Animate'  # Wan 2.2 character animation
+        elif 'vace' in dir_name:
+            return 'VACE'  # Wan 2.1 all-in-one
         elif 'i2v' in dir_name:
-            return 'I2V (Image-to-Video)'
+            return 'I2V'   # Image-to-video
         elif 't2v' in dir_name:
-            return 'T2V (Text-to-Video)'
+            return 'T2V'   # Text-to-video
         elif 'flf2v' in dir_name:
-            return 'FLF2V (First-Last-Frame-to-Video)'
-        
-        # Check config.json for more details
+            return 'FLF2V' # First-last-frame-to-video
+
+        # Check model_index.json for Wan 2.2 Diffusers models
+        model_index_path = directory / 'model_index.json'
+        if model_index_path.exists():
+            try:
+                with open(model_index_path, 'r') as f:
+                    config = json.load(f)
+
+                # Check _class_name field
+                class_name = config.get('_class_name', '').lower()
+                if 'ti2v' in class_name or 'imagetovideo' in class_name:
+                    return 'TI2V'
+                elif 'i2v' in class_name:
+                    return 'I2V'
+
+            except (json.JSONDecodeError, IOError):
+                pass
+
+        # Check config.json for more details (Wan 2.1 format)
         config_path = directory / 'config.json'
         if config_path.exists():
             try:
                 with open(config_path, 'r') as f:
                     config = json.load(f)
-                    
+
                 # Look for type indicators in config
                 config_str = json.dumps(config).lower()
                 if 'vace' in config_str:
-                    return 'VACE (All-in-One)'
+                    return 'VACE'
                 elif 'i2v' in config_str:
-                    return 'I2V (Image-to-Video)'
-                    
+                    return 'I2V'
+
             except (json.JSONDecodeError, IOError):
                 pass
-        
+
         # Default assumption based on file structure
-        return 'T2V (Text-to-Video)'
+        return 'T2V'
     
     def _detect_model_size(self, directory: Path) -> str:
-        """Detect model size (1.3B, 14B, etc.)"""
+        """Detect model size (5B, 1.3B, 14B, A14B, etc.)"""
         dir_name = directory.name.lower()
-        
-        # Check directory name for size indicators
-        if '1.3b' in dir_name or '1_3b' in dir_name:
+
+        # Check directory name for size indicators (Wan 2.2 first)
+        if '5b' in dir_name or '5_b' in dir_name:
+            return '5B'
+        elif 'a14b' in dir_name or 'a_14b' in dir_name:
+            return 'A14B'  # MoE architecture: 27B total, 14B active
+        elif '1.3b' in dir_name or '1_3b' in dir_name:
             return '1.3B'
         elif '14b' in dir_name:
             return '14B'
-        
+
+        # Check model_index.json for Wan 2.2 Diffusers models
+        model_index_path = directory / 'model_index.json'
+        if model_index_path.exists():
+            try:
+                with open(model_index_path, 'r') as f:
+                    config = json.load(f)
+
+                # Extract from _name_or_path or similar fields
+                name_or_path = config.get('_name_or_path', '').lower()
+                if '5b' in name_or_path:
+                    return '5B'
+                elif 'a14b' in name_or_path or '14b' in name_or_path:
+                    return 'A14B'
+
+            except (json.JSONDecodeError, IOError):
+                pass
+
         # Check for multi-part model files (indicates 14B)
         multi_part_exists = any(
             (directory / f"diffusion_pytorch_model-{i:05d}-of-00007.safetensors").exists()
@@ -234,8 +289,20 @@ class WanModelDiscovery:
         )
         if multi_part_exists:
             return '14B'
-        
-        # Check file sizes as a hint (rough estimate)
+
+        # Check transformer model file sizes for Wan 2.2
+        transformer_model = directory / 'transformer' / 'diffusion_pytorch_model.safetensors'
+        if transformer_model.exists():
+            try:
+                size_gb = transformer_model.stat().st_size / (1024**3)
+                if size_gb < 15:
+                    return '5B'
+                else:
+                    return 'A14B'
+            except OSError:
+                pass
+
+        # Check legacy file sizes for Wan 2.1
         main_model = directory / 'diffusion_pytorch_model.safetensors'
         if main_model.exists():
             try:
@@ -246,8 +313,8 @@ class WanModelDiscovery:
                     return '14B'
             except OSError:
                 pass
-        
-        return '1.3B'  # Default assumption
+
+        return '5B'  # Default to 5B for Wan 2.2 models
     
     def _generate_model_name(self, directory: Path, model_type: str, model_size: str) -> str:
         """Generate a friendly name for the model"""
@@ -277,28 +344,36 @@ class WanModelDiscovery:
         return unique
     
     def _sort_models_by_preference(self, models: List[Dict]) -> List[Dict]:
-        """Sort models by preference (VACE > T2V, local > cache, etc.)"""
+        """Sort models by preference (TI2V > T2V > I2V > VACE, prefer smaller/faster)"""
         def preference_score(model):
             score = 0
-            
-            # Prefer VACE models (most capable)
-            if 'VACE' in model['type']:
-                score += 100
-            elif 'T2V' in model['type']:
-                score += 50
-            elif 'I2V' in model['type']:
-                score += 30
-                
+
+            # Model type priority (Wan 2.2 unified models preferred)
+            type_priority = {
+                'TI2V': 100,     # Wan 2.2 unified text/image-to-video (best)
+                'T2V': 80,       # Standard text-to-video
+                'I2V': 60,       # Image-to-video only
+                'VACE': 40,      # Wan 2.1 all-in-one (requires full repo)
+                'S2V': 20,       # Speech-to-video (specialized)
+                'Animate': 10,   # Character animation (specialized)
+            }
+            score += type_priority.get(model['type'], 0)
+
+            # Size priority (prefer smaller/faster for consumer GPUs)
+            size_priority = {
+                '5B': 50,        # Wan 2.2 TI2V-5B (fastest, RTX 4090 compatible)
+                '1.3B': 40,      # Wan 2.1 small models
+                '14B': 20,       # Wan 2.1 large models
+                'A14B': 10,      # Wan 2.2 MoE (27B total, requires more VRAM)
+            }
+            score += size_priority.get(model['size'], 0)
+
             # Prefer local over cache
             if 'Local' in model['source']:
-                score += 10
-                
-            # Prefer 1.3B for stability
-            if '1.3B' in model['size']:
                 score += 5
-                
+
             return score
-            
+
         return sorted(models, key=preference_score, reverse=True)
     
     def get_best_model(self) -> Optional[Dict]:

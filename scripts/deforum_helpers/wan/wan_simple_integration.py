@@ -57,7 +57,8 @@ class WanSimpleIntegration:
                 print_wan_info(f"🔍 Searching: {search_path}")
                 
                 for model_dir in search_path.iterdir():
-                    if model_dir.is_dir() and model_dir.name.startswith(('Wan2.1', 'wan')):
+                    # Check for Wan 2.2, Wan 2.1, or generic wan directories
+                    if model_dir.is_dir() and model_dir.name.lower().startswith(('wan2.2', 'wan2.1', 'wan-', 'wan_')):
                         model_info = self._analyze_model_directory(model_dir)
                         if model_info:
                             models.append(model_info)
@@ -84,18 +85,30 @@ class WanSimpleIntegration:
         if not self._has_required_files(model_dir):
             return None
         
-        # Determine model type and size
+        # Determine model type and size (Wan 2.2 first, then 2.1)
         model_type = "Unknown"
         model_size = "Unknown"
-        
-        if 'vace' in model_name:
+
+        # Detect type (prioritize Wan 2.2 models)
+        if 'ti2v' in model_name:
+            model_type = "TI2V"
+        elif 's2v' in model_name:
+            model_type = "S2V"
+        elif 'animate' in model_name:
+            model_type = "Animate"
+        elif 'vace' in model_name:
             model_type = "VACE"
         elif 't2v' in model_name:
             model_type = "T2V"
         elif 'i2v' in model_name:
             model_type = "I2V"
-        
-        if '1.3b' in model_name:
+
+        # Detect size (Wan 2.2 and 2.1)
+        if '5b' in model_name or '5_b' in model_name:
+            model_size = "5B"
+        elif 'a14b' in model_name or 'a_14b' in model_name:
+            model_size = "A14B"
+        elif '1.3b' in model_name:
             model_size = "1.3B"
         elif '14b' in model_name:
             model_size = "14B"
@@ -256,11 +269,11 @@ class WanSimpleIntegration:
         if not self.models:
             return None
         
-        # Priority: T2V > I2V > VACE, and 1.3B > 14B (for compatibility)
+        # Priority: TI2V > T2V > I2V > VACE (Wan 2.2 preferred), and 5B > 1.3B > 14B > A14B
         def model_priority(model):
-            type_priority = {'T2V': 0, 'I2V': 1, 'VACE': 2, 'Unknown': 3}
-            size_priority = {'1.3B': 0, '14B': 1, 'Unknown': 2}
-            return (type_priority.get(model['type'], 3), size_priority.get(model['size'], 2))
+            type_priority = {'TI2V': 0, 'T2V': 1, 'I2V': 2, 'VACE': 3, 'S2V': 4, 'Animate': 5, 'Unknown': 6}
+            size_priority = {'5B': 0, '1.3B': 1, '14B': 2, 'A14B': 3, 'Unknown': 4}
+            return (type_priority.get(model['type'], 6), size_priority.get(model['size'], 4))
         
         best_model = min(self.models, key=model_priority)
         print(f"🎯 Best model selected: {best_model['name']} ({best_model['type']}, {best_model['size']})")
@@ -658,15 +671,43 @@ class WanSimpleIntegration:
             
             # Strategy 2: Try diffusers fallback
             try:
-                from diffusers import DiffusionPipeline
-                
-                print("🔄 Loading with DiffusionPipeline...")
-                pipeline = DiffusionPipeline.from_pretrained(
-                    model_info['path'],
-                    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-                    use_safetensors=True
+                # Check if this is a Wan 2.2 Diffusers model
+                is_wan22_diffusers = (
+                    'TI2V' in model_info['type'] or
+                    '5B' in model_info['size'] or
+                    'A14B' in model_info['size'] or
+                    'wan2.2' in model_info['name'].lower()
                 )
-                
+
+                if is_wan22_diffusers:
+                    print("🔄 Loading Wan 2.2 Diffusers pipeline...")
+                    from diffusers import WanPipeline, AutoencoderKLWan
+
+                    # Load VAE separately for better compatibility
+                    vae = AutoencoderKLWan.from_pretrained(
+                        model_info['path'],
+                        subfolder="vae",
+                        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+                    )
+
+                    # Load main pipeline
+                    pipeline = WanPipeline.from_pretrained(
+                        model_info['path'],
+                        vae=vae,
+                        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+                    )
+                    print("✅ Loaded Wan 2.2 pipeline (WanPipeline)")
+                else:
+                    # Fallback to generic DiffusionPipeline for Wan 2.1
+                    print("🔄 Loading with generic DiffusionPipeline...")
+                    from diffusers import DiffusionPipeline
+
+                    pipeline = DiffusionPipeline.from_pretrained(
+                        model_info['path'],
+                        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                        use_safetensors=True
+                    )
+
                 if torch.cuda.is_available():
                     pipeline = pipeline.to(self.device)
                 

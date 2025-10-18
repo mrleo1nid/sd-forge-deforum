@@ -762,10 +762,13 @@ The auto-discovery will find your models automatically!
                 selected_model = model
                 break
                 
-        # Fallback to best available model
+        # Fallback to best available model using priority logic (T2V > I2V > VACE)
         if not selected_model:
-            selected_model = models[0]
-            print(f"⚠️ User requested {user_preferred_size} but using available: {selected_model['size']}")
+            selected_model = integration.get_best_model()
+            if selected_model:
+                print(f"⚠️ User requested {user_preferred_size} but using best available: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
+            else:
+                raise RuntimeError("No Wan models available!")
             
         print(f"🎯 Selected model: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
         print(f"📁 Model path: {selected_model['path']}")
