@@ -195,7 +195,7 @@ class WanModelDiscovery:
             return None
     
     def _detect_model_type(self, directory: Path) -> str:
-        """Detect if model is TI2V, VACE, T2V, I2V, S2V, etc."""
+        """Detect if model is TI2V, T2V, I2V, S2V, etc."""
         dir_name = directory.name.lower()
 
         # Check directory name for type indicators (Wan 2.2 first, then 2.1)
@@ -205,8 +205,6 @@ class WanModelDiscovery:
             return 'S2V'   # Wan 2.2 speech-to-video
         elif 'animate' in dir_name:
             return 'Animate'  # Wan 2.2 character animation
-        elif 'vace' in dir_name:
-            return 'VACE'  # Wan 2.1 all-in-one
         elif 'i2v' in dir_name:
             return 'I2V'   # Image-to-video
         elif 't2v' in dir_name:
@@ -240,9 +238,7 @@ class WanModelDiscovery:
 
                 # Look for type indicators in config
                 config_str = json.dumps(config).lower()
-                if 'vace' in config_str:
-                    return 'VACE'
-                elif 'i2v' in config_str:
+                if 'i2v' in config_str:
                     return 'I2V'
 
             except (json.JSONDecodeError, IOError):
@@ -344,7 +340,7 @@ class WanModelDiscovery:
         return unique
     
     def _sort_models_by_preference(self, models: List[Dict]) -> List[Dict]:
-        """Sort models by preference (TI2V > T2V > I2V > VACE, prefer smaller/faster)"""
+        """Sort models by preference (TI2V > T2V > I2V, prefer smaller/faster)"""
         def preference_score(model):
             score = 0
 
@@ -353,7 +349,6 @@ class WanModelDiscovery:
                 'TI2V': 100,     # Wan 2.2 unified text/image-to-video (best)
                 'T2V': 80,       # Standard text-to-video
                 'I2V': 60,       # Image-to-video only
-                'VACE': 40,      # Wan 2.1 all-in-one (requires full repo)
                 'S2V': 20,       # Speech-to-video (specialized)
                 'Animate': 10,   # Character animation (specialized)
             }
@@ -383,21 +378,15 @@ class WanModelDiscovery:
             
         return self.discovered_models[0] if self.discovered_models else None
     
-    def get_model_by_preference(self, prefer_vace: bool = True, prefer_size: str = "1.3B") -> Optional[Dict]:
-        """Get model based on specific preferences"""
+    def get_model_by_preference(self, prefer_size: str = "5B") -> Optional[Dict]:
+        """Get model based on size preference"""
         if not self.discovered_models:
             self.discover_models()
-            
+
         for model in self.discovered_models:
-            type_match = True
-            if prefer_vace and 'VACE' not in model['type']:
-                continue
-                
-            if prefer_size and prefer_size not in model['size']:
-                continue
-                
-            return model
-            
+            if prefer_size and prefer_size in model['size']:
+                return model
+
         # Fallback to any available model
         return self.discovered_models[0] if self.discovered_models else None
 

@@ -96,8 +96,6 @@ class WanSimpleIntegration:
             model_type = "S2V"
         elif 'animate' in model_name:
             model_type = "Animate"
-        elif 'vace' in model_name:
-            model_type = "VACE"
         elif 't2v' in model_name:
             model_type = "T2V"
         elif 'i2v' in model_name:
@@ -142,124 +140,6 @@ class WanSimpleIntegration:
         
         return has_weights and has_config
     
-    def _validate_vace_weights(self, model_path: Path) -> bool:
-        """Validate that VACE model has required weights - compatibility method for UI"""
-        try:
-            print(f"🔍 Validating VACE model: {model_path.name}")
-            
-            # Check if the main model files exist
-            diffusion_model = model_path / "diffusion_pytorch_model.safetensors"
-            if not diffusion_model.exists():
-                # Check for multi-part model
-                diffusion_model = model_path / "diffusion_pytorch_model-00001-of-00007.safetensors"
-                if not diffusion_model.exists():
-                    print("❌ No diffusion model file found for VACE validation")
-                    return False
-            
-            # Basic file size check
-            if diffusion_model.stat().st_size < 1_000_000:  # Less than 1MB is suspicious
-                print(f"❌ VACE model file too small: {diffusion_model.stat().st_size} bytes")
-                return False
-            
-            # Check for required config files
-            config_file = model_path / "config.json"
-            if not config_file.exists():
-                print("❌ VACE model missing config.json")
-                return False
-            
-            # Try to load and validate config
-            try:
-                with open(config_file, 'r') as f:
-                    config = json.load(f)
-                
-                # Check if it's actually a VACE model
-                model_type = config.get("model_type", "").lower()
-                class_name = config.get("_class_name", "").lower()
-                
-                if "vace" not in model_type and "vace" not in class_name:
-                    print(f"⚠️ Model config doesn't indicate VACE type: {model_type}, {class_name}")
-                    # Don't fail - might still be VACE with different naming
-                
-                print(f"✅ VACE model validation passed: {model_path.name}")
-                return True
-                
-            except Exception as config_e:
-                print(f"⚠️ VACE config validation failed: {config_e}")
-                # Don't fail completely - file might still be valid
-                return True
-            
-        except Exception as e:
-            print(f"❌ VACE validation error: {e}")
-            return False
-    
-    def _has_incomplete_models(self) -> bool:
-        """Check if there are incomplete models - compatibility method for UI"""
-        try:
-            incomplete_models = self._check_for_incomplete_models()
-            return len(incomplete_models) > 0
-        except Exception as e:
-            print(f"⚠️ Error checking for incomplete models: {e}")
-            return False
-    
-    def _check_for_incomplete_models(self) -> List[Path]:
-        """Check for incomplete model downloads - compatibility method for UI"""
-        try:
-            incomplete_models = []
-            
-            # Check common model directories
-            search_paths = [
-                Path.cwd() / "models" / "wan",
-                Path.cwd() / "Wan2.1",
-            ]
-            
-            for search_path in search_paths:
-                if search_path.exists():
-                    for model_dir in search_path.iterdir():
-                        if model_dir.is_dir():
-                            # Check if model looks incomplete
-                            model_name = model_dir.name.lower()
-                            if 'wan' in model_name or 'vace' in model_name:
-                                # Basic completeness check
-                                config_exists = (model_dir / "config.json").exists()
-                                has_weights = any(
-                                    file.suffix in ['.safetensors', '.bin', '.pt', '.pth']
-                                    for file in model_dir.rglob('*')
-                                    if file.is_file()
-                                )
-                                
-                                if not (config_exists and has_weights):
-                                    print(f"⚠️ Potentially incomplete model: {model_dir.name}")
-                                    incomplete_models.append(model_dir)
-            
-            return incomplete_models
-            
-        except Exception as e:
-            print(f"❌ Error checking for incomplete models: {e}")
-            return []
-    
-    def _fix_incomplete_model(self, model_dir: Path, downloader=None) -> bool:
-        """Fix incomplete model - compatibility method for UI"""
-        try:
-            print(f"🔧 Attempting to fix incomplete model: {model_dir.name}")
-            
-            # For now, just provide instructions rather than auto-fixing
-            print(f"💡 To fix incomplete model '{model_dir.name}':")
-            print(f"   1. Delete the incomplete directory: {model_dir}")
-            print(f"   2. Re-download the model:")
-            
-            if 'vace' in model_dir.name.lower():
-                print(f"      huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir {model_dir}")
-            elif 't2v' in model_dir.name.lower():
-                print(f"      huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir {model_dir}")
-            elif 'i2v' in model_dir.name.lower():
-                print(f"      huggingface-cli download Wan-AI/Wan2.1-I2V-1.3B --local-dir {model_dir}")
-            
-            # Return False to indicate manual intervention needed
-            return False
-            
-        except Exception as e:
-            print(f"❌ Error fixing incomplete model: {e}")
-            return False
     
     def get_best_model(self) -> Optional[Dict]:
         """Get the best available model"""
@@ -269,11 +149,11 @@ class WanSimpleIntegration:
         if not self.models:
             return None
         
-        # Priority: TI2V > T2V > I2V > VACE (Wan 2.2 preferred), and 5B > 1.3B > 14B > A14B
+        # Priority: TI2V > T2V > I2V (Wan 2.2 preferred), and 5B > 1.3B > 14B > A14B
         def model_priority(model):
-            type_priority = {'TI2V': 0, 'T2V': 1, 'I2V': 2, 'VACE': 3, 'S2V': 4, 'Animate': 5, 'Unknown': 6}
+            type_priority = {'TI2V': 0, 'T2V': 1, 'I2V': 2, 'S2V': 3, 'Animate': 4, 'Unknown': 5}
             size_priority = {'5B': 0, '1.3B': 1, '14B': 2, 'A14B': 3, 'Unknown': 4}
-            return (type_priority.get(model['type'], 6), size_priority.get(model['size'], 4))
+            return (type_priority.get(model['type'], 5), size_priority.get(model['size'], 4))
         
         best_model = min(self.models, key=model_priority)
         print(f"🎯 Best model selected: {best_model['name']} ({best_model['type']}, {best_model['size']})")
@@ -282,294 +162,29 @@ class WanSimpleIntegration:
     def load_simple_wan_pipeline(self, model_info: Dict, wan_args=None) -> bool:
         """Load Wan pipeline with styled progress indicators"""
         model_name = model_info['name']
-        
+
         with WanModelLoadingContext(model_name) as progress:
             try:
                 progress.update(10, "Initializing...")
-                
-                if model_info['type'] == 'VACE':
-                    progress.update(30, "Loading VACE model...")
-                    success = self._load_vace_model(model_info)
-                else:
-                    progress.update(30, "Loading standard model...")
-                    success = self._load_standard_wan_model(model_info)
-                
+                progress.update(30, "Loading model...")
+                success = self._load_standard_wan_model(model_info)
+
                 if success:
                     progress.update(80, "Configuring...")
                     # Configure Flash Attention if requested
                     if wan_args and hasattr(wan_args, 'wan_flash_attention'):
                         self.flash_attention_mode = wan_args.wan_flash_attention
                         print_wan_info(f"Flash Attention mode: {self.flash_attention_mode}")
-                    
+
                     progress.update(100, "Complete!")
                     return True
                 else:
                     print_wan_error(f"Failed to load pipeline for {model_name}")
                     return False
-                    
+
             except Exception as e:
                 print_wan_error(f"Model loading failed: {e}")
                 return False
-    
-    def _load_vace_model(self, model_info: Dict) -> bool:
-        """Load VACE model with proper handling"""
-        try:
-            print("🔧 Loading VACE model...")
-            
-            # Look for official Wan repository
-            extension_root = Path(__file__).parent.parent.parent.parent
-            wan_repo_path = extension_root / "Wan2.1"
-            
-            if wan_repo_path.exists() and (wan_repo_path / "wan").exists():
-                print(f"✅ Found Wan repository at: {wan_repo_path}")
-                
-                # Add to Python path
-                if str(wan_repo_path) not in sys.path:
-                    sys.path.insert(0, str(wan_repo_path))
-                
-                try:
-                    # Load only VACE model (not T2V)
-                    import wan
-                    from wan.vace import WanVace
-                    
-                    print("🚀 Using official Wan VACE implementation (single model)")
-                    
-                    # Apply Flash Attention patches after Wan modules are imported
-                    try:
-                        from .wan_flash_attention_patch import apply_flash_attention_patch, update_patched_flash_attention_mode
-                        
-                        # Update mode if stored
-                        if hasattr(self, 'flash_attention_mode'):
-                            update_patched_flash_attention_mode(self.flash_attention_mode)
-                        
-                        success = apply_flash_attention_patch()
-                        if success:
-                            print("✅ Flash Attention monkey patch applied successfully")
-                        else:
-                            print("⚠️ Flash Attention patch could not be applied - may be already patched")
-                    except Exception as patch_e:
-                        print(f"⚠️ Flash Attention patch failed: {patch_e}")
-                        print("🔄 Continuing without patches...")
-                    
-                    # Create VACE config
-                    class VACEConfig:
-                        def __init__(self):
-                            self.num_train_timesteps = 1000
-                            self.param_dtype = torch.bfloat16
-                            self.t5_dtype = torch.float16  # Use fp16 for T5 to save memory
-                            self.text_len = 512
-                            self.vae_stride = [4, 8, 8]
-                            self.patch_size = [1, 2, 2]
-                            self.sample_neg_prompt = "Low quality, blurry, distorted, artifacts, bad anatomy"
-                            self.sample_fps = 8  # Lower FPS for stability
-                            # Use relative paths that VACE will resolve
-                            self.t5_checkpoint = 'models_t5_umt5-xxl-enc-bf16.pth'
-                            self.vae_checkpoint = 'Wan2.1_VAE.pth'
-                            self.t5_tokenizer = 'google/umt5-xxl'
-                    
-                    vace_config = VACEConfig()
-                    
-                    # Initialize only VACE model
-                    print("🔧 Loading WanVace for both T2V and I2V generation...")
-                    vace_model = WanVace(
-                        config=vace_config,
-                        checkpoint_dir=model_info['path'],
-                        device_id=0,
-                        rank=0,
-                        dit_fsdp=False,
-                        t5_fsdp=False
-                    )
-                    
-                    # Create VACE wrapper that handles T2V and I2V correctly
-                    class SmartVACEWrapper:
-                        def __init__(self, vace_model):
-                            self.vace_model = vace_model
-                            
-                            # Determine optimal resolution based on VACE model size
-                            # Extract model size from the checkpoint directory path
-                            model_path = str(model_info['path']).lower()
-                            if '14b' in model_path:
-                                # 14B VACE model optimized for 720p
-                                self.optimal_width = 1280
-                                self.optimal_height = 720
-                                self.model_size = "14B"
-                            else:
-                                # 1.3B VACE model optimized for 480p
-                                self.optimal_width = 832
-                                self.optimal_height = 480
-                                self.model_size = "1.3B"
-                            
-                            print(f"🎯 VACE {self.model_size} model detected - using optimal resolution {self.optimal_width}x{self.optimal_height}")
-            
-                        def __call__(self, prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs):
-                            # T2V mode: Use VACE correctly for pure text-to-video generation
-                            
-                            # Use optimal resolution for this VACE model
-                            aligned_width = self.optimal_width
-                            aligned_height = self.optimal_height
-                            
-                            if aligned_width != width or aligned_height != height:
-                                print(f"🔧 VACE T2V resolution correction: {width}x{height} -> {aligned_width}x{aligned_height}")
-                                print(f"🔧 VACE {self.model_size} optimized for {aligned_width}x{aligned_height}")
-                            
-                            print(f"🎬 VACE T2V generating: {prompt[:50]}...")
-                            print(f"🔧 Parameters: {aligned_width}x{aligned_height}, {num_frames} frames, {num_inference_steps} steps, guidance={guidance_scale}")
-                            
-                            try:
-                                # For pure T2V: Use prepare_source but with all None inputs
-                                # This creates proper blank tensors for T2V generation
-                                src_video, src_mask, src_ref_images = self.vace_model.prepare_source(
-                                    [None],  # T2V: no source video
-                                    [None],  # T2V: no source mask
-                                    [None],  # T2V: no reference images
-                                    num_frames,
-                                    (aligned_height, aligned_width),  # Note: VACE expects (H, W) order
-                                    self.vace_model.device
-                                )
-                                
-                                print(f"🔧 T2V prepared tensors - video: {len(src_video)}, mask: {len(src_mask)}, ref: {src_ref_images}")
-                                if src_video and src_video[0] is not None:
-                                    print(f"🔧 src_video shape: {src_video[0].shape}, range: [{src_video[0].min():.3f}, {src_video[0].max():.3f}]")
-                                if src_mask and src_mask[0] is not None:
-                                    print(f"🔧 src_mask shape: {src_mask[0].shape}, range: [{src_mask[0].min():.3f}, {src_mask[0].max():.3f}]")
-                                
-                                result = self.vace_model.generate(
-                                    input_prompt=prompt,
-                                    input_frames=src_video,
-                                    input_masks=src_mask,
-                                    input_ref_images=src_ref_images,
-                                    size=(aligned_width, aligned_height),
-                                    frame_num=num_frames,
-                                    sampling_steps=num_inference_steps,
-                                    guide_scale=guidance_scale,
-                                    shift=16,  # VACE uses higher shift than T2V
-                                    seed=-1,
-                                    **kwargs
-                                )
-                                
-                                if result is not None:
-                                    print(f"✅ VACE T2V generation completed, output shape: {result.shape}")
-                                    print(f"🔧 Output value range: min={result.min():.3f}, max={result.max():.3f}")
-                                else:
-                                    print("⚠️ VACE T2V returned None result")
-                                
-                                return result
-                                
-                            except Exception as e:
-                                print(f"❌ VACE T2V generation failed: {e}")
-                                import traceback
-                                traceback.print_exc()
-                                raise
-                        
-                        def generate_image2video(self, image, prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs):
-                            # I2V mode: Use VACE with proper image conditioning
-                            
-                            # Use optimal resolution for this VACE model
-                            aligned_width = self.optimal_width
-                            aligned_height = self.optimal_height
-                            
-                            # Enhanced prompt for continuity
-                            enhanced_prompt = f"Continuing seamlessly from the provided image, {prompt}. Maintaining visual continuity and style."
-                            
-                            if aligned_width != width or aligned_height != height:
-                                print(f"🔧 VACE I2V resolution correction: {width}x{height} -> {aligned_width}x{aligned_height}")
-                                print(f"🔧 VACE {self.model_size} optimized for {aligned_width}x{aligned_height}")
-                            
-                            print(f"🎬 VACE I2V generating: {enhanced_prompt[:50]}...")
-                            print(f"🔧 Parameters: {aligned_width}x{aligned_height}, {num_frames} frames, {num_inference_steps} steps, guidance={guidance_scale}")
-                            
-                            try:
-                                if image is not None:
-                                    import tempfile
-                                    import os
-                                    from PIL import Image as PILImage
-                                    
-                                    # Ensure image is PIL Image
-                                    if not hasattr(image, 'save'):
-                                        # Convert tensor/array to PIL if needed
-                                        if hasattr(image, 'numpy'):
-                                            image_np = image.numpy()
-                                        else:
-                                            image_np = image
-                                        image = PILImage.fromarray((image_np * 255).astype('uint8'))
-                                    
-                                    # Resize image to match VACE dimensions if needed
-                                    if image.size != (aligned_width, aligned_height):
-                                        image = image.resize((aligned_width, aligned_height), PILImage.Resampling.LANCZOS)
-                                    
-                                    # Save image temporarily for VACE processing
-                                    with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp_file:
-                                        image.save(tmp_file.name, 'PNG')
-                                        temp_image_path = tmp_file.name
-                                    
-                                    try:
-                                        # Use VACE's prepare_source for proper I2V setup
-                                        src_video, src_mask, src_ref_images = self.vace_model.prepare_source(
-                                            [None],  # I2V: no source video (will create blank frames)
-                                            [None],  # I2V: no source mask (will create ones)
-                                            [[temp_image_path]],  # I2V: reference image for conditioning
-                                            num_frames,
-                                            (aligned_height, aligned_width),
-                                            self.vace_model.device
-                                        )
-                                        
-                                        print(f"🔧 I2V prepared tensors - video: {len(src_video)}, mask: {len(src_mask)}, ref: {len(src_ref_images[0]) if src_ref_images and src_ref_images[0] else 'None'}")
-                                        
-                                        result = self.vace_model.generate(
-                                            input_prompt=enhanced_prompt,
-                                            input_frames=src_video,
-                                            input_masks=src_mask,
-                                            input_ref_images=src_ref_images,
-                                            size=(aligned_width, aligned_height),
-                                            frame_num=num_frames,
-                                            sampling_steps=num_inference_steps,
-                                            guide_scale=guidance_scale,
-                                            shift=16,  # VACE uses higher shift
-                                            **kwargs
-                                        )
-                                        
-                                        if result is not None:
-                                            print(f"✅ VACE I2V generation completed, output shape: {result.shape}")
-                                            print(f"🔧 Output value range: min={result.min():.3f}, max={result.max():.3f}")
-                                        else:
-                                            print("⚠️ VACE I2V returned None result")
-                                            
-                                        return result
-                                        
-                                    finally:
-                                        # Clean up temporary file
-                                        try:
-                                            os.unlink(temp_image_path)
-                                        except:
-                                            pass
-                                else:
-                                    # No image provided, fallback to T2V
-                                    return self.__call__(prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs)
-                                
-                            except Exception as e:
-                                print(f"❌ VACE I2V generation failed: {e}")
-                                import traceback
-                                traceback.print_exc()
-                                raise
-                    
-                    self.pipeline = SmartVACEWrapper(vace_model)
-                    print("✅ Smart VACE model loaded successfully (single model for both T2V and I2V)")
-                    return True
-                    
-                except Exception as wan_e:
-                    print(f"❌ Official VACE loading failed: {wan_e}")
-                    
-            # VACE fallback - refuse diffusers
-            print("❌ VACE model requires official Wan repository!")
-            print("💡 Solutions:")
-            print("1. 📦 Install Wan repository: cd Wan2.1 && pip install -e .")
-            print("2. 📁 Use T2V models instead: huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B")
-            print("🚫 VACE models are not compatible with diffusers fallback")
-            return False
-            
-        except Exception as e:
-            print(f"❌ VACE loading failed: {e}")
-            return False
     
     def _load_standard_wan_model(self, model_info: Dict) -> bool:
         """Load standard T2V/I2V Wan model"""
@@ -821,18 +436,6 @@ Diffusers error: {diffusers_e}
                 if cached_audio_path:
                     print_wan_info(f"Audio: {os.path.basename(cached_audio_path)}")
                 
-                # Align dimensions if needed
-                if model_info['type'] == 'VACE':
-                    # VACE models prefer specific resolutions
-                    if self.model_size == "1.3B":
-                        aligned_width, aligned_height = 720, 480
-                    else:  # 14B
-                        aligned_width, aligned_height = min(width, 960), min(height, 640)
-                    
-                    if (width, height) != (aligned_width, aligned_height):
-                        print_wan_info(f"Resolution aligned: {width}x{height} → {aligned_width}x{aligned_height}")
-                        width, height = aligned_width, aligned_height
-                
                 # Generate each clip with progress tracking
                 for clip_idx, clip in enumerate(clips):
                     try:
@@ -864,7 +467,7 @@ Diffusers error: {diffusers_e}
                                     print_wan_info(f"I2V chaining from: {os.path.basename(last_frame_path)}")
                                     
                                     if hasattr(self.pipeline, 'generate_image2video'):
-                                        # VACE or custom I2V pipeline
+                                        # Custom I2V pipeline
                                         from PIL import Image
                                         last_frame_image = Image.open(last_frame_path)
                                         
@@ -963,7 +566,7 @@ Diffusers error: {diffusers_e}
                         frame_tensor = frames_tensor[:, frame_idx, :, :]  # (C, H, W)
                         frame_np = frame_tensor.permute(1, 2, 0).numpy()  # (H, W, C)
                         
-                        # VACE outputs in [-1, 1] range, convert to [0, 255]
+                        # Models may output in [-1, 1] range, convert to [0, 255]
                         if frame_np.min() < -0.5:  # Likely [-1, 1] range
                             # Convert from [-1, 1] to [0, 1] then to [0, 255]
                             frame_np = (frame_np + 1.0) / 2.0  # [-1, 1] -> [0, 1]
