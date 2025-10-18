@@ -162,14 +162,16 @@ def patch_torch_rmsnorm():
 
 def patch_diffusers_attention():
     """
-    Patch diffusers attention dispatch to remove enable_gqa parameter for PyTorch < 2.4.0
+    Patch PyTorch's scaled_dot_product_attention to filter out enable_gqa parameter
 
     Diffusers git main uses enable_gqa parameter in scaled_dot_product_attention,
     but this parameter was added in PyTorch 2.4.0. Forge uses PyTorch 2.3.1.
+
+    Nuclear option: Patch torch.nn.functional directly to filter unsupported parameters.
     """
     try:
         import torch
-        from typing import Optional
+        import inspect
 
         # Check PyTorch version
         torch_version = tuple(int(x) for x in torch.__version__.split('.')[:2])
@@ -177,51 +179,39 @@ def patch_diffusers_attention():
             print("✅ PyTorch 2.4.0+ detected - enable_gqa parameter supported")
             return True
 
-        print(f"🔧 PyTorch {torch.__version__} detected - patching enable_gqa parameter...")
+        print(f"🔧 PyTorch {torch.__version__} detected - patching scaled_dot_product_attention...")
 
-        from diffusers.models import attention_dispatch
+        # Save original PyTorch function
+        original_sdpa = torch.nn.functional.scaled_dot_product_attention
 
-        # Replace the entire function without enable_gqa parameter
-        def patched_native_attention(
-            query: torch.Tensor,
-            key: torch.Tensor,
-            value: torch.Tensor,
-            attn_mask: Optional[torch.Tensor] = None,
-            dropout_p: float = 0.0,
-            is_causal: bool = False,
-            scale: Optional[float] = None,
-            enable_gqa: bool = False,  # Accept but ignore
-            return_lse: bool = False,
-            _parallel_config: Optional = None,
-        ) -> torch.Tensor:
-            """Patched version that doesn't pass enable_gqa to PyTorch"""
-            if return_lse:
-                raise ValueError("Native attention backend does not support setting `return_lse=True`.")
+        # Get the original signature to know what parameters are actually supported
+        original_params = set(inspect.signature(original_sdpa).parameters.keys())
+        print(f"   Original SDPA parameters: {original_params}")
 
-            query, key, value = (x.permute(0, 2, 1, 3) for x in (query, key, value))
+        def patched_scaled_dot_product_attention(*args, **kwargs):
+            """Wrapper that filters out unsupported parameters like enable_gqa"""
+            # Remove unsupported parameters
+            if 'enable_gqa' in kwargs:
+                if kwargs.pop('enable_gqa'):
+                    print("   ⚠️ enable_gqa=True requested but not supported in PyTorch 2.3.1, ignoring")
 
-            # Call PyTorch WITHOUT enable_gqa parameter
-            out = torch.nn.functional.scaled_dot_product_attention(
-                query=query,
-                key=key,
-                value=value,
-                attn_mask=attn_mask,
-                dropout_p=dropout_p,
-                is_causal=is_causal,
-                scale=scale,
-                # enable_gqa=enable_gqa,  # Removed for PyTorch 2.3.1 compatibility
-            )
-            out = out.permute(0, 2, 1, 3)
-            return out
+            # Remove any other parameters not in original signature
+            unsupported = [k for k in kwargs.keys() if k not in original_params]
+            for param in unsupported:
+                print(f"   ⚠️ Removing unsupported parameter: {param}={kwargs[param]}")
+                kwargs.pop(param)
 
-        # Replace the function
-        attention_dispatch._native_attention = patched_native_attention
+            # Call original function with filtered parameters
+            return original_sdpa(*args, **kwargs)
 
-        print("✅ Diffusers attention dispatch patched: removed enable_gqa parameter")
+        # Replace PyTorch's function globally
+        torch.nn.functional.scaled_dot_product_attention = patched_scaled_dot_product_attention
+
+        print("✅ PyTorch scaled_dot_product_attention patched to filter enable_gqa")
         return True
 
     except Exception as e:
-        print(f"⚠️ Failed to apply attention dispatch patch: {e}")
+        print(f"⚠️ Failed to apply attention patch: {e}")
         import traceback
         traceback.print_exc()
         return False
