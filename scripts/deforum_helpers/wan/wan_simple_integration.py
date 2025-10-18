@@ -294,6 +294,10 @@ class WanSimpleIntegration:
                     'wan2.2' in model_info['name'].lower()
                 )
 
+                # Initialize flags for memory optimization
+                is_fp8_quantized = False
+                use_aggressive_offload = False
+
                 if is_wan22_diffusers:
                     print("🔄 Loading Wan 2.2 Diffusers pipeline...")
 
@@ -310,20 +314,48 @@ class WanSimpleIntegration:
 
                     from diffusers import WanPipeline, AutoencoderKLWan
 
+                    # Detect FP8 quantization from model files
+                    model_path = Path(model_info['path'])
+                    is_fp8_quantized = any(
+                        'fp8' in f.name.lower() or 'e4m3fn' in f.name.lower()
+                        for f in model_path.rglob('*.safetensors')
+                    )
+
+                    if is_fp8_quantized:
+                        print_wan_info("🔍 Detected FP8 quantized model - optimizing for low VRAM (<16GB)")
+                        # FP8 models are stored quantized but loaded as float16
+                        model_dtype = torch.float16
+                        vae_dtype = torch.float16  # VAE can use FP16 for FP8 models
+                        use_aggressive_offload = True
+                    else:
+                        print_wan_info("🔍 Standard precision model detected")
+                        model_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                        vae_dtype = torch.float32  # Standard VAE needs float32 for stability
+                        use_aggressive_offload = False
+
                     # Load VAE separately for better compatibility (keep on CPU initially)
+                    print_wan_info(f"Loading VAE with dtype={vae_dtype}")
                     vae = AutoencoderKLWan.from_pretrained(
                         model_info['path'],
                         subfolder="vae",
-                        torch_dtype=torch.float32  # VAE needs float32 for stability
+                        torch_dtype=vae_dtype,
+                        low_cpu_mem_usage=True  # Reduce CPU RAM usage during load
                     )
 
                     # Load main pipeline (keep on CPU initially)
+                    print_wan_info(f"Loading pipeline with dtype={model_dtype}")
                     pipeline = WanPipeline.from_pretrained(
                         model_info['path'],
                         vae=vae,
-                        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+                        torch_dtype=model_dtype,
+                        low_cpu_mem_usage=True,  # Reduce CPU RAM usage during load
+                        use_safetensors=True
                     )
-                    print("✅ Loaded Wan 2.2 pipeline (WanPipeline)")
+
+                    if is_fp8_quantized:
+                        print_wan_success("✅ Loaded FP8 quantized Wan 2.2 pipeline")
+                    else:
+                        print_wan_success("✅ Loaded Wan 2.2 pipeline")
                 else:
                     # Fallback to generic DiffusionPipeline
                     print("🔄 Loading with generic DiffusionPipeline...")
@@ -335,11 +367,50 @@ class WanSimpleIntegration:
                         use_safetensors=True
                     )
 
-                # Enable CPU offload instead of moving entire model to GPU
+                # Enable memory optimizations based on model type
                 if torch.cuda.is_available():
-                    print("🔧 Enabling model CPU offload to save VRAM...")
-                    pipeline.enable_model_cpu_offload()
-                    print("✅ CPU offload enabled - model will stream to GPU during inference")
+                    if is_wan22_diffusers and is_fp8_quantized and use_aggressive_offload:
+                        print_wan_info("🔧 Enabling aggressive VRAM optimizations for FP8 model...")
+
+                        # Sequential CPU offload (more aggressive than model CPU offload)
+                        try:
+                            pipeline.enable_sequential_cpu_offload()
+                            print_wan_success("✅ Sequential CPU offload enabled")
+                        except:
+                            # Fallback to model CPU offload
+                            pipeline.enable_model_cpu_offload()
+                            print_wan_success("✅ Model CPU offload enabled (fallback)")
+
+                        # Enable attention slicing for lower VRAM
+                        try:
+                            pipeline.enable_attention_slicing(slice_size="auto")
+                            print_wan_success("✅ Attention slicing enabled")
+                        except Exception as e:
+                            print_wan_warning(f"Attention slicing not available: {e}")
+
+                        # Enable VAE tiling for lower VRAM
+                        try:
+                            if hasattr(pipeline, 'enable_vae_tiling'):
+                                pipeline.enable_vae_tiling()
+                                print_wan_success("✅ VAE tiling enabled")
+                        except Exception as e:
+                            print_wan_warning(f"VAE tiling not available: {e}")
+
+                        # Enable VAE slicing
+                        try:
+                            if hasattr(pipeline, 'enable_vae_slicing'):
+                                pipeline.enable_vae_slicing()
+                                print_wan_success("✅ VAE slicing enabled")
+                        except Exception as e:
+                            print_wan_warning(f"VAE slicing not available: {e}")
+
+                        print_wan_success("✅ All VRAM optimizations enabled - should work with <16GB VRAM")
+
+                    else:
+                        # Standard CPU offload for non-FP8 models
+                        print_wan_info("🔧 Enabling model CPU offload to save VRAM...")
+                        pipeline.enable_model_cpu_offload()
+                        print_wan_success("✅ CPU offload enabled - model will stream to GPU during inference")
                 
                 # Create wrapper for diffusers pipeline
                 class DiffusersWrapper:
