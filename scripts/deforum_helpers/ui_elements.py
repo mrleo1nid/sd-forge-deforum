@@ -947,8 +947,8 @@ The auto-discovery will find your models automatically!
                 guidance_scale=wan_args.wan_guidance_scale,
                 seed=wan_args.wan_seed if wan_args.wan_seed > 0 else -1,
                 wan_args=wan_args
-            )
-        
+        )
+
         generated_videos = [output_file] if output_file else []
         
         total_time = time.time() - start_time
