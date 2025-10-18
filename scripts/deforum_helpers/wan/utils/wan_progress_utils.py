@@ -99,7 +99,12 @@ class WanProgressBar:
         """Set postfix with key-value pairs"""
         if self.pbar:
             self.pbar.set_postfix(**kwargs)
-            
+
+    def set_postfix_str(self, postfix: str):
+        """Set postfix with string"""
+        if self.pbar:
+            self.pbar.set_postfix_str(postfix)
+
     def close(self):
         """Close the progress bar"""
         if self.pbar:
