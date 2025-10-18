@@ -34,8 +34,8 @@ class WanSimpleIntegration:
         self.models = []
         self.pipeline = None
         self.model_size = None
-        self.optimal_width = 1280  # Wan 2.2 TI2V default: 720p landscape
-        self.optimal_height = 720
+        self.optimal_width = 1280  # Wan 2.2 TI2V default: 720p landscape (divisible by 32)
+        self.optimal_height = 736  # Aligned to 32 for Wan 2.2 (VAE scale=16 * patch=2)
         self.flash_attention_mode = "auto"  # auto, enabled, disabled
         print_wan_info(f"Simple Integration initialized on {self.device}")
     
@@ -335,30 +335,41 @@ class WanSimpleIntegration:
                         self.pipeline = pipeline
                     
                     def __call__(self, prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs):
-                        # Ensure dimensions are aligned
-                        aligned_width = ((width + 15) // 16) * 16
-                        aligned_height = ((height + 15) // 16) * 16
-                        
+                        # Wan 2.2 requires dimensions divisible by 32 (VAE spatial_scale=16 * transformer patch_size=2)
+                        aligned_width = ((width + 31) // 32) * 32
+                        aligned_height = ((height + 31) // 32) * 32
+
+                        # WanPipeline requires specific parameter names
+                        import inspect
+                        pipeline_signature = inspect.signature(self.pipeline.__call__)
+
+                        print_wan_info(f"🔍 Pipeline parameters available: {list(pipeline_signature.parameters.keys())}")
+
                         generation_kwargs = {
                             "prompt": prompt,
                             "num_inference_steps": num_inference_steps,
                             "guidance_scale": guidance_scale,
                         }
-                        
-                        # Add video-specific parameters if supported
-                        import inspect
-                        try:
-                            pipeline_signature = inspect.signature(self.pipeline.__call__)
-                            
-                            if 'height' in pipeline_signature.parameters:
-                                generation_kwargs['height'] = aligned_height
-                            if 'width' in pipeline_signature.parameters:
-                                generation_kwargs['width'] = aligned_width
-                            if 'num_frames' in pipeline_signature.parameters:
-                                generation_kwargs['num_frames'] = num_frames
-                        except:
-                            pass
-                        
+
+                        # Add video-specific parameters based on pipeline signature
+                        if 'height' in pipeline_signature.parameters:
+                            generation_kwargs['height'] = aligned_height
+                        if 'width' in pipeline_signature.parameters:
+                            generation_kwargs['width'] = aligned_width
+                        if 'num_frames' in pipeline_signature.parameters:
+                            generation_kwargs['num_frames'] = num_frames
+                        elif 'video_length' in pipeline_signature.parameters:
+                            generation_kwargs['video_length'] = num_frames
+                        elif 'num_video_frames' in pipeline_signature.parameters:
+                            generation_kwargs['num_video_frames'] = num_frames
+
+                        print_wan_info(f"🎬 Generation parameters:")
+                        print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+                        print_wan_info(f"   Frames: {num_frames}")
+                        print_wan_info(f"   Steps: {num_inference_steps}")
+                        print_wan_info(f"   Guidance: {guidance_scale}")
+                        print_wan_info(f"   Full kwargs: {generation_kwargs}")
+
                         with torch.no_grad():
                             return self.pipeline(**generation_kwargs)
                     

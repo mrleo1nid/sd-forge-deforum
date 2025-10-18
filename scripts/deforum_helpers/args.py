@@ -1190,9 +1190,9 @@ def WanArgs():
         "wan_resolution": {
             "label": "Wan Resolution",
             "type": "dropdown",
-            "choices": ["1280x720 (Landscape)", "720x1280 (Portrait)"],
-            "value": "1280x720 (Landscape)",
-            "info": "Wan 2.2 TI2V models support 720p resolution. Landscape or portrait orientation."
+            "choices": ["1280x736 (Landscape, 720p)", "736x1280 (Portrait, 720p)", "1024x1024 (Square, 1K)", "1280x704 (Landscape, Letterbox)"],
+            "value": "1280x736 (Landscape, 720p)",
+            "info": "Wan 2.2 TI2V models require resolutions divisible by 32 (VAE=16x * Patch=2x). These are optimized for 720p."
         },
         "wan_seed": {
             "label": "Wan Seed",
