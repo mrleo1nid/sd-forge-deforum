@@ -1241,9 +1241,17 @@ def get_tab_wan(dw: SimpleNamespace):
                 wan_fixed_strength = create_gr_elem(dw.wan_fixed_strength)
                 
             with FormRow():
-                wan_guidance_override = create_gr_elem(dw.wan_guidance_override) 
+                wan_guidance_override = create_gr_elem(dw.wan_guidance_override)
                 wan_guidance_scale = create_gr_elem(dw.wan_guidance_scale)
-                
+
+            # Advanced Generation Settings
+            with FormRow():
+                wan_negative_prompt = create_gr_elem(dw.wan_negative_prompt)
+
+            with FormRow():
+                wan_sampler = create_gr_elem(dw.wan_sampler)
+                wan_scheduler = create_gr_elem(dw.wan_scheduler)
+
             with FormRow():
                 wan_motion_strength_override = create_gr_elem(dw.wan_motion_strength_override)
                 wan_motion_strength = create_gr_elem(dw.wan_motion_strength)
