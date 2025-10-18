@@ -932,13 +932,9 @@ The auto-discovery will find your models automatically!
             wan_args.wan_motion_intensity_schedule = motion_intensity_schedule
             print(f"💡 Added motion intensity schedule to wan_args for frame-by-frame control")
         
-        # Check if user wants T2V mode (no continuity)
-        use_t2v_only = wan_args.wan_i2v_model == "Use T2V Model (No Continuity)"
-        mode_description = "generation"  # Default fallback
-        
-        if use_t2v_only:
-            print(f"\n🎬 Using T2V mode (no continuity) for {len(clips_data)} independent clips")
-            print("⚠️ Each clip will be generated independently - no frame continuity between clips")
+        # Wan 2.2 TI2V models always use unified T2V+I2V (no separate modes)
+        mode_description = "unified TI2V generation"
+        print(f"\n🎬 Using Wan 2.2 TI2V unified generation for {len(clips_data)} clips with frame continuity")
             
             # Generate video using T2V for all clips (no chaining)
             output_file = integration.generate_video_t2v_only(
@@ -1195,13 +1191,10 @@ def get_tab_wan(dw: SimpleNamespace):
                 wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
                 wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
         
-        # MODEL SETTINGS - Collapsed by default  
+        # MODEL SETTINGS - Collapsed by default
         with gr.Accordion("🔧 Model Settings", open=False):
-            with FormRow():
-                wan_t2v_model = create_gr_elem(dw.wan_t2v_model)
-                wan_i2v_model = create_gr_elem(dw.wan_i2v_model)
-            with FormRow():
-                wan_model_path = create_gr_elem(dw.wan_model_path)
+            wan_t2v_model = create_gr_elem(dw.wan_t2v_model)
+            wan_model_path = create_gr_elem(dw.wan_model_path)
         
         # OVERRIDES SECTION - Movement sensitivity moved here
         with gr.Accordion("🔧 Override Settings (Advanced)", open=False):

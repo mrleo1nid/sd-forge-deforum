@@ -19,7 +19,8 @@ import gradio as gr
 from .defaults import get_gradio_html
 from .gradio_funcs import change_css, handle_change_functions
 from .args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, RootArgs, LoopArgs, FreeUArgs, KohyaHRFixArgs, WanArgs
-from .deforum_controlnet import setup_controlnet_ui
+# TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
+# from .deforum_controlnet import setup_controlnet_ui
 from .ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
                           get_tab_hybrid, get_tab_output, get_tab_freeu, get_tab_kohya_hrfix)
 
@@ -122,7 +123,9 @@ def setup_deforum_left_side_ui():
             tab_keyframes_params = get_tab_keyframes(d, da, dloopArgs)  # Keyframes tab
             tab_prompts_params = get_tab_prompts(da)  # Prompts tab
             tab_init_params = get_tab_init(d, da, dp)  # Init tab
-            controlnet_dict = setup_controlnet_ui()  # ControlNet tab
+            # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
+            # controlnet_dict = setup_controlnet_ui()  # ControlNet tab
+            controlnet_dict = {}  # Empty dict for backwards compatibility
             tab_freeu_params = get_tab_freeu(dfu)  # FreeU tab
             tab_kohya_hrfix_params = get_tab_kohya_hrfix(dku)  # Kohya tab
             # Re-enable Wan tab (UI only, imports still isolated)
