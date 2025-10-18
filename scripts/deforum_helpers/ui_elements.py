@@ -1171,16 +1171,36 @@ def get_tab_wan(dw: SimpleNamespace):
         # MODEL SETTINGS - Collapsed by default
         with gr.Accordion("🔧 Model Settings", open=False):
             gr.Markdown("""
-            **⚡ For GPUs with <16GB VRAM**: Download FP8 quantized models for lower memory usage!
-
-            📥 **Download FP8 Models:**
-            - **TI2V-5B FP8**: Search Hugging Face for "Kijai Wan2.2-TI2V-5B FP8" (~12GB VRAM)
-            - Files needed: `*_fp8_e4m3fn_scaled_KJ.safetensors`, `wan2.2_vae.safetensors`, `umt5_xxl_fp8_e4m3fn_scaled.safetensors`
-            - Place in: `models/wan/Wan2.2-TI2V-5B-FP8/` directory
-
-            📦 **Full precision models** (~24GB VRAM): Search for "Wan2.2-TI2V-5B" official releases
+            **📥 One-Click Model Download**: Download models automatically from Hugging Face!
+            - **FP8 Models** (Recommended for <16GB VRAM): Kijai's optimized quantizations
+            - **Official Models** (Requires >24GB VRAM): Full precision from Wan-AI
             """)
 
+            # Model Download Buttons
+            with gr.Accordion("📥 Download Models", open=True):
+                gr.Markdown("**⚡ Recommended for <16GB VRAM (RTX 4070, RTX 3080, etc.)**")
+                with FormRow():
+                    download_fp8_5b = gr.Button("📥 TI2V-5B-FP8 (12GB) [Best Choice]", variant="primary", size="sm")
+                    download_gguf_5b = gr.Button("📥 TI2V-5B-GGUF (8GB) [Experimental]", size="sm")
+
+                gr.Markdown("**For High-End GPUs (>24GB VRAM)**")
+                with FormRow():
+                    download_official_5b = gr.Button("📥 TI2V-5B Official (24GB)", size="sm")
+                    download_kijai_5b = gr.Button("📥 TI2V-5B Kijai Full (24GB)", size="sm")
+
+                gr.Markdown("**Advanced Models**")
+                with FormRow():
+                    download_fp8_a14b = gr.Button("📥 T2V-A14B-FP8 (18GB)", size="sm")
+                    download_official_a14b = gr.Button("📥 TI2V-A14B Official (32GB)", size="sm")
+
+                download_status = gr.Textbox(
+                    label="Download Status",
+                    interactive=False,
+                    lines=4,
+                    placeholder="Click a download button above to start downloading a model..."
+                )
+
+            # Model Selection
             with FormRow():
                 wan_t2v_model = gr.Dropdown(
                     label="TI2V Model (Wan 2.2)",
@@ -1650,12 +1670,45 @@ def get_tab_wan(dw: SimpleNamespace):
         inputs=[wan_enhanced_prompts],
         outputs=[wan_generation_status]
     )
-    
+
     # Add automatic validation status updates when prompts change
     wan_enhanced_prompts.change(
         fn=validate_wan_generation,
         inputs=[wan_enhanced_prompts],
         outputs=[wan_generation_status]
+    )
+
+    # Connect model download buttons
+    from .wan.wan_model_downloader import download_wan_model
+
+    download_fp8_5b.click(
+        fn=lambda: download_wan_model("TI2V-5B-FP8"),
+        outputs=[download_status]
+    )
+
+    download_gguf_5b.click(
+        fn=lambda: download_wan_model("TI2V-5B-GGUF"),
+        outputs=[download_status]
+    )
+
+    download_official_5b.click(
+        fn=lambda: download_wan_model("TI2V-5B-Official"),
+        outputs=[download_status]
+    )
+
+    download_kijai_5b.click(
+        fn=lambda: download_wan_model("TI2V-5B-Kijai"),
+        outputs=[download_status]
+    )
+
+    download_fp8_a14b.click(
+        fn=lambda: download_wan_model("T2V-A14B-FP8"),
+        outputs=[download_status]
+    )
+
+    download_official_a14b.click(
+        fn=lambda: download_wan_model("TI2V-A14B-Official"),
+        outputs=[download_status]
     )
     
     # Connect new Wan prompt loading buttons
