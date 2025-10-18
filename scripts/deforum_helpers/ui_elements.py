@@ -1152,7 +1152,6 @@ def get_tab_wan(dw: SimpleNamespace):
         with gr.Accordion("⚙️ Essential Settings", open=True):
             with FormRow():
                 wan_auto_download = create_gr_elem(dw.wan_auto_download)
-                wan_preferred_size = create_gr_elem(dw.wan_preferred_size)
                 wan_resolution = gr.Dropdown(
                     label="Wan Resolution",
                     choices=["1280x736 (Landscape, 720p)", "736x1280 (Portrait, 720p)", "1024x1024 (Square, 1K)", "1280x704 (Landscape, Letterbox)"],
