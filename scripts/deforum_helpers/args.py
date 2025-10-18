@@ -1165,7 +1165,7 @@ def WanArgs():
             "label": "Wan 2.2 Model Selection",
             "type": "dropdown",
             "choices": ["Auto-Detect (Recommended)", "TI2V-5B", "TI2V-A14B", "Custom Path"],
-            "value": "Auto-Detect (Recommended)",
+            "value": "TI2V-5B",
             "info": "Wan 2.2 unified T2V+I2V model. Auto-Detect: automatically selects best available model. TI2V-5B: 16GB+ VRAM with CPU offload, 720p@24fps. TI2V-A14B: 32GB+ VRAM, MoE architecture, highest quality."
         },
         "wan_auto_download": {
@@ -1200,7 +1200,7 @@ def WanArgs():
             "minimum": 5,
             "maximum": 100,
             "step": 1,
-            "value": 20,
+            "value": 30,
             "info": "Number of inference steps for Wan generation. Lower values (5-15) for quick testing, higher values (30-50) for quality"
         },
         "wan_strength_override": {
@@ -1215,8 +1215,8 @@ def WanArgs():
             "minimum": 0.0,
             "maximum": 1.0,
             "step": 0.05,
-            "value": 0.85,
-            "info": "Controls how strongly each clip continues from the last frame. 0.85-0.95: strong continuity (recommended), 0.5-0.7: balanced, 0.0-0.3: creative variation. Higher values = smoother transitions."
+            "value": 0.5,
+            "info": "Controls how strongly each clip continues from the last frame. 0.5-0.7: balanced (recommended for prompt changes), 0.85-0.95: strong continuity, 0.0-0.3: creative variation. Lower values = more prompt freedom."
         },
         "wan_guidance_override": {
             "label": "Guidance Scale Override",

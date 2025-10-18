@@ -563,14 +563,16 @@ class WanSimpleIntegration:
                             strength: Image conditioning strength (0.0-1.0)
                                      1.0 = maximum continuity from image
                                      0.0 = ignore image, pure T2V
+                        
+                        Note on prompts:
+                            When we have image conditioning (via image parameter or latents),
+                            we use the ORIGINAL prompt without modifications. The image provides
+                            the visual continuity, while the prompt guides the evolution.
+                            Only add continuity language when we have NO image conditioning.
                         """
                         # Wan 2.2 requires dimensions divisible by 32
                         aligned_width = ((width + 31) // 32) * 32
                         aligned_height = ((height + 31) // 32) * 32
-
-                        # Enhanced prompt for I2V continuity
-                        # More specific language to encourage smooth transitions
-                        enhanced_prompt = f"{prompt}. Smooth continuation, maintaining consistent style and subject."
 
                         # Use dedicated I2V pipeline if available
                         if self.i2v_pipeline is not None:
@@ -579,8 +581,9 @@ class WanSimpleIntegration:
                             pipeline_signature = inspect.signature(self.i2v_pipeline.__call__)
                             print_wan_info(f"🔍 I2V Pipeline parameters: {list(pipeline_signature.parameters.keys())}")
                             
+                            # Use original prompt - image provides continuity, prompt guides evolution
                             generation_kwargs = {
-                                "prompt": enhanced_prompt,
+                                "prompt": prompt,  # Original prompt, no modifications
                                 "num_inference_steps": num_inference_steps,
                                 "guidance_scale": guidance_scale,
                             }
@@ -589,6 +592,7 @@ class WanSimpleIntegration:
                             if 'image' in pipeline_signature.parameters:
                                 generation_kwargs['image'] = image
                                 print_wan_info(f"✅ I2V conditioning: Using 'image' parameter with strength {strength:.2f}")
+                                print_wan_info(f"📝 Using original prompt (image handles continuity, prompt guides changes)")
                             
                             # Add strength if supported
                             if 'strength' in pipeline_signature.parameters:
@@ -605,6 +609,7 @@ class WanSimpleIntegration:
                                 generation_kwargs['video_length'] = num_frames
                             
                             print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
+                            print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
                             print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
                             print_wan_info(f"   Frames: {num_frames}")
                             print_wan_info(f"   I2V Strength: {strength:.2f}")
@@ -621,8 +626,9 @@ class WanSimpleIntegration:
                         # Log available parameters for debugging
                         print_wan_info(f"🔍 T2V Pipeline parameters: {list(pipeline_signature.parameters.keys())}")
 
+                        # Start with original prompt - we'll only enhance it if NO image conditioning works
                         generation_kwargs = {
-                            "prompt": enhanced_prompt,
+                            "prompt": prompt,  # Start with original prompt
                             "num_inference_steps": num_inference_steps,
                             "guidance_scale": guidance_scale,
                         }
@@ -634,18 +640,22 @@ class WanSimpleIntegration:
                         if 'image' in pipeline_signature.parameters:
                             generation_kwargs['image'] = image
                             print_wan_info(f"✅ I2V conditioning: Using 'image' parameter with strength {strength:.2f}")
+                            print_wan_info(f"📝 Using original prompt (image handles continuity)")
                             i2v_param_added = True
                         elif 'init_image' in pipeline_signature.parameters:
                             generation_kwargs['init_image'] = image
                             print_wan_info(f"✅ I2V conditioning: Using 'init_image' parameter with strength {strength:.2f}")
+                            print_wan_info(f"📝 Using original prompt (image handles continuity)")
                             i2v_param_added = True
                         elif 'input_image' in pipeline_signature.parameters:
                             generation_kwargs['input_image'] = image
                             print_wan_info(f"✅ I2V conditioning: Using 'input_image' parameter with strength {strength:.2f}")
+                            print_wan_info(f"📝 Using original prompt (image handles continuity)")
                             i2v_param_added = True
                         elif 'conditioning_image' in pipeline_signature.parameters:
                             generation_kwargs['conditioning_image'] = image
                             print_wan_info(f"✅ I2V conditioning: Using 'conditioning_image' parameter with strength {strength:.2f}")
+                            print_wan_info(f"📝 Using original prompt (image handles continuity)")
                             i2v_param_added = True
                         elif 'latents' in pipeline_signature.parameters:
                             # Use latents for I2V conditioning
@@ -656,6 +666,7 @@ class WanSimpleIntegration:
                                 if init_latents is not None:
                                     generation_kwargs['latents'] = init_latents
                                     print_wan_info(f"✅ I2V conditioning: Using latent initialization with strength {strength:.2f}")
+                                    print_wan_info(f"📝 Using original prompt (latents handle continuity)")
                                     i2v_param_added = True
                                 else:
                                     print_wan_warning("⚠️ Failed to encode image to latents, falling back to prompt-only")
@@ -663,9 +674,13 @@ class WanSimpleIntegration:
                                 print_wan_warning(f"⚠️ Latent encoding failed: {e}, falling back to prompt-only")
 
                         if not i2v_param_added:
+                            # No image conditioning available - enhance prompt for continuity
+                            enhanced_prompt = f"{prompt}. Smooth continuation, maintaining consistent style and subject."
+                            generation_kwargs['prompt'] = enhanced_prompt
                             print_wan_warning("⚠️ Pipeline does not support any known I2V image parameters")
                             print_wan_warning(f"⚠️ Available parameters: {list(pipeline_signature.parameters.keys())}")
-                            print_wan_warning("⚠️ Using enhanced prompt only for continuity")
+                            print_wan_warning("⚠️ Using enhanced prompt for continuity (limited effectiveness)")
+                            print_wan_info(f"📝 Enhanced prompt: {enhanced_prompt[:80]}...")
 
                         # Add strength parameter if supported (some I2V pipelines use this)
                         if 'strength' in pipeline_signature.parameters and not i2v_param_added:
@@ -690,11 +705,15 @@ class WanSimpleIntegration:
                         elif 'num_video_frames' in pipeline_signature.parameters:
                             generation_kwargs['num_video_frames'] = num_frames
 
+                        # Log generation parameters
+                        actual_prompt = generation_kwargs['prompt']
                         print_wan_info(f"🎬 I2V Generation:")
+                        print_wan_info(f"   Prompt: {actual_prompt[:60]}{'...' if len(actual_prompt) > 60 else ''}")
                         print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
                         print_wan_info(f"   Frames: {num_frames}")
                         print_wan_info(f"   I2V Strength: {strength:.2f}")
                         print_wan_info(f"   CFG: {guidance_scale}")
+                        print_wan_info(f"   Image conditioning: {'Yes' if i2v_param_added else 'No (prompt-only)'}")
 
                         with torch.no_grad():
                             return self.pipeline(**generation_kwargs)

@@ -785,8 +785,33 @@ The auto-discovery will find your models automatically!
             raise RuntimeError(f"Failed to load Wan pipeline for {selected_model['name']}")
         print("✅ Wan pipeline loaded successfully")
 
-        # Prepare output directory (let Deforum handle directory creation)
-        output_directory = args.outdir if hasattr(args, 'outdir') else root.outdir 
+        # Prepare output directory with proper batch name
+        import os
+        
+        # args.outdir should already have the batch name from process_args()
+        if hasattr(args, 'outdir') and args.outdir:
+            output_directory = args.outdir
+            print(f"📁 Using args.outdir: {output_directory}")
+        else:
+            # Fallback: manually construct with batch name
+            deforum_outpath = os.path.join(os.getcwd(), 'outputs', 'deforum')
+            
+            # Get batch name, ensuring it has timestring
+            batch_name = getattr(args, 'batch_name', f'Deforum_{root.timestring}')
+            
+            # If batch_name is just "Deforum" without timestring, add it
+            if batch_name == 'Deforum' or batch_name == 'Deforum_{timestring}':
+                batch_name = f'Deforum_{root.timestring}'
+                print(f"⚠️ Batch name was generic, adding timestring: {batch_name}")
+            
+            output_directory = os.path.join(deforum_outpath, batch_name)
+            print(f"📁 Constructed output directory: {output_directory}")
+            print(f"   Batch name: {batch_name}")
+            print(f"   Timestring: {root.timestring}")
+        
+        # Ensure directory exists
+        os.makedirs(output_directory, exist_ok=True)
+        print(f"✅ Output directory confirmed: {output_directory}")
         
         # Generate video using direct integration
         print("🚀 Starting direct Wan integration...")
