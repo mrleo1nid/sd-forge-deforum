@@ -300,11 +300,13 @@ class WanSimpleIntegration:
                     # Apply compatibility patches BEFORE importing diffusers
                     # This ensures patches are active even if diffusers was imported elsewhere
                     try:
-                        from ...deforum_helpers.diffusers_compat_patch import apply_all_patches
+                        from ..diffusers_compat_patch import apply_all_patches
                         print("🔧 Applying diffusers compatibility patches before pipeline load...")
                         apply_all_patches()
                     except Exception as patch_e:
                         print(f"⚠️ Warning: Compatibility patches failed: {patch_e}")
+                        import traceback
+                        traceback.print_exc()
 
                     from diffusers import WanPipeline, AutoencoderKLWan
 
