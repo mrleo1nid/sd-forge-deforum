@@ -935,10 +935,10 @@ The auto-discovery will find your models automatically!
         # Wan 2.2 TI2V models always use unified T2V+I2V (no separate modes)
         mode_description = "unified TI2V generation"
         print(f"\n🎬 Using Wan 2.2 TI2V unified generation for {len(clips_data)} clips with frame continuity")
-            
-            # Generate video using T2V for all clips (no chaining)
-            output_file = integration.generate_video_t2v_only(
-                clips=clips_data,
+
+        # Generate video using unified TI2V generation
+        output_file = integration.generate_video_unified(
+            clips=clips_data,
                 model_info=selected_model,
                 output_dir=str(output_directory),
                 width=width,
