@@ -26,6 +26,13 @@ def init_deforum():
     # use sys.path.extend to make sure all of our files are available for importation
     deforum_sys_extend()
 
+    # Apply compatibility patches for diffusers git main + Forge
+    try:
+        from deforum_helpers.diffusers_compat_patch import apply_all_patches
+        apply_all_patches()
+    except Exception as e:
+        print(f"⚠️ Deforum: Failed to apply diffusers compatibility patches: {e}")
+
     # create the Models/Deforum folder, where many of the deforum related models/ packages will be downloaded
     os.makedirs(ph.models_path + '/Deforum', exist_ok=True)
 
