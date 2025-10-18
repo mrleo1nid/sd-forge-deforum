@@ -946,18 +946,22 @@ The auto-discovery will find your models automatically!
         mode_description = "unified TI2V generation"
         print(f"\n🎬 Using Wan 2.2 TI2V unified generation for {len(clips_data)} clips with frame continuity")
 
-        # Generate video using unified TI2V generation
-        output_file = integration.generate_video_unified(
+        # Generate video using I2V chaining (TI2V supports both T2V and I2V)
+        result = integration.generate_video_with_i2v_chaining(
             clips=clips_data,
-                model_info=selected_model,
-                output_dir=str(output_directory),
-                width=width,
-                height=height,
-                steps=wan_args.wan_inference_steps,
-                guidance_scale=wan_args.wan_guidance_scale,
-                seed=wan_args.wan_seed if wan_args.wan_seed > 0 else -1,
-                wan_args=wan_args
+            model_info=selected_model,
+            output_dir=str(output_directory),
+            wan_args=wan_args,
+            width=width,
+            height=height,
+            num_inference_steps=wan_args.wan_inference_steps,
+            guidance_scale=wan_args.wan_guidance_scale,
+            fps=video_args.fps,
+            timestring=root.timestring,
+            seed=wan_args.wan_seed if wan_args.wan_seed > 0 else -1
         )
+
+        output_file = result.get('output_dir') if result else None
 
         generated_videos = [output_file] if output_file else []
         
@@ -981,7 +985,7 @@ The auto-discovery will find your models automatically!
         # Provide helpful troubleshooting info
         print(f"\n🔧 TROUBLESHOOTING:")
         print(f"   • Check model availability with: python scripts/deforum_helpers/wan_direct_integration.py")
-        print(f"   • Download models: huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir models/wan")
+        print(f"   • Download models: huggingface-cli download Wan-AI/Wan2.2-TI2V-5B-Diffusers --local-dir models/wan")
         print(f"   • Verify Wan models are in: models/wan/ directory")
         
         # Re-raise for Deforum error handling
