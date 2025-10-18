@@ -44,13 +44,21 @@ last_vid_data = None
 def run_deforum(*args):
     print("Starting Deforum...")
 
-    if isinstance(shared.sd_model, FakeInitialModel):
+    # Parse component names early to check animation mode
+    component_names = get_component_names()
+    args_dict = {component_names[i]: args[i+2] for i in range(0, len(component_names))}
+
+    # Check if this is Wan Video mode - if so, skip loading Flux/SD models
+    animation_mode = args_dict.get('animation_mode', '2D')
+    is_wan_mode = (animation_mode == 'Wan Video')
+
+    if is_wan_mode:
+        print("🎬 Wan Video mode detected - skipping Flux/SD model loading")
+    elif isinstance(shared.sd_model, FakeInitialModel):
         print("Loading Models...")
         forge_model_reload()
 
     f_location, f_crf, f_preset = get_ffmpeg_params()  # get params for ffmpeg exec
-    component_names = get_component_names()
-    args_dict = {component_names[i]: args[i+2] for i in range(0, len(component_names))}
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
         outpath_samples = shared.opts.outdir_samples or shared.opts.outdir_img2img_samples

@@ -21,27 +21,49 @@ def patch_flow_match_scheduler():
         original_time_shift = FlowMatchEulerDiscreteScheduler.time_shift
 
         @classmethod
-        def patched_time_shift(cls, mu, sigma, t):
+        def patched_time_shift(cls, self_or_mu, mu_or_sigma=None, sigma_or_t=None, t=None):
             """
-            Patched version that works when called as class method with None self
+            Patched version that works when called as class method with None self OR as instance method
+
+            Forge calls: FlowMatchEulerDiscreteScheduler.time_shift(None, mu, 1.0, sigmas)
+            -> receives (cls, None, mu, 1.0, sigmas)
+
+            New diffusers calls: instance.time_shift(mu, 1.0, sigmas)
+            -> receives (cls, self, mu, 1.0, sigmas)
 
             Args:
-                cls: Can be the class or None (from Forge's static call)
-                mu: Shift parameter
-                sigma: Scale parameter
-                t: Time values (sigmas)
+                cls: The class
+                self_or_mu: Either self (instance) or mu (if called with None as first arg)
+                mu_or_sigma: Either mu or sigma depending on call pattern
+                sigma_or_t: Either sigma or t depending on call pattern
+                t: Time values (only present in Forge's call pattern)
             """
-            # If called with proper self (instance method), use original
-            if cls is not None and hasattr(cls, 'config'):
-                return original_time_shift(mu, sigma, t)
+            # Determine call pattern
+            if t is not None:
+                # Forge pattern: time_shift(None, mu, sigma, t)
+                # self_or_mu = None, mu_or_sigma = mu, sigma_or_t = sigma, t = t
+                mu = mu_or_sigma
+                sigma = sigma_or_t
+                # Use static implementation
+            elif hasattr(self_or_mu, 'config'):
+                # Instance method pattern: self.time_shift(mu, sigma, t)
+                # self_or_mu = self, mu_or_sigma = mu, sigma_or_t = sigma, t = None -> but wait, t is the 4th arg
+                # Actually this won't happen because we're replacing the whole method
+                # Let me just use original for this case
+                return original_time_shift(self_or_mu, mu_or_sigma, sigma_or_t)
+            else:
+                # Assume Forge pattern with positional args
+                mu = mu_or_sigma
+                sigma = sigma_or_t
 
-            # Otherwise, implement static version for Forge compatibility
-            # This is the default "exponential" behavior
-            if isinstance(t, torch.Tensor):
-                return torch.exp(mu) / (torch.exp(mu) + (1 / t - 1) ** sigma)
+            # Static version for Forge compatibility (default "exponential" behavior)
+            if isinstance(t if t is not None else sigma_or_t, torch.Tensor):
+                time_val = t if t is not None else sigma_or_t
+                return torch.exp(mu) / (torch.exp(mu) + (1 / time_val - 1) ** sigma)
             else:
                 import numpy as np
-                return np.exp(mu) / (np.exp(mu) + (1 / t - 1) ** sigma)
+                time_val = t if t is not None else sigma_or_t
+                return np.exp(mu) / (np.exp(mu) + (1 / time_val - 1) ** sigma)
 
         # Replace the method
         FlowMatchEulerDiscreteScheduler.time_shift = patched_time_shift
