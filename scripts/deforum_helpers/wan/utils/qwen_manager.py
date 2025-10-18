@@ -160,50 +160,96 @@ class QwenModelManager:
     def download_model(self, model_name: str) -> bool:
         """
         Download a Qwen model if not already available
-        
+
         Args:
             model_name: Name of the model to download
-            
+
         Returns:
             bool: Success status
         """
         if model_name == "Auto-Select":
             # Auto-select and download the best model
             model_name = self.auto_select_model()
-            
+
         if self.is_model_downloaded(model_name):
             print(f"✅ Model {model_name} already available")
             return True
-            
+
         model_spec = self.MODEL_SPECS.get(model_name)
         if not model_spec:
             print(f"❌ Unknown model: {model_name}")
             return False
-            
+
         print(f"📥 Downloading Qwen model: {model_name}")
         print(f"   HuggingFace: {model_spec['hf_name']}")
         print(f"   VRAM requirement: {model_spec['vram_gb']}GB")
         print(f"   Description: {model_spec['description']}")
-        
+
         try:
-            # Try downloading using huggingface_hub
-            from huggingface_hub import snapshot_download
-            
+            # Work around Forge's huggingface_hub monkey-patching by using CLI
+            import subprocess
+            import resource
+
             local_path = self.models_dir / model_name
-            
-            snapshot_download(
-                repo_id=model_spec['hf_name'],
-                local_dir=str(local_path),
-                local_dir_use_symlinks=False
+            local_path.mkdir(parents=True, exist_ok=True)
+
+            # Get current file descriptor limit
+            soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+            print(f"📊 Current file descriptor limit: {soft_limit}/{hard_limit}")
+
+            # Temporarily increase soft limit to hard limit
+            try:
+                new_limit = min(hard_limit, 8192)  # Cap at 8192 for safety
+                resource.setrlimit(resource.RLIMIT_NOFILE, (new_limit, hard_limit))
+                print(f"✅ Temporarily increased file descriptor limit to {new_limit}")
+            except Exception as limit_e:
+                print(f"⚠️ Could not increase file limit: {limit_e}")
+                # Continue anyway
+
+            # Use CLI with increased limits
+            cmd = [
+                "huggingface-cli", "download",
+                model_spec['hf_name'],
+                "--local-dir", str(local_path),
+                "--local-dir-use-symlinks", "False",
+                "--resume-download"  # Allow resuming
+            ]
+
+            print(f"🚀 Running: {' '.join(cmd)}")
+
+            # Run with real-time output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
             )
-            
-            print(f"✅ Successfully downloaded {model_name} to {local_path}")
-            return True
-            
-        except ImportError:
-            print("⚠️ huggingface_hub not available, trying alternative download...")
-            return self._download_with_transformers(model_name, model_spec)
-            
+
+            # Stream output
+            for line in process.stdout:
+                line = line.strip()
+                if line:
+                    print(f"   {line}")
+
+            process.wait()
+
+            # Restore original file descriptor limit
+            try:
+                resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
+                print(f"✅ Restored file descriptor limit to {soft_limit}")
+            except:
+                pass
+
+            if process.returncode == 0:
+                print(f"✅ Successfully downloaded {model_name} to {local_path}")
+                return True
+            else:
+                print(f"❌ Download failed with return code {process.returncode}")
+                print("💡 Trying to use cached/online version...")
+                return self._download_with_transformers(model_name, model_spec)
+
         except Exception as e:
             print(f"❌ Failed to download {model_name}: {e}")
             print("💡 Trying to use cached/online version...")
