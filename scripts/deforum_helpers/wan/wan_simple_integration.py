@@ -596,37 +596,41 @@ class WanSimpleIntegration:
                             
                             # Check if strength parameter is supported
                             if 'strength' not in pipeline_signature.parameters:
-                                print_wan_warning(f"⚠️ WanImageToVideoPipeline does NOT support 'strength' parameter!")
-                                print_wan_warning(f"⚠️ Image would be used at FULL strength without control")
-                                print_wan_warning(f"⚠️ Switching to T2V pipeline with latent noise control for strength support...")
-                                
-                                # Use T2V pipeline with latent-based strength control instead
-                                # This gives us proper strength control via noise blending
-                                pass  # Fall through to T2V path below
+                                # I2V pipeline doesn't support strength parameter
+                                # Apply noise to the image in pixel space instead!
+                                if strength < 0.99:  # Only if strength is not maximum
+                                    print_wan_info(f"ℹ️ I2V pipeline lacks strength control, applying pixel-space noise for strength {strength:.2f}")
+                                    image = self._add_noise_to_image(image, strength)
+                                    generation_kwargs['image'] = image  # Update with noised image
+                                    print_wan_info(f"   → Noised image by {(1.0 - strength) * 100:.0f}% before I2V")
+                                else:
+                                    print_wan_info(f"ℹ️ I2V pipeline lacks strength control but strength is maximum ({strength:.2f})")
+                                    print_wan_info(f"   → Using image as-is (no noise needed)")
                             else:
                                 # Pipeline supports strength - use it!
                                 generation_kwargs['strength'] = strength
                                 print_wan_info(f"✅ Strength parameter supported: {strength:.2f}")
-                                
-                                # Add resolution parameters
-                                if 'height' in pipeline_signature.parameters:
-                                    generation_kwargs['height'] = aligned_height
-                                if 'width' in pipeline_signature.parameters:
-                                    generation_kwargs['width'] = aligned_width
-                                if 'num_frames' in pipeline_signature.parameters:
-                                    generation_kwargs['num_frames'] = num_frames
-                                elif 'video_length' in pipeline_signature.parameters:
-                                    generation_kwargs['video_length'] = num_frames
-                                
-                                print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
-                                print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
-                                print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
-                                print_wan_info(f"   Frames: {num_frames}")
-                                print_wan_info(f"   I2V Strength: {strength:.2f}")
-                                print_wan_info(f"   CFG: {guidance_scale}")
-                                
-                                with torch.no_grad():
-                                    return self.i2v_pipeline(**generation_kwargs)
+                            
+                            # Use I2V pipeline
+                            # Add resolution parameters
+                            if 'height' in pipeline_signature.parameters:
+                                generation_kwargs['height'] = aligned_height
+                            if 'width' in pipeline_signature.parameters:
+                                generation_kwargs['width'] = aligned_width
+                            if 'num_frames' in pipeline_signature.parameters:
+                                generation_kwargs['num_frames'] = num_frames
+                            elif 'video_length' in pipeline_signature.parameters:
+                                generation_kwargs['video_length'] = num_frames
+                            
+                            print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
+                            print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
+                            print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+                            print_wan_info(f"   Frames: {num_frames}")
+                            print_wan_info(f"   I2V Strength: {strength:.2f}")
+                            print_wan_info(f"   CFG: {guidance_scale}")
+                            
+                            with torch.no_grad():
+                                return self.i2v_pipeline(**generation_kwargs)
                         
                         # Fall back to T2V pipeline with I2V conditioning
                         print_wan_info("ℹ️ Using T2V pipeline with I2V conditioning fallback")
@@ -732,6 +736,36 @@ class WanSimpleIntegration:
                         with torch.no_grad():
                             return self.pipeline(**generation_kwargs)
                 
+                    def _add_noise_to_image(self, image, strength):
+                        """
+                        Add noise to image in pixel space for strength control
+                        
+                        Args:
+                            image: PIL Image
+                            strength: 0.0-1.0, where 1.0 = no noise (full image), 0.0 = full noise
+                        
+                        Returns:
+                            PIL Image with noise applied
+                        """
+                        import numpy as np
+                        from PIL import Image
+                        
+                        # Convert to numpy array [0, 1]
+                        img_array = np.array(image).astype(np.float32) / 255.0
+                        
+                        # Generate random noise
+                        noise = np.random.randn(*img_array.shape).astype(np.float32) * 0.5 + 0.5  # Gaussian noise centered at 0.5
+                        
+                        # Blend: image * strength + noise * (1 - strength)
+                        noise_scale = 1.0 - strength
+                        blended = img_array * strength + noise * noise_scale
+                        
+                        # Clip to valid range and convert back
+                        blended = np.clip(blended, 0, 1)
+                        blended = (blended * 255).astype(np.uint8)
+                        
+                        return Image.fromarray(blended)
+                    
                     def _encode_image_to_latents_with_noise(self, image, width, height, strength, num_frames):
                         """
                         Encode image to latents with noise-based strength control for I2V
