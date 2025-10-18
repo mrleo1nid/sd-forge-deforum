@@ -160,8 +160,49 @@ def patch_torch_rmsnorm():
         return False
 
 
+def patch_diffusers_attention():
+    """
+    Patch diffusers attention dispatch to remove enable_gqa parameter for PyTorch < 2.4.0
+
+    Diffusers git main uses enable_gqa parameter in scaled_dot_product_attention,
+    but this parameter was added in PyTorch 2.4.0. Forge uses PyTorch 2.3.1.
+    """
+    try:
+        import torch
+
+        # Check PyTorch version
+        torch_version = tuple(int(x) for x in torch.__version__.split('.')[:2])
+        if torch_version >= (2, 4):
+            print("✅ PyTorch 2.4.0+ detected - enable_gqa parameter supported")
+            return True
+
+        print(f"🔧 PyTorch {torch.__version__} detected - patching enable_gqa parameter...")
+
+        from diffusers.models import attention_dispatch
+
+        # Save original function
+        original_native_attention = attention_dispatch._native_attention
+
+        def patched_native_attention(**kwargs):
+            """Remove enable_gqa parameter for PyTorch < 2.4.0"""
+            # Remove enable_gqa if present
+            kwargs.pop('enable_gqa', None)
+            return original_native_attention(**kwargs)
+
+        # Replace the function
+        attention_dispatch._native_attention = patched_native_attention
+
+        print("✅ Diffusers attention dispatch patched: removed enable_gqa parameter")
+        return True
+
+    except Exception as e:
+        print(f"⚠️ Failed to apply attention dispatch patch: {e}")
+        return False
+
+
 def apply_all_patches():
     """Apply all compatibility patches"""
     print("🔧 Applying diffusers compatibility patches for Forge + Wan 2.2...")
     patch_torch_rmsnorm()
     patch_flow_match_scheduler()
+    patch_diffusers_attention()
