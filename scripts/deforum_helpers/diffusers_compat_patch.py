@@ -184,19 +184,21 @@ def patch_diffusers_attention():
         # Save original PyTorch function
         original_sdpa = torch.nn.functional.scaled_dot_product_attention
 
-        # Get the original signature to know what parameters are actually supported
-        original_params = set(inspect.signature(original_sdpa).parameters.keys())
-        print(f"   Original SDPA parameters: {original_params}")
+        # PyTorch 2.3.1 supports these parameters (hardcoded since it's a C++ builtin)
+        supported_params_231 = {'query', 'key', 'value', 'attn_mask', 'dropout_p', 'is_causal', 'scale'}
+        print(f"   PyTorch 2.3.1 SDPA parameters: {supported_params_231}")
 
         def patched_scaled_dot_product_attention(*args, **kwargs):
             """Wrapper that filters out unsupported parameters like enable_gqa"""
             # Remove unsupported parameters
             if 'enable_gqa' in kwargs:
-                if kwargs.pop('enable_gqa'):
+                enable_gqa_value = kwargs.pop('enable_gqa')
+                # Only warn if it's True (False is default anyway)
+                if enable_gqa_value:
                     print("   ⚠️ enable_gqa=True requested but not supported in PyTorch 2.3.1, ignoring")
 
-            # Remove any other parameters not in original signature
-            unsupported = [k for k in kwargs.keys() if k not in original_params]
+            # Remove any other parameters not supported in PyTorch 2.3.1
+            unsupported = [k for k in list(kwargs.keys()) if k not in supported_params_231]
             for param in unsupported:
                 print(f"   ⚠️ Removing unsupported parameter: {param}={kwargs[param]}")
                 kwargs.pop(param)
