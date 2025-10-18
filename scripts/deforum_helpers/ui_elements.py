@@ -1171,27 +1171,20 @@ def get_tab_wan(dw: SimpleNamespace):
         # MODEL SETTINGS - Collapsed by default
         with gr.Accordion("🔧 Model Settings", open=False):
             gr.Markdown("""
-            **📥 One-Click Model Download**: Download models automatically from Hugging Face!
-            - **FP8 Models** (Recommended for <16GB VRAM): Kijai's optimized quantizations
-            - **Official Models** (Requires >24GB VRAM): Full precision from Wan-AI
+            **📥 One-Click Model Download**: Download official Wan 2.2 models from Hugging Face!
+            - **TI2V-5B** (Recommended): Works with 16GB VRAM using automatic CPU offload
+            - **TI2V-A14B** (Advanced): Highest quality, requires 24GB+ VRAM
             """)
 
             # Model Download Buttons
             with gr.Accordion("📥 Download Models", open=True):
-                gr.Markdown("**⚡ Recommended for <16GB VRAM (RTX 4070, RTX 3080, etc.)**")
+                gr.Markdown("**✅ Recommended for Most Users (16GB+ VRAM)**")
                 with FormRow():
-                    download_fp8_5b = gr.Button("📥 TI2V-5B-FP8 (12GB) [Best Choice]", variant="primary", size="sm")
-                    download_gguf_5b = gr.Button("📥 TI2V-5B-GGUF (8GB) [Experimental]", size="sm")
+                    download_ti2v_5b = gr.Button("📥 TI2V-5B (30GB Download, ~16GB VRAM with offload)", variant="primary", size="sm")
 
-                gr.Markdown("**For High-End GPUs (>24GB VRAM)**")
+                gr.Markdown("**🚀 Advanced / High-End GPUs (24GB+ VRAM)**")
                 with FormRow():
-                    download_official_5b = gr.Button("📥 TI2V-5B Official (24GB)", size="sm")
-                    download_kijai_5b = gr.Button("📥 TI2V-5B Kijai Full (24GB)", size="sm")
-
-                gr.Markdown("**Advanced Models**")
-                with FormRow():
-                    download_fp8_a14b = gr.Button("📥 T2V-A14B-FP8 (18GB)", size="sm")
-                    download_official_a14b = gr.Button("📥 TI2V-A14B Official (32GB)", size="sm")
+                    download_ti2v_a14b = gr.Button("📥 TI2V-A14B (60GB Download, ~32GB VRAM)", size="sm")
 
                 download_status = gr.Textbox(
                     label="Download Status",
@@ -1206,14 +1199,7 @@ def get_tab_wan(dw: SimpleNamespace):
                     label="TI2V Model (Wan 2.2)",
                     choices=["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
                     value="Auto-Detect",
-                    info="Wan 2.2 unified text/image-to-video model. Auto-Detect will find any model in models/wan/"
-                )
-
-                wan_quantization = gr.Dropdown(
-                    label="Quantization Preference",
-                    choices=["Auto (detect from filename)", "Prefer FP8 (low VRAM)", "Prefer FP16 (quality)"],
-                    value="Auto (detect from filename)",
-                    info="FP8: ~12GB VRAM, FP16: ~24GB VRAM. Auto detects fp8/e4m3fn in filename."
+                    info="Wan 2.2 unified text/image-to-video model. TI2V-5B auto-enables CPU offload for 16GB VRAM."
                 )
 
             wan_model_path = create_gr_elem(dw.wan_model_path)
@@ -1681,33 +1667,13 @@ def get_tab_wan(dw: SimpleNamespace):
     # Connect model download buttons
     from .wan.wan_model_downloader import download_wan_model
 
-    download_fp8_5b.click(
-        fn=lambda: download_wan_model("TI2V-5B-FP8"),
+    download_ti2v_5b.click(
+        fn=lambda: download_wan_model("TI2V-5B"),
         outputs=[download_status]
     )
 
-    download_gguf_5b.click(
-        fn=lambda: download_wan_model("TI2V-5B-GGUF"),
-        outputs=[download_status]
-    )
-
-    download_official_5b.click(
-        fn=lambda: download_wan_model("TI2V-5B-Official"),
-        outputs=[download_status]
-    )
-
-    download_kijai_5b.click(
-        fn=lambda: download_wan_model("TI2V-5B-Kijai"),
-        outputs=[download_status]
-    )
-
-    download_fp8_a14b.click(
-        fn=lambda: download_wan_model("T2V-A14B-FP8"),
-        outputs=[download_status]
-    )
-
-    download_official_a14b.click(
-        fn=lambda: download_wan_model("TI2V-A14B-Official"),
+    download_ti2v_a14b.click(
+        fn=lambda: download_wan_model("TI2V-A14B"),
         outputs=[download_status]
     )
     

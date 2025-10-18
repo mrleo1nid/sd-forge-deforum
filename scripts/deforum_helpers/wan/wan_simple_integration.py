@@ -110,12 +110,22 @@ class WanSimpleIntegration:
             model_size = "1.3B"
         elif '14b' in model_name:
             model_size = "14B"
-        
+
+        # Detect quantization
+        quantization = "FP16"  # Default
+        if 'fp8' in model_name or 'e4m3fn' in model_name or 'e5m2' in model_name:
+            quantization = "FP8"
+        elif 'gguf' in model_name or 'q8' in model_name or 'q5' in model_name or 'q4' in model_name:
+            quantization = "GGUF"
+        elif 'bf16' in model_name:
+            quantization = "BF16"
+
         return {
             'name': model_dir.name,
             'path': str(model_dir.absolute()),
             'type': model_type,
             'size': model_size,
+            'quantization': quantization,
             'directory': model_dir
         }
     
@@ -149,14 +159,20 @@ class WanSimpleIntegration:
         if not self.models:
             return None
         
-        # Priority: TI2V > T2V > I2V (Wan 2.2 preferred), and 5B > 1.3B > 14B > A14B
+        # Priority: TI2V > T2V > I2V (Wan 2.2 preferred), 5B > 1.3B > 14B > A14B, FP8 > GGUF > FP16 (VRAM efficient)
         def model_priority(model):
             type_priority = {'TI2V': 0, 'T2V': 1, 'I2V': 2, 'S2V': 3, 'Animate': 4, 'Unknown': 5}
             size_priority = {'5B': 0, '1.3B': 1, '14B': 2, 'A14B': 3, 'Unknown': 4}
-            return (type_priority.get(model['type'], 5), size_priority.get(model['size'], 4))
-        
+            quant_priority = {'FP8': 0, 'GGUF': 1, 'FP16': 2, 'BF16': 3}  # FP8 preferred for VRAM efficiency
+            return (
+                type_priority.get(model['type'], 5),
+                size_priority.get(model['size'], 4),
+                quant_priority.get(model.get('quantization', 'FP16'), 2)
+            )
+
         best_model = min(self.models, key=model_priority)
-        print(f"🎯 Best model selected: {best_model['name']} ({best_model['type']}, {best_model['size']})")
+        quantization_info = best_model.get('quantization', 'Unknown')
+        print(f"🎯 Best model selected: {best_model['name']} ({best_model['type']}, {best_model['size']}, {quantization_info})")
         return best_model
     
     def load_simple_wan_pipeline(self, model_info: Dict, wan_args=None) -> bool:
@@ -295,7 +311,6 @@ class WanSimpleIntegration:
                 )
 
                 # Initialize flags for memory optimization
-                is_fp8_quantized = False
                 use_aggressive_offload = False
 
                 if is_wan22_diffusers:
@@ -314,21 +329,17 @@ class WanSimpleIntegration:
 
                     from diffusers import WanPipeline, AutoencoderKLWan
 
-                    # Detect FP8 quantization from model files
-                    model_path = Path(model_info['path'])
-                    is_fp8_quantized = any(
-                        'fp8' in f.name.lower() or 'e4m3fn' in f.name.lower()
-                        for f in model_path.rglob('*.safetensors')
-                    )
+                    # Enable aggressive offload for TI2V-5B models (16GB VRAM optimization)
+                    # A14B models are too large and need >24GB VRAM anyway
+                    is_5b_model = '5B' in model_info['size'] or '5b' in model_info['name'].lower()
 
-                    if is_fp8_quantized:
-                        print_wan_info("🔍 Detected FP8 quantized model - optimizing for low VRAM (<16GB)")
-                        # FP8 models are stored quantized but loaded as float16
+                    if is_5b_model:
+                        print_wan_info("🔍 TI2V-5B model detected - enabling aggressive VRAM optimizations for 16GB GPUs")
                         model_dtype = torch.float16
-                        vae_dtype = torch.float16  # VAE can use FP16 for FP8 models
+                        vae_dtype = torch.float16  # FP16 VAE for lower VRAM
                         use_aggressive_offload = True
                     else:
-                        print_wan_info("🔍 Standard precision model detected")
+                        print_wan_info("🔍 Large model detected (A14B) - standard precision")
                         model_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
                         vae_dtype = torch.float32  # Standard VAE needs float32 for stability
                         use_aggressive_offload = False
@@ -352,8 +363,8 @@ class WanSimpleIntegration:
                         use_safetensors=True
                     )
 
-                    if is_fp8_quantized:
-                        print_wan_success("✅ Loaded FP8 quantized Wan 2.2 pipeline")
+                    if is_5b_model:
+                        print_wan_success("✅ Loaded Wan 2.2 TI2V-5B pipeline with VRAM optimizations")
                     else:
                         print_wan_success("✅ Loaded Wan 2.2 pipeline")
                 else:
@@ -369,8 +380,8 @@ class WanSimpleIntegration:
 
                 # Enable memory optimizations based on model type
                 if torch.cuda.is_available():
-                    if is_wan22_diffusers and is_fp8_quantized and use_aggressive_offload:
-                        print_wan_info("🔧 Enabling aggressive VRAM optimizations for FP8 model...")
+                    if is_wan22_diffusers and use_aggressive_offload:
+                        print_wan_info("🔧 Enabling aggressive VRAM optimizations for 16GB VRAM...")
 
                         # Sequential CPU offload (more aggressive than model CPU offload)
                         try:
@@ -638,21 +649,41 @@ Error: {diffusers_e}
         try:
             from PIL import Image
             import numpy as np
-            
+
             frames = []
-            
+
+            # Debug: Log result type
+            print_wan_info(f"🔍 Result type: {type(result)}")
+            print_wan_info(f"🔍 Result attributes: {dir(result)[:10]}...")  # First 10 attributes
+
             # Handle different result formats
             if isinstance(result, tuple):
+                print_wan_info("Result is tuple, extracting first element")
                 frames_data = result[0]
             elif hasattr(result, 'frames'):
+                print_wan_info("Result has .frames attribute")
                 frames_data = result.frames
+            elif hasattr(result, 'images'):
+                print_wan_info("Result has .images attribute")
+                frames_data = result.images
+            elif hasattr(result, 'videos'):
+                print_wan_info("Result has .videos attribute")
+                frames_data = result.videos
             else:
+                print_wan_info("Using result directly as frames_data")
                 frames_data = result
-            
+
+            print_wan_info(f"🔍 Frames data type: {type(frames_data)}")
+
+            # Check if frames_data is None or empty
+            if frames_data is None:
+                print_wan_error("❌ Frames data is None!")
+                return []
+
             # Convert to individual frames
             if hasattr(frames_data, 'cpu'):  # Tensor
                 frames_tensor = frames_data.cpu()
-                print_wan_info(f"Processing tensor: {frames_tensor.shape}")
+                print_wan_info(f"✅ Processing tensor: {frames_tensor.shape}")
                 
                 # Handle different tensor formats
                 if len(frames_tensor.shape) == 5:  # (B, C, F, H, W)
@@ -700,15 +731,112 @@ Error: {diffusers_e}
                             frame_progress.update(1)
             
             elif isinstance(frames_data, list):  # List of PIL Images or arrays
+                print_wan_info(f"✅ Processing list with {len(frames_data)} items")
                 for frame in frames_data:
                     if hasattr(frame, 'save'):  # PIL Image
                         frames.append(np.array(frame))
                     else:
                         frames.append(frame)
-                    
+
                     if frame_progress:
                         frame_progress.update(1)
-            
+
+            elif isinstance(frames_data, np.ndarray):  # Numpy array (WanPipelineOutput.frames)
+                print_wan_info(f"✅ Processing numpy array: {frames_data.shape}")
+
+                # WanPipeline returns frames in shape (B, F, H, W, C) or (B, C, F, H, W)
+                if len(frames_data.shape) == 5:
+                    # Check if channels are first (B, C, F, H, W) or last (B, F, H, W, C)
+                    if frames_data.shape[1] == 3 or frames_data.shape[1] == 4:
+                        # (B, C, F, H, W) format
+                        print_wan_info("Detected (B, C, F, H, W) format, converting...")
+                        frames_np = frames_data[0]  # Remove batch dim: (C, F, H, W)
+                        num_frames_in_clip = frames_np.shape[1]
+
+                        for frame_idx in range(num_frames_in_clip):
+                            frame = frames_np[:, frame_idx, :, :]  # (C, H, W)
+                            frame = np.transpose(frame, (1, 2, 0))  # (H, W, C)
+
+                            # Normalize to [0, 255]
+                            if frame.min() < -0.5:  # [-1, 1] range
+                                frame = (frame + 1.0) / 2.0
+                                frame = np.clip(frame, 0, 1)
+                                frame = (frame * 255).astype(np.uint8)
+                            elif frame.max() <= 1.0:  # [0, 1] range
+                                frame = (frame * 255).astype(np.uint8)
+                            else:  # Already [0, 255]
+                                frame = np.clip(frame, 0, 255).astype(np.uint8)
+
+                            frames.append(frame)
+                            if frame_progress:
+                                frame_progress.update(1)
+                    else:
+                        # (B, F, H, W, C) format
+                        print_wan_info("Detected (B, F, H, W, C) format, converting...")
+                        frames_np = frames_data[0]  # Remove batch dim: (F, H, W, C)
+
+                        for frame_idx in range(frames_np.shape[0]):
+                            frame = frames_np[frame_idx]  # (H, W, C)
+
+                            # Normalize to [0, 255]
+                            if frame.min() < -0.5:  # [-1, 1] range
+                                frame = (frame + 1.0) / 2.0
+                                frame = np.clip(frame, 0, 1)
+                                frame = (frame * 255).astype(np.uint8)
+                            elif frame.max() <= 1.0:  # [0, 1] range
+                                frame = (frame * 255).astype(np.uint8)
+                            else:  # Already [0, 255]
+                                frame = np.clip(frame, 0, 255).astype(np.uint8)
+
+                            frames.append(frame)
+                            if frame_progress:
+                                frame_progress.update(1)
+
+                elif len(frames_data.shape) == 4:
+                    # (F, H, W, C) format (already removed batch)
+                    print_wan_info("Detected (F, H, W, C) format, converting...")
+                    for frame_idx in range(frames_data.shape[0]):
+                        frame = frames_data[frame_idx]  # (H, W, C)
+
+                        # Normalize to [0, 255]
+                        if frame.min() < -0.5:
+                            frame = (frame + 1.0) / 2.0
+                            frame = np.clip(frame, 0, 1)
+                            frame = (frame * 255).astype(np.uint8)
+                        elif frame.max() <= 1.0:
+                            frame = (frame * 255).astype(np.uint8)
+                        else:
+                            frame = np.clip(frame, 0, 255).astype(np.uint8)
+
+                        frames.append(frame)
+                        if frame_progress:
+                            frame_progress.update(1)
+                else:
+                    print_wan_error(f"❌ Unexpected numpy array shape: {frames_data.shape}")
+                    return []
+
+            else:
+                # Unknown format - try to debug it
+                print_wan_error(f"❌ Unknown frames_data format!")
+                print_wan_error(f"   Type: {type(frames_data)}")
+                print_wan_error(f"   Has __len__: {hasattr(frames_data, '__len__')}")
+                print_wan_error(f"   Has __iter__: {hasattr(frames_data, '__iter__')}")
+                if hasattr(frames_data, '__len__'):
+                    try:
+                        print_wan_error(f"   Length: {len(frames_data)}")
+                    except:
+                        pass
+                return []
+
+            # Check if we extracted any frames
+            if not frames:
+                print_wan_error(f"❌ No frames extracted from result!")
+                print_wan_error(f"   Result type: {type(result)}")
+                print_wan_error(f"   Frames data type: {type(frames_data)}")
+                return []
+
+            print_wan_info(f"✅ Extracted {len(frames)} frames, proceeding to save...")
+
             # Save frames as PNG files
             saved_paths = []
             for i, frame_np in enumerate(frames):
