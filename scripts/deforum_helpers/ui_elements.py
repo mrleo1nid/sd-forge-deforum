@@ -732,20 +732,30 @@ The auto-discovery will find your models automatically!
         
         # Select the best model (or use user's size preference)
         selected_model = None
-        
+
         # Try to find a model matching user's size preference
-        user_preferred_size = wan_args.wan_preferred_size.replace(" (Recommended)", "").replace(" (High Quality)", "")
-        
-        for model in models:
-            if user_preferred_size in model['size']:
-                selected_model = model
-                break
-                
-        # Fallback to best available model using priority logic (T2V > I2V > VACE)
+        user_preferred_size = wan_args.wan_preferred_size.replace(" (Recommended)", "").replace(" (Highest Quality)", "")
+
+        # Extract just the size part (5B or A14B) from the preference
+        if "5B" in user_preferred_size:
+            size_to_match = "5B"
+        elif "A14B" in user_preferred_size or "14B" in user_preferred_size:
+            size_to_match = "A14B"
+        else:
+            size_to_match = None
+
+        if size_to_match:
+            for model in models:
+                if size_to_match == model['size']:  # Exact match on size
+                    selected_model = model
+                    print(f"✅ Matched user preference: {model['name']} ({model['size']})")
+                    break
+
+        # Fallback to best available model using priority logic (TI2V > T2V > I2V)
         if not selected_model:
             selected_model = integration.get_best_model()
             if selected_model:
-                print(f"⚠️ User requested {user_preferred_size} but using best available: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
+                print(f"⚠️ Using auto-detected best model: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
             else:
                 raise RuntimeError("No Wan models available!")
             
