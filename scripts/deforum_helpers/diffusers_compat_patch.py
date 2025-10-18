@@ -169,6 +169,7 @@ def patch_diffusers_attention():
     """
     try:
         import torch
+        from typing import Optional
 
         # Check PyTorch version
         torch_version = tuple(int(x) for x in torch.__version__.split('.')[:2])
@@ -180,14 +181,38 @@ def patch_diffusers_attention():
 
         from diffusers.models import attention_dispatch
 
-        # Save original function
-        original_native_attention = attention_dispatch._native_attention
+        # Replace the entire function without enable_gqa parameter
+        def patched_native_attention(
+            query: torch.Tensor,
+            key: torch.Tensor,
+            value: torch.Tensor,
+            attn_mask: Optional[torch.Tensor] = None,
+            dropout_p: float = 0.0,
+            is_causal: bool = False,
+            scale: Optional[float] = None,
+            enable_gqa: bool = False,  # Accept but ignore
+            return_lse: bool = False,
+            _parallel_config: Optional = None,
+        ) -> torch.Tensor:
+            """Patched version that doesn't pass enable_gqa to PyTorch"""
+            if return_lse:
+                raise ValueError("Native attention backend does not support setting `return_lse=True`.")
 
-        def patched_native_attention(**kwargs):
-            """Remove enable_gqa parameter for PyTorch < 2.4.0"""
-            # Remove enable_gqa if present
-            kwargs.pop('enable_gqa', None)
-            return original_native_attention(**kwargs)
+            query, key, value = (x.permute(0, 2, 1, 3) for x in (query, key, value))
+
+            # Call PyTorch WITHOUT enable_gqa parameter
+            out = torch.nn.functional.scaled_dot_product_attention(
+                query=query,
+                key=key,
+                value=value,
+                attn_mask=attn_mask,
+                dropout_p=dropout_p,
+                is_causal=is_causal,
+                scale=scale,
+                # enable_gqa=enable_gqa,  # Removed for PyTorch 2.3.1 compatibility
+            )
+            out = out.permute(0, 2, 1, 3)
+            return out
 
         # Replace the function
         attention_dispatch._native_attention = patched_native_attention
@@ -197,6 +222,8 @@ def patch_diffusers_attention():
 
     except Exception as e:
         print(f"⚠️ Failed to apply attention dispatch patch: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
