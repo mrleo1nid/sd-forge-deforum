@@ -179,35 +179,81 @@ class WanModelDownloader:
         local_dir.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            # Import huggingface_hub Python API (better than CLI for large downloads)
+            # Work around Forge's huggingface_hub monkey-patching issues
+            # Use CLI with ulimit workaround instead
+            import resource
+
+            # Get current file descriptor limit
+            soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+            print(f"📊 Current file descriptor limit: {soft_limit}/{hard_limit}")
+
+            # Temporarily increase soft limit to hard limit
             try:
-                from huggingface_hub import snapshot_download
-            except ImportError:
-                # Fallback: try installing again
-                print("⚠️ Importing huggingface_hub failed, trying to install...")
+                new_limit = min(hard_limit, 8192)  # Cap at 8192 for safety
+                resource.setrlimit(resource.RLIMIT_NOFILE, (new_limit, hard_limit))
+                print(f"✅ Temporarily increased file descriptor limit to {new_limit}")
                 if progress_callback:
-                    progress_callback("⚠️ Installing huggingface_hub...")
-                subprocess.run([sys.executable, "-m", "pip", "install", "huggingface_hub"], check=True)
-                from huggingface_hub import snapshot_download
+                    progress_callback(f"🔧 Increased file descriptor limit to {new_limit} for download")
+            except Exception as limit_e:
+                print(f"⚠️ Could not increase file limit: {limit_e}")
+                # Continue anyway
 
-            # Use Python API with controlled concurrency (fixes "too many open files")
-            print(f"🚀 Downloading with max_workers=4 (prevents file descriptor issues)...")
+            # Use CLI with increased limits
+            cmd = [
+                "huggingface-cli", "download",
+                model_info["repo_id"],
+                "--local-dir", str(local_dir),
+                "--local-dir-use-symlinks", "False",
+                "--resume-download"  # Allow resuming
+            ]
+
+            print(f"🚀 Running: {' '.join(cmd)}")
             if progress_callback:
-                progress_callback("🚀 Starting download with controlled concurrency...")
+                progress_callback(f"🚀 Starting download (this may take 15-30 minutes)...\nDownloading to: {local_dir}")
 
-            snapshot_download(
-                repo_id=model_info["repo_id"],
-                local_dir=str(local_dir),
-                local_dir_use_symlinks=False,
-                max_workers=4,  # Limit concurrent downloads to prevent "too many open files"
-                resume_download=True  # Allow resuming interrupted downloads
+            # Run with real-time output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
             )
 
-            success_msg = f"✅ Successfully downloaded {model_key} to {local_dir}"
-            print(success_msg)
-            if progress_callback:
-                progress_callback(success_msg)
-            return True
+            # Stream output
+            last_progress = ""
+            for line in process.stdout:
+                line = line.strip()
+                if line:
+                    print(f"   {line}")
+                    # Only update callback every 10 lines to avoid UI spam
+                    if "Fetching" in line or "Downloading" in line or "%" in line:
+                        last_progress = line
+                        if progress_callback:
+                            progress_callback(f"📥 {line}")
+
+            process.wait()
+
+            # Restore original file descriptor limit
+            try:
+                resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
+                print(f"✅ Restored file descriptor limit to {soft_limit}")
+            except:
+                pass
+
+            if process.returncode == 0:
+                success_msg = f"✅ Successfully downloaded {model_key} to {local_dir}"
+                print(success_msg)
+                if progress_callback:
+                    progress_callback(success_msg)
+                return True
+            else:
+                error_msg = f"❌ Download failed with return code {process.returncode}"
+                print(error_msg)
+                if progress_callback:
+                    progress_callback(error_msg)
+                return False
 
         except Exception as e:
             error_msg = f"❌ Download error: {e}"
