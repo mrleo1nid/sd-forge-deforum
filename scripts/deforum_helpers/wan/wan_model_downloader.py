@@ -18,17 +18,64 @@ class WanModelDownloader:
         # Dynamically detect the models directory
         self.models_dir = self._detect_models_directory()
         self.available_models = {
-            "TI2V-5B": {
-                "repo_id": "Wan-AI/Wan2.2-TI2V-5B-Diffusers",
-                "local_dir": str(self.models_dir / "Wan2.2-TI2V-5B"),
-                "description": "Wan 2.2 TI2V-5B (Unified T2V + I2V, 720P@24fps, RTX 4090)",
-                "size_gb": 30
+            # Kijai's FP8 Quantized Models (Recommended for <16GB VRAM)
+            "TI2V-5B-FP8": {
+                "repo_id": "Kijai/WanVideo_comfy_fp8_scaled",
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-5B-FP8-Kijai"),
+                "description": "Wan 2.2 TI2V-5B FP8 (Unified T2V + I2V, 720P@24fps, <16GB VRAM) [Kijai]",
+                "size_gb": 12,
+                "quantization": "FP8",
+                "vram": "~12GB",
+                "source": "Kijai"
             },
-            "TI2V-A14B": {
+            "TI2V-5B-GGUF": {
+                "repo_id": "Kijai/WanVideo_comfy_GGUF",
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-5B-GGUF-Kijai"),
+                "description": "Wan 2.2 TI2V-5B GGUF (For very low VRAM, experimental) [Kijai]",
+                "size_gb": 8,
+                "quantization": "GGUF",
+                "vram": "~8GB",
+                "source": "Kijai"
+            },
+            "T2V-A14B-FP8": {
+                "repo_id": "Kijai/WanVideo_comfy_fp8_scaled",
+                "local_dir": str(self.models_dir / "Wan2.2-T2V-A14B-FP8-Kijai"),
+                "description": "Wan 2.2 T2V-A14B FP8 (MoE, Text-to-Video only, High Quality) [Kijai]",
+                "size_gb": 18,
+                "quantization": "FP8",
+                "vram": "~18GB",
+                "source": "Kijai"
+            },
+
+            # Kijai's Full Precision ComfyUI Models
+            "TI2V-5B-Kijai": {
+                "repo_id": "Kijai/WanVideo_comfy",
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-5B-Kijai"),
+                "description": "Wan 2.2 TI2V-5B (Unified T2V + I2V, 720P@24fps, Full Precision) [Kijai]",
+                "size_gb": 30,
+                "quantization": "FP16",
+                "vram": "~24GB",
+                "source": "Kijai"
+            },
+
+            # Official Wan-AI Models (Diffusers format)
+            "TI2V-5B-Official": {
+                "repo_id": "Wan-AI/Wan2.2-TI2V-5B-Diffusers",
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-5B-Official"),
+                "description": "Wan 2.2 TI2V-5B (Unified T2V + I2V, 720P@24fps, Official Release)",
+                "size_gb": 30,
+                "quantization": "FP16",
+                "vram": "~24GB",
+                "source": "Official"
+            },
+            "TI2V-A14B-Official": {
                 "repo_id": "Wan-AI/Wan2.2-TI2V-A14B-Diffusers",
-                "local_dir": str(self.models_dir / "Wan2.2-TI2V-A14B"),
-                "description": "Wan 2.2 TI2V-A14B (MoE, Unified T2V + I2V, Highest Quality)",
-                "size_gb": 60
+                "local_dir": str(self.models_dir / "Wan2.2-TI2V-A14B-Official"),
+                "description": "Wan 2.2 TI2V-A14B (MoE, Unified T2V + I2V, Highest Quality, Official Release)",
+                "size_gb": 60,
+                "quantization": "FP16",
+                "vram": "~32GB",
+                "source": "Official"
             }
         }
     
@@ -220,18 +267,24 @@ class WanModelDownloader:
         return models
     
     def auto_download_recommended(self) -> Dict[str, str]:
-        """Auto-download recommended model (TI2V-5B)"""
+        """Auto-download recommended model (TI2V-5B-FP8 for <16GB VRAM)"""
         results = {}
 
-        # Download TI2V-5B (Wan 2.2 only)
-        print("🎯 Auto-downloading Wan 2.2 TI2V-5B (Unified T2V+I2V, 720p@24fps)")
-        if self.download_model("TI2V-5B"):
-            model_path = self.get_model_path("TI2V-5B")
+        # Download TI2V-5B-FP8 (Recommended for GPUs with <16GB VRAM)
+        print("🎯 Auto-downloading Wan 2.2 TI2V-5B-FP8 (Unified T2V+I2V, 720p@24fps, <16GB VRAM)")
+        if self.download_model("TI2V-5B-FP8"):
+            model_path = self.get_model_path("TI2V-5B-FP8")
             results["t2v"] = model_path
             results["i2v"] = model_path  # TI2V handles both T2V and I2V
-            print("✅ TI2V-5B ready for unified T2V and I2V generation")
+            print("✅ TI2V-5B-FP8 ready for unified T2V and I2V generation")
         else:
-            print("❌ Failed to download TI2V-5B model")
+            print("❌ Failed to download TI2V-5B-FP8 model")
+            print("💡 Trying full precision TI2V-5B as fallback...")
+            if self.download_model("TI2V-5B"):
+                model_path = self.get_model_path("TI2V-5B")
+                results["t2v"] = model_path
+                results["i2v"] = model_path
+                print("✅ TI2V-5B (FP16) downloaded, but requires >24GB VRAM")
 
         return results
     
