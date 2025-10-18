@@ -144,70 +144,78 @@ class WanModelDownloader:
         if model_key not in self.available_models:
             print(f"❌ Unknown model: {model_key}")
             return False
-        
+
         model_info = self.available_models[model_key]
         local_dir = Path(model_info["local_dir"])
-        
+
         # Check if model already exists
         if self.is_model_downloaded(model_key):
             print(f"✅ Model {model_key} already exists at {local_dir}")
+            if progress_callback:
+                progress_callback(f"✅ Model already downloaded at {local_dir}")
             return True
-        
-        # Ensure huggingface-cli is available
+
+        # Install huggingface_hub if needed
         if not self.check_huggingface_cli():
-            print("⚠️ huggingface-cli not found, installing huggingface_hub...")
+            print("⚠️ huggingface_hub not found, installing...")
+            if progress_callback:
+                progress_callback("📦 Installing huggingface_hub...")
             if not self.install_huggingface_hub():
-                print("❌ Failed to install huggingface_hub")
+                error_msg = "❌ Failed to install huggingface_hub"
+                print(error_msg)
+                if progress_callback:
+                    progress_callback(error_msg)
                 return False
-        
+
         print(f"📥 Downloading {model_key} ({model_info['description']})...")
         print(f"   📂 From: {model_info['repo_id']}")
         print(f"   📁 To: {local_dir}")
         print(f"   💾 Size: ~{model_info['size_gb']}GB")
-        
+
+        if progress_callback:
+            progress_callback(f"📥 Downloading {model_key} from {model_info['repo_id']}\nSize: ~{model_info['size_gb']}GB\nThis may take a while...")
+
         # Create directory
         local_dir.parent.mkdir(parents=True, exist_ok=True)
-        
+
         try:
-            # Use huggingface-cli to download
-            cmd = [
-                "huggingface-cli", "download",
-                model_info["repo_id"],
-                "--local-dir", str(local_dir),
-                "--local-dir-use-symlinks", "False"
-            ]
-            
-            print(f"🚀 Running: {' '.join(cmd)}")
-            
-            # Run with real-time output
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
+            # Import huggingface_hub Python API (better than CLI for large downloads)
+            try:
+                from huggingface_hub import snapshot_download
+            except ImportError:
+                # Fallback: try installing again
+                print("⚠️ Importing huggingface_hub failed, trying to install...")
+                if progress_callback:
+                    progress_callback("⚠️ Installing huggingface_hub...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "huggingface_hub"], check=True)
+                from huggingface_hub import snapshot_download
+
+            # Use Python API with controlled concurrency (fixes "too many open files")
+            print(f"🚀 Downloading with max_workers=4 (prevents file descriptor issues)...")
+            if progress_callback:
+                progress_callback("🚀 Starting download with controlled concurrency...")
+
+            snapshot_download(
+                repo_id=model_info["repo_id"],
+                local_dir=str(local_dir),
+                local_dir_use_symlinks=False,
+                max_workers=4,  # Limit concurrent downloads to prevent "too many open files"
+                resume_download=True  # Allow resuming interrupted downloads
             )
-            
-            # Stream output
-            for line in process.stdout:
-                line = line.strip()
-                if line:
-                    print(f"   {line}")
-                    if progress_callback:
-                        progress_callback(line)
-            
-            process.wait()
-            
-            if process.returncode == 0:
-                print(f"✅ Successfully downloaded {model_key}")
-                return True
-            else:
-                print(f"❌ Download failed with return code {process.returncode}")
-                return False
-                
+
+            success_msg = f"✅ Successfully downloaded {model_key} to {local_dir}"
+            print(success_msg)
+            if progress_callback:
+                progress_callback(success_msg)
+            return True
+
         except Exception as e:
-            print(f"❌ Download error: {e}")
+            error_msg = f"❌ Download error: {e}"
+            print(error_msg)
+            if progress_callback:
+                progress_callback(error_msg)
+            import traceback
+            traceback.print_exc()
             return False
     
     def is_model_downloaded(self, model_key: str) -> bool:
