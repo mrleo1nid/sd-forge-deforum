@@ -298,14 +298,14 @@ class WanSimpleIntegration:
                     print("🔄 Loading Wan 2.2 Diffusers pipeline...")
                     from diffusers import WanPipeline, AutoencoderKLWan
 
-                    # Load VAE separately for better compatibility
+                    # Load VAE separately for better compatibility (keep on CPU initially)
                     vae = AutoencoderKLWan.from_pretrained(
                         model_info['path'],
                         subfolder="vae",
-                        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+                        torch_dtype=torch.float32  # VAE needs float32 for stability
                     )
 
-                    # Load main pipeline
+                    # Load main pipeline (keep on CPU initially)
                     pipeline = WanPipeline.from_pretrained(
                         model_info['path'],
                         vae=vae,
@@ -313,7 +313,7 @@ class WanSimpleIntegration:
                     )
                     print("✅ Loaded Wan 2.2 pipeline (WanPipeline)")
                 else:
-                    # Fallback to generic DiffusionPipeline for Wan 2.1
+                    # Fallback to generic DiffusionPipeline
                     print("🔄 Loading with generic DiffusionPipeline...")
                     from diffusers import DiffusionPipeline
 
@@ -323,8 +323,11 @@ class WanSimpleIntegration:
                         use_safetensors=True
                     )
 
+                # Enable CPU offload instead of moving entire model to GPU
                 if torch.cuda.is_available():
-                    pipeline = pipeline.to(self.device)
+                    print("🔧 Enabling model CPU offload to save VRAM...")
+                    pipeline.enable_model_cpu_offload()
+                    print("✅ CPU offload enabled - model will stream to GPU during inference")
                 
                 # Create wrapper for diffusers pipeline
                 class DiffusersWrapper:
@@ -372,16 +375,16 @@ class WanSimpleIntegration:
                 print(f"❌ Diffusers loading failed: {diffusers_e}")
                 
                 raise RuntimeError(f"""
-❌ CRITICAL: Could not load Wan model with any method!
+❌ CRITICAL: Could not load Wan 2.2 model!
 
 🔧 TROUBLESHOOTING:
-1. 📦 Install dependencies: pip install diffusers transformers
-2. 🔧 For official Wan support: cd Wan2.1 && pip install -e .
-3. 💾 Check model files are complete
-4. 🔄 Restart WebUI
+1. 📦 Dependencies upgraded automatically by extension
+2. 💾 Verify model download is complete: {model_info['path']}
+3. 🔄 Restart WebUI to apply dependency upgrades
+4. 💬 Check console for detailed error messages
 
-❌ All loading methods failed!
-Diffusers error: {diffusers_e}
+❌ Model loading failed!
+Error: {diffusers_e}
 """)
         
         except Exception as e:
