@@ -948,26 +948,6 @@ The auto-discovery will find your models automatically!
                 seed=wan_args.wan_seed if wan_args.wan_seed > 0 else -1,
                 wan_args=wan_args
             )
-            
-            mode_description = "T2V independent clips"
-        else:
-            print(f"\n🔗 Using I2V chaining for better continuity between {len(clips_data)} clips")
-            
-            # Generate video using I2V chaining
-            output_file = integration.generate_video_with_i2v_chaining(
-                clips=clips_data,
-                model_info=selected_model,
-                output_dir=str(output_directory),
-                width=width,
-                height=height,
-                steps=wan_args.wan_inference_steps,
-                guidance_scale=wan_args.wan_guidance_scale,
-                seed=wan_args.wan_seed if wan_args.wan_seed > 0 else -1,
-                anim_args=anim_args,  # Pass anim_args for strength scheduling
-                wan_args=wan_args     # Pass wan_args for strength override settings and motion schedule
-            )
-            
-            mode_description = "I2V chaining"
         
         generated_videos = [output_file] if output_file else []
         
