@@ -19,22 +19,41 @@ import os
 
 req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
 
+print("Deforum: Installing dependencies for Wan 2.2 support...")
+
+# Force upgrade critical dependencies for Wan 2.2 TI2V support
+critical_upgrades = {
+    'peft': '0.17.1',
+    'accelerate': '1.10.1',
+}
+
+for package, version in critical_upgrades.items():
+    try:
+        import importlib.metadata
+        current_version = importlib.metadata.version(package)
+        if current_version != version:
+            print(f"Deforum: Upgrading {package} {current_version} → {version} for Wan 2.2...")
+            launch.run_pip(f"install {package}=={version}", f"Deforum Wan 2.2 requirement: {package}=={version}")
+    except:
+        print(f"Deforum: Installing {package}=={version}...")
+        launch.run_pip(f"install {package}=={version}", f"Deforum Wan 2.2 requirement: {package}=={version}")
+
 with open(req_file) as file:
     for lib in file:
         lib = lib.strip()
         if not lib or lib.startswith('#'):
             continue
-        
-        # Special handling for diffusers/transformers/accelerate - only install if not present
-        # Don't force upgrades to avoid breaking webui-forge compatibility
-        if lib.startswith('diffusers>=') or lib.startswith('transformers>=') or lib.startswith('accelerate>='):
-            package_name = lib.split('>=')[0].split('<')[0]  # Handle version ranges like "diffusers>=0.26.0,<0.33.0"
-            if not launch.is_installed(package_name):
-                print(f"Installing {package_name} for Wan compatibility...")
-                launch.run_pip(f"install {lib}", f"Deforum Wan requirement: {lib}")
-            else:
-                print(f"Skipping {package_name} upgrade to maintain webui-forge compatibility")
-        else:
-            # Normal installation for other packages
-            if not launch.is_installed(lib):
-                launch.run_pip(f"install {lib}", f"Deforum requirement: {lib}")
+
+        # Force install git diffusers for Wan 2.2 support
+        if lib.startswith('git+'):
+            print(f"Deforum: Installing diffusers from git for Wan 2.2 support...")
+            launch.run_pip(f"install --upgrade {lib}", f"Deforum Wan 2.2 requirement: diffusers (git main)")
+            continue
+
+        # Skip version-range packages already handled above
+        if any(lib.startswith(pkg) for pkg in ['peft', 'accelerate']):
+            continue
+
+        # Install other packages normally
+        if not launch.is_installed(lib.split('>=')[0].split('==')[0].split('<')[0]):
+            launch.run_pip(f"install {lib}", f"Deforum requirement: {lib}")
