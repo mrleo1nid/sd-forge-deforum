@@ -328,7 +328,7 @@ class WanSimpleIntegration:
                         traceback.print_exc()
 
                     from diffusers import WanPipeline, AutoencoderKLWan
-                    
+
                     # Also try to import I2V pipeline for chaining support
                     try:
                         from diffusers import WanImageToVideoPipeline
@@ -591,32 +591,42 @@ class WanSimpleIntegration:
                             # Add image parameter (standard for I2V pipelines)
                             if 'image' in pipeline_signature.parameters:
                                 generation_kwargs['image'] = image
-                                print_wan_info(f"✅ I2V conditioning: Using 'image' parameter with strength {strength:.2f}")
+                                print_wan_info(f"✅ I2V conditioning: Using 'image' parameter")
                                 print_wan_info(f"📝 Using original prompt (image handles continuity, prompt guides changes)")
                             
-                            # Add strength if supported
-                            if 'strength' in pipeline_signature.parameters:
+                            # Check if strength parameter is supported
+                            if 'strength' not in pipeline_signature.parameters:
+                                print_wan_warning(f"⚠️ WanImageToVideoPipeline does NOT support 'strength' parameter!")
+                                print_wan_warning(f"⚠️ Image would be used at FULL strength without control")
+                                print_wan_warning(f"⚠️ Switching to T2V pipeline with latent noise control for strength support...")
+                                
+                                # Use T2V pipeline with latent-based strength control instead
+                                # This gives us proper strength control via noise blending
+                                pass  # Fall through to T2V path below
+                            else:
+                                # Pipeline supports strength - use it!
                                 generation_kwargs['strength'] = strength
-                            
-                            # Add resolution parameters
-                            if 'height' in pipeline_signature.parameters:
-                                generation_kwargs['height'] = aligned_height
-                            if 'width' in pipeline_signature.parameters:
-                                generation_kwargs['width'] = aligned_width
-                            if 'num_frames' in pipeline_signature.parameters:
-                                generation_kwargs['num_frames'] = num_frames
-                            elif 'video_length' in pipeline_signature.parameters:
-                                generation_kwargs['video_length'] = num_frames
-                            
-                            print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
-                            print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
-                            print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
-                            print_wan_info(f"   Frames: {num_frames}")
-                            print_wan_info(f"   I2V Strength: {strength:.2f}")
-                            print_wan_info(f"   CFG: {guidance_scale}")
-                            
-                            with torch.no_grad():
-                                return self.i2v_pipeline(**generation_kwargs)
+                                print_wan_info(f"✅ Strength parameter supported: {strength:.2f}")
+                                
+                                # Add resolution parameters
+                                if 'height' in pipeline_signature.parameters:
+                                    generation_kwargs['height'] = aligned_height
+                                if 'width' in pipeline_signature.parameters:
+                                    generation_kwargs['width'] = aligned_width
+                                if 'num_frames' in pipeline_signature.parameters:
+                                    generation_kwargs['num_frames'] = num_frames
+                                elif 'video_length' in pipeline_signature.parameters:
+                                    generation_kwargs['video_length'] = num_frames
+                                
+                                print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
+                                print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
+                                print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+                                print_wan_info(f"   Frames: {num_frames}")
+                                print_wan_info(f"   I2V Strength: {strength:.2f}")
+                                print_wan_info(f"   CFG: {guidance_scale}")
+                                
+                                with torch.no_grad():
+                                    return self.i2v_pipeline(**generation_kwargs)
                         
                         # Fall back to T2V pipeline with I2V conditioning
                         print_wan_info("ℹ️ Using T2V pipeline with I2V conditioning fallback")
@@ -658,14 +668,18 @@ class WanSimpleIntegration:
                             print_wan_info(f"📝 Using original prompt (image handles continuity)")
                             i2v_param_added = True
                         elif 'latents' in pipeline_signature.parameters:
-                            # Use latents for I2V conditioning
+                            # Use latents for I2V conditioning with proper strength control
                             print_wan_info("🔧 Using latent-based I2V conditioning (encoding image to latents)")
                             try:
-                                # Encode image to latents for I2V conditioning
-                                init_latents = self._encode_image_to_latents(image, aligned_width, aligned_height, strength)
+                                # Encode image to latents and add noise based on strength
+                                # Lower strength = more noise = less influence from image = more prompt freedom
+                                init_latents = self._encode_image_to_latents_with_noise(
+                                    image, aligned_width, aligned_height, strength, num_frames
+                                )
                                 if init_latents is not None:
                                     generation_kwargs['latents'] = init_latents
-                                    print_wan_info(f"✅ I2V conditioning: Using latent initialization with strength {strength:.2f}")
+                                    print_wan_info(f"✅ I2V conditioning: Latent initialization with strength {strength:.2f}")
+                                    print_wan_info(f"   → Noise level: {1.0 - strength:.2f} (lower strength = more prompt freedom)")
                                     print_wan_info(f"📝 Using original prompt (latents handle continuity)")
                                     i2v_param_added = True
                                 else:
@@ -717,16 +731,117 @@ class WanSimpleIntegration:
 
                         with torch.no_grad():
                             return self.pipeline(**generation_kwargs)
-                    
-                    def _encode_image_to_latents(self, image, width, height, strength):
+                
+                    def _encode_image_to_latents_with_noise(self, image, width, height, strength, num_frames):
                         """
-                        Encode image to latents for I2V conditioning
+                        Encode image to latents with noise-based strength control for I2V
                         
                         Args:
                             image: PIL Image to encode
                             width: Target width
                             height: Target height
-                            strength: Strength parameter (higher = more influence from image)
+                            strength: Strength parameter (0.0-1.0)
+                                     1.0 = full influence from image (no noise added)
+                                     0.0 = no influence (pure noise)
+                            num_frames: Number of frames to generate
+                        
+                        Returns:
+                            Tensor of noisy latents or None if encoding fails
+                        """
+                        try:
+                            from PIL import Image
+                            import torchvision.transforms as T
+                            
+                            # Resize image to match target resolution
+                            if image.size != (width, height):
+                                image = image.resize((width, height), Image.Resampling.LANCZOS)
+                            
+                            # Convert PIL Image to tensor
+                            transform = T.Compose([
+                                T.ToTensor(),
+                                T.Normalize([0.5], [0.5])  # Normalize to [-1, 1]
+                            ])
+                            
+                            image_tensor = transform(image).unsqueeze(0)  # (1, C, H, W)
+                            
+                            # Move to pipeline device
+                            if hasattr(self.pipeline, 'vae'):
+                                vae = self.pipeline.vae
+                                device = vae.device if hasattr(vae, 'device') else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                                dtype = vae.dtype if hasattr(vae, 'dtype') else torch.float16
+                                
+                                image_tensor = image_tensor.to(device=device, dtype=dtype)
+                                
+                                # WanVAE expects 5D tensor: (B, C, F, H, W) for video
+                                # Add temporal dimension: (1, C, H, W) -> (1, C, 1, H, W)
+                                image_tensor = image_tensor.unsqueeze(2)
+                                print_wan_info(f"🔍 Image tensor shape for VAE: {image_tensor.shape}")
+                                
+                                # Encode image to latents
+                                with torch.no_grad():
+                                    latent_dist = vae.encode(image_tensor).latent_dist
+                                    latents = latent_dist.mode()  # Use mode for determinism
+                                    
+                                    # Scale latents (VAE uses scaling factor)
+                                    if hasattr(vae.config, 'scaling_factor'):
+                                        latents = latents * vae.config.scaling_factor
+                                    else:
+                                        latents = latents * 0.18215  # Default scaling factor
+                                    
+                                    # latents shape should be: (1, C, 1, H//8, W//8) from single-frame encoding
+                                    # For video generation, we need: (1, C, F, H//8, W//8)
+                                    print_wan_info(f"🔍 Encoded latent shape: {latents.shape}")
+                                    
+                                    # If latents are already (1, C, F, H//8, W//8), adjust F to match num_frames
+                                    if len(latents.shape) == 5:
+                                        current_frames = latents.shape[2]
+                                        if current_frames == 1 and num_frames > 1:
+                                            # Replicate single frame across temporal dimension
+                                            latents = latents.repeat(1, 1, num_frames, 1, 1)
+                                            print_wan_info(f"🔍 Replicated to {num_frames} frames: {latents.shape}")
+                                        elif current_frames != num_frames:
+                                            # Interpolate to match num_frames
+                                            print_wan_warning(f"⚠️ Latent frames ({current_frames}) != requested frames ({num_frames})")
+                                            print_wan_warning(f"⚠️ Using available frames as-is")
+                                    else:
+                                        # Unexpected shape, try to handle it
+                                        print_wan_warning(f"⚠️ Unexpected latent shape: {latents.shape}")
+                                    
+                                    # Add noise based on strength
+                                    # strength = 1.0: no noise (full image influence)
+                                    # strength = 0.0: full noise (no image influence)
+                                    noise_scale = 1.0 - strength
+                                    
+                                    if noise_scale > 0.01:  # Only add noise if strength < 0.99
+                                        noise = torch.randn_like(latents)
+                                        # Blend: latents * strength + noise * (1 - strength)
+                                        latents = latents * strength + noise * noise_scale
+                                        print_wan_info(f"🔍 Added noise: {noise_scale:.2f} scale (strength={strength:.2f})")
+                                    else:
+                                        print_wan_info(f"🔍 No noise added (strength={strength:.2f} is very high)")
+                                    
+                                    print_wan_info(f"🔍 Final latent shape: {latents.shape}")
+                                    
+                                    return latents
+                            else:
+                                print_wan_warning("⚠️ Pipeline has no VAE - cannot encode image to latents")
+                                return None
+                                
+                        except Exception as e:
+                            print_wan_error(f"Failed to encode image to latents with noise: {e}")
+                            import traceback
+                            traceback.print_exc()
+                            return None
+                    
+                    def _encode_image_to_latents(self, image, width, height, strength):
+                        """
+                        Simple image encoding to latents (legacy method, kept for compatibility)
+                        
+                        Args:
+                            image: PIL Image to encode
+                            width: Target width
+                            height: Target height
+                            strength: Strength parameter (not used in simple encoding)
                         
                         Returns:
                             Tensor of latents or None if encoding fails

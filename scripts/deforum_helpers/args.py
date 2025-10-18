@@ -1181,11 +1181,11 @@ def WanArgs():
             "info": "Custom path to Wan model (used when 'Custom Path' is selected)"
         },
         "wan_resolution": {
-            "label": "Wan Resolution",
+            "label": "Wan Resolution ⚠️ Set FPS to 24 in Output tab!",
             "type": "dropdown",
             "choices": ["1280x736 (Landscape, 720p)", "736x1280 (Portrait, 720p)", "1024x1024 (Square, 1K)", "1280x704 (Landscape, Letterbox)"],
             "value": "1280x736 (Landscape, 720p)",
-            "info": "Wan 2.2 TI2V models require resolutions divisible by 32 (VAE=16x * Patch=2x). These are optimized for 720p."
+            "info": "Wan 2.2 TI2V models require resolutions divisible by 32 (VAE=16x * Patch=2x). These are optimized for 720p.\n\n⚠️ IMPORTANT: Wan 2.2 is trained at 24 FPS! Set FPS to 24 in the Output tab for best results. Deforum defaults to 60 FPS which may cause temporal artifacts. Since frames are saved individually, you can adjust FPS during video compilation."
         },
         "wan_seed": {
             "label": "Wan Seed",

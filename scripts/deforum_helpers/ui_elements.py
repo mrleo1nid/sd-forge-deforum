@@ -788,30 +788,88 @@ The auto-discovery will find your models automatically!
         # Prepare output directory with proper batch name
         import os
         
-        # args.outdir should already have the batch name from process_args()
+        print("="*80)
+        print("🔍 DEBUG: Output Directory Setup")
+        print("="*80)
+        
+        # Log all relevant attributes
+        print(f"📋 args.outdir exists: {hasattr(args, 'outdir')}")
+        if hasattr(args, 'outdir'):
+            print(f"📋 args.outdir value: {args.outdir}")
+        print(f"📋 args.batch_name exists: {hasattr(args, 'batch_name')}")
+        if hasattr(args, 'batch_name'):
+            print(f"📋 args.batch_name value: {args.batch_name}")
+        print(f"📋 root.timestring: {root.timestring}")
+        print(f"📋 root.raw_batch_name exists: {hasattr(root, 'raw_batch_name')}")
+        if hasattr(root, 'raw_batch_name'):
+            print(f"📋 root.raw_batch_name: {root.raw_batch_name}")
+        print("-"*80)
+        
+        # Determine output directory
+        output_directory = None
+        
+        # Strategy 1: Use args.outdir if it exists and looks valid
         if hasattr(args, 'outdir') and args.outdir:
-            output_directory = args.outdir
-            print(f"📁 Using args.outdir: {output_directory}")
-        else:
-            # Fallback: manually construct with batch name
+            # Validate that outdir has a timestring or unique identifier
+            if 'Deforum_' in args.outdir or any(char.isdigit() for char in os.path.basename(args.outdir)):
+                output_directory = args.outdir
+                print(f"✅ Using args.outdir (contains identifier): {output_directory}")
+            else:
+                print(f"⚠️ args.outdir lacks unique identifier: {args.outdir}")
+                print(f"⚠️ Will reconstruct with batch name to avoid collisions")
+        
+        # Strategy 2: Construct from batch_name if outdir not suitable
+        if not output_directory:
             deforum_outpath = os.path.join(os.getcwd(), 'outputs', 'deforum')
             
-            # Get batch name, ensuring it has timestring
-            batch_name = getattr(args, 'batch_name', f'Deforum_{root.timestring}')
+            # Get batch name with multiple fallbacks
+            batch_name = None
             
-            # If batch_name is just "Deforum" without timestring, add it
-            if batch_name == 'Deforum' or batch_name == 'Deforum_{timestring}':
-                batch_name = f'Deforum_{root.timestring}'
-                print(f"⚠️ Batch name was generic, adding timestring: {batch_name}")
+            # Try args.batch_name first
+            if hasattr(args, 'batch_name') and args.batch_name:
+                batch_name = args.batch_name
+                print(f"📝 Using args.batch_name: {batch_name}")
+            
+            # Try root.raw_batch_name
+            elif hasattr(root, 'raw_batch_name') and root.raw_batch_name:
+                batch_name = root.raw_batch_name
+                print(f"📝 Using root.raw_batch_name: {batch_name}")
+            
+            # Default fallback
+            else:
+                batch_name = 'Deforum_{timestring}'
+                print(f"⚠️ No batch_name found, using default: {batch_name}")
+            
+            # Substitute placeholders
+            if '{timestring}' in batch_name or batch_name == 'Deforum':
+                batch_name = batch_name.replace('{timestring}', root.timestring)
+                print(f"🔄 Substituted timestring: {batch_name}")
+            
+            # Final validation: ensure batch_name has unique identifier
+            if not any(char.isdigit() for char in batch_name):
+                batch_name = f"{batch_name}_{root.timestring}"
+                print(f"⚠️ Added timestring for uniqueness: {batch_name}")
             
             output_directory = os.path.join(deforum_outpath, batch_name)
-            print(f"📁 Constructed output directory: {output_directory}")
-            print(f"   Batch name: {batch_name}")
-            print(f"   Timestring: {root.timestring}")
+            print(f"✅ Constructed output directory: {output_directory}")
         
         # Ensure directory exists
         os.makedirs(output_directory, exist_ok=True)
-        print(f"✅ Output directory confirmed: {output_directory}")
+        
+        # Final validation
+        dir_name = os.path.basename(output_directory)
+        if dir_name == 'Deforum' or dir_name == 'deforum':
+            print("="*80)
+            print(f"❌ CRITICAL ERROR: Output directory has no unique identifier!")
+            print(f"❌ Directory: {output_directory}")
+            print(f"❌ This will cause files from different generations to mix!")
+            print("="*80)
+            raise RuntimeError(f"Invalid output directory (no unique ID): {output_directory}")
+        
+        print("="*80)
+        print(f"✅ Final output directory: {output_directory}")
+        print(f"✅ Directory name: {dir_name}")
+        print("="*80)
         
         # Generate video using direct integration
         print("🚀 Starting direct Wan integration...")
