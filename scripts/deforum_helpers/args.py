@@ -1162,24 +1162,17 @@ def WanArgs():
     """Wan 2.1 video generation arguments - Updated to integrate with Deforum schedules"""
     return {
         "wan_t2v_model": {
-            "label": "TI2V Model (Wan 2.2)",
+            "label": "Wan 2.2 Model Selection",
             "type": "dropdown",
-            "choices": ["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
-            "value": "Auto-Detect",  # Auto-detect will prefer TI2V-5B
-            "info": "Wan 2.2 unified text/image-to-video model. TI2V-5B: 720p@24fps, 24GB VRAM (recommended). TI2V-A14B: MoE, 32GB+ VRAM (highest quality)."
+            "choices": ["Auto-Detect (Recommended)", "TI2V-5B", "TI2V-A14B", "Custom Path"],
+            "value": "Auto-Detect (Recommended)",
+            "info": "Wan 2.2 unified T2V+I2V model. Auto-Detect: automatically selects best available model. TI2V-5B: 16GB+ VRAM with CPU offload, 720p@24fps. TI2V-A14B: 32GB+ VRAM, MoE architecture, highest quality."
         },
         "wan_auto_download": {
             "label": "Auto-Download Models",
             "type": "checkbox",
             "value": True,
             "info": "Automatically download missing models from HuggingFace (recommended for first-time setup)"
-        },
-        "wan_preferred_size": {
-            "label": "Preferred Model",
-            "type": "dropdown",
-            "choices": ["TI2V-5B (Recommended)", "TI2V-A14B (Highest Quality)"],
-            "value": "TI2V-5B (Recommended)",
-            "info": "Wan 2.2 only. TI2V-5B: 720p@24fps, 24GB VRAM, RTX 4090. TI2V-A14B: MoE, 32GB+ VRAM, highest quality."
         },
         "wan_model_path": {
             "label": "Custom Model Path",
@@ -1211,19 +1204,19 @@ def WanArgs():
             "info": "Number of inference steps for Wan generation. Lower values (5-15) for quick testing, higher values (30-50) for quality"
         },
         "wan_strength_override": {
-            "label": "Strength Override",
+            "label": "I2V Strength Override",
             "type": "checkbox",
             "value": True,
-            "info": "Override Deforum strength schedule with fixed value for maximum continuity (recommended for I2V chaining)"
+            "info": "Use fixed I2V strength for clip-to-clip continuity. Recommended for Wan 2.2 to maintain consistent visual flow between clips."
         },
         "wan_fixed_strength": {
-            "label": "Fixed Strength",
+            "label": "I2V Continuity Strength",
             "type": "slider",
             "minimum": 0.0,
             "maximum": 1.0,
             "step": 0.05,
-            "value": 1.0,
-            "info": "Fixed strength value for I2V chaining (1.0 = maximum continuity, 0.0 = maximum creativity)"
+            "value": 0.85,
+            "info": "Controls how strongly each clip continues from the last frame. 0.85-0.95: strong continuity (recommended), 0.5-0.7: balanced, 0.0-0.3: creative variation. Higher values = smoother transitions."
         },
         "wan_guidance_override": {
             "label": "Guidance Scale Override",
@@ -1232,14 +1225,38 @@ def WanArgs():
             "info": "Override Deforum CFG scale schedule with fixed value (recommended for consistent Wan generation)"
         },
         "wan_guidance_scale": {
-            "label": "Fixed Guidance Scale",
+            "label": "Fixed Guidance Scale (CFG)",
             "type": "slider",
             "minimum": 1.0,
             "maximum": 20.0,
             "step": 0.5,
-            "value": 7.5,
-            "info": "Fixed guidance scale for prompt adherence (only used when Guidance Scale Override is enabled)"
+            "value": 3.5,
+            "info": "Wan 2.2 recommended CFG: 3.5 (higher values like 6+ tend to 'cook' outputs). Range 2.5-5.0 works best. Only used when Guidance Scale Override is enabled."
         },
+
+        # Advanced Generation Settings
+        "wan_negative_prompt": {
+            "label": "Negative Prompt",
+            "type": "textbox",
+            "value": "blurry, low quality, distorted, watermark, text, worst quality",
+            "lines": 3,
+            "info": "Negative prompt for Wan 2.2 generation. Describes what you don't want in the video."
+        },
+        "wan_sampler": {
+            "label": "Sampler",
+            "type": "dropdown",
+            "choices": ["auto", "uni_pc", "euler", "ddim", "pndm"],
+            "value": "auto",
+            "info": "Sampling method for Wan 2.2. Recommended: 'auto' (uses uni_pc), or 'euler' for faster generation. uni_pc generally provides best quality."
+        },
+        "wan_scheduler": {
+            "label": "Scheduler",
+            "type": "dropdown",
+            "choices": ["auto", "simple", "normal", "karras", "exponential"],
+            "value": "auto",
+            "info": "Noise schedule for Wan 2.2. Recommended: 'auto' (uses simple). 'simple' works best for most cases."
+        },
+
         "wan_frame_overlap": {
             "label": "Frame Overlap",
             "type": "slider",

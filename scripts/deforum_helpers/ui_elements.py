@@ -730,34 +730,51 @@ def generate_wan_video(args, anim_args, video_args, frame_idx, turbo_mode, turbo
 The auto-discovery will find your models automatically!
 """)
         
-        # Select the best model (or use user's size preference)
+        # Select model based on user's choice
         selected_model = None
+        user_model_choice = wan_args.wan_t2v_model.replace(" (Recommended)", "")
 
-        # Try to find a model matching user's size preference
-        user_preferred_size = wan_args.wan_preferred_size.replace(" (Recommended)", "").replace(" (Highest Quality)", "")
-
-        # Extract just the size part (5B or A14B) from the preference
-        if "5B" in user_preferred_size:
-            size_to_match = "5B"
-        elif "A14B" in user_preferred_size or "14B" in user_preferred_size:
-            size_to_match = "A14B"
-        else:
-            size_to_match = None
-
-        if size_to_match:
-            for model in models:
-                if size_to_match == model['size']:  # Exact match on size
-                    selected_model = model
-                    print(f"✅ Matched user preference: {model['name']} ({model['size']})")
-                    break
-
-        # Fallback to best available model using priority logic (TI2V > T2V > I2V)
-        if not selected_model:
+        # Handle different model selection options
+        if user_model_choice == "Auto-Detect":
+            # Auto-detect best model using priority logic (TI2V > T2V > I2V, FP8 > GGUF > FP16)
             selected_model = integration.get_best_model()
             if selected_model:
-                print(f"⚠️ Using auto-detected best model: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
+                print(f"🎯 Auto-detected best model: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
             else:
-                raise RuntimeError("No Wan models available!")
+                raise RuntimeError("No Wan models available! Please download a model first.")
+
+        elif user_model_choice == "Custom Path":
+            # User will provide custom path via wan_model_path
+            custom_path = wan_args.wan_model_path
+            print(f"📁 Using custom model path: {custom_path}")
+            # TODO: Add custom path validation and loading
+            raise NotImplementedError("Custom path loading not yet implemented. Please use Auto-Detect or specific model selection.")
+
+        else:
+            # User selected specific model size (TI2V-5B or TI2V-A14B)
+            if "5B" in user_model_choice:
+                size_to_match = "5B"
+            elif "A14B" in user_model_choice or "14B" in user_model_choice:
+                size_to_match = "A14B"
+            else:
+                size_to_match = None
+
+            if size_to_match:
+                for model in models:
+                    if size_to_match == model['size']:
+                        selected_model = model
+                        print(f"✅ Using user-selected model: {model['name']} ({model['size']})")
+                        break
+
+                if not selected_model:
+                    print(f"⚠️ Requested {size_to_match} model not found, falling back to auto-detect")
+                    selected_model = integration.get_best_model()
+            else:
+                # Fallback to auto-detect
+                selected_model = integration.get_best_model()
+
+        if not selected_model:
+            raise RuntimeError("No Wan models available! Please download a model first.")
             
         print(f"🎯 Selected model: {selected_model['name']} ({selected_model['type']}, {selected_model['size']})")
         print(f"📁 Model path: {selected_model['path']}")

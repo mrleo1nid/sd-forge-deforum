@@ -467,10 +467,72 @@ class WanSimpleIntegration:
                         with torch.no_grad():
                             return self.pipeline(**generation_kwargs)
                     
-                    def generate_image2video(self, image, prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs):
-                        # Enhanced prompt for I2V
-                        enhanced_prompt = f"Starting from the given image, {prompt}. Maintain visual continuity."
-                        return self.__call__(enhanced_prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs)
+                    def generate_image2video(self, image, prompt, height, width, num_frames, num_inference_steps, guidance_scale, strength=0.8, **kwargs):
+                        """
+                        Image-to-Video generation with proper image conditioning
+
+                        Args:
+                            image: PIL Image to use as first frame/conditioning
+                            prompt: Text prompt for video generation
+                            strength: Image conditioning strength (0.0-1.0)
+                                     1.0 = maximum continuity from image
+                                     0.0 = ignore image, pure T2V
+                        """
+                        # Wan 2.2 requires dimensions divisible by 32
+                        aligned_width = ((width + 31) // 32) * 32
+                        aligned_height = ((height + 31) // 32) * 32
+
+                        # Enhanced prompt for I2V continuity
+                        # More specific language to encourage smooth transitions
+                        enhanced_prompt = f"{prompt}. Smooth continuation, maintaining consistent style and subject."
+
+                        import inspect
+                        pipeline_signature = inspect.signature(self.pipeline.__call__)
+
+                        generation_kwargs = {
+                            "prompt": enhanced_prompt,
+                            "num_inference_steps": num_inference_steps,
+                            "guidance_scale": guidance_scale,
+                        }
+
+                        # Add image conditioning if pipeline supports it
+                        if 'image' in pipeline_signature.parameters:
+                            generation_kwargs['image'] = image
+                            print_wan_info(f"✅ I2V conditioning: Using image with strength {strength:.2f}")
+                        else:
+                            print_wan_warning("⚠️ Pipeline does not support image parameter - using enhanced prompt only")
+
+                        # Add strength parameter if supported (some I2V pipelines use this)
+                        if 'strength' in pipeline_signature.parameters:
+                            generation_kwargs['strength'] = strength
+
+                        # Add image_guidance_scale if supported (alternative to strength in some pipelines)
+                        if 'image_guidance_scale' in pipeline_signature.parameters:
+                            # Convert strength to guidance scale (typically 1.0-10.0 range)
+                            image_guidance = 1.0 + (strength * 9.0)  # Map 0-1 to 1-10
+                            generation_kwargs['image_guidance_scale'] = image_guidance
+                            print_wan_info(f"🎯 Image guidance scale: {image_guidance:.1f}")
+
+                        # Add resolution parameters
+                        if 'height' in pipeline_signature.parameters:
+                            generation_kwargs['height'] = aligned_height
+                        if 'width' in pipeline_signature.parameters:
+                            generation_kwargs['width'] = aligned_width
+                        if 'num_frames' in pipeline_signature.parameters:
+                            generation_kwargs['num_frames'] = num_frames
+                        elif 'video_length' in pipeline_signature.parameters:
+                            generation_kwargs['video_length'] = num_frames
+                        elif 'num_video_frames' in pipeline_signature.parameters:
+                            generation_kwargs['num_video_frames'] = num_frames
+
+                        print_wan_info(f"🎬 I2V Generation:")
+                        print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+                        print_wan_info(f"   Frames: {num_frames}")
+                        print_wan_info(f"   I2V Strength: {strength:.2f}")
+                        print_wan_info(f"   CFG: {guidance_scale}")
+
+                        with torch.no_grad():
+                            return self.pipeline(**generation_kwargs)
                 
                 self.pipeline = DiffusersWrapper(pipeline)
                 print("✅ Diffusers model loaded successfully")
@@ -573,12 +635,21 @@ Error: {diffusers_e}
                                 else:
                                     # Subsequent clips: I2V chaining
                                     print_wan_info(f"I2V chaining from: {os.path.basename(last_frame_path)}")
-                                    
+
+                                    # Get I2V strength from wan_args
+                                    i2v_strength = 0.85  # Default: strong continuity (matches UI default)
+                                    if wan_args and hasattr(wan_args, 'wan_strength_override') and wan_args.wan_strength_override:
+                                        if hasattr(wan_args, 'wan_fixed_strength'):
+                                            i2v_strength = float(wan_args.wan_fixed_strength)
+                                            print_wan_info(f"Using fixed I2V strength from settings: {i2v_strength:.2f}")
+                                    else:
+                                        print_wan_info(f"Using default I2V strength: {i2v_strength:.2f}")
+
                                     if hasattr(self.pipeline, 'generate_image2video'):
-                                        # Custom I2V pipeline
+                                        # Custom I2V pipeline with image conditioning
                                         from PIL import Image
                                         last_frame_image = Image.open(last_frame_path)
-                                        
+
                                         result = self.pipeline.generate_image2video(
                                             image=last_frame_image,
                                             prompt=clip['prompt'],
@@ -587,11 +658,13 @@ Error: {diffusers_e}
                                             num_frames=clip['num_frames'],
                                             num_inference_steps=steps,
                                             guidance_scale=guidance_scale,
+                                            strength=i2v_strength,  # Control image conditioning strength
                                         )
                                         inference_progress.update(steps)
                                     else:
                                         # Fallback to T2V with enhanced prompt
-                                        enhanced_prompt = f"Continuing seamlessly, {clip['prompt']}. Maintain visual continuity."
+                                        print_wan_warning("⚠️ Pipeline does not support I2V - using enhanced T2V")
+                                        enhanced_prompt = f"Continuing seamlessly from previous scene, {clip['prompt']}. Maintain visual continuity, smooth transition."
                                         result = self.pipeline(
                                             prompt=enhanced_prompt,
                                             height=height,
