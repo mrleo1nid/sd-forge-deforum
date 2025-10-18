@@ -1165,7 +1165,7 @@ def WanArgs():
             "label": "TI2V Model (Wan 2.2)",
             "type": "dropdown",
             "choices": ["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
-            "value": "TI2V-5B",
+            "value": "Auto-Detect",  # Auto-detect will prefer TI2V-5B
             "info": "Wan 2.2 unified text/image-to-video model. TI2V-5B: 720p@24fps, 24GB VRAM (recommended). TI2V-A14B: MoE, 32GB+ VRAM (highest quality)."
         },
         "wan_auto_download": {
@@ -1508,7 +1508,9 @@ def process_args(args_dict_main, run_id):
     freeu_args = SimpleNamespace(**{name: args_dict_main[name] for name in FreeUArgs()})
     kohya_hrfix_args = SimpleNamespace(**{name: args_dict_main[name] for name in KohyaHRFixArgs()})
     wan_args = SimpleNamespace(**{name: args_dict_main[name] for name in WanArgs()})
-    controlnet_args = SimpleNamespace(**{name: args_dict_main[name] for name in controlnet_component_names()})
+    # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
+    # controlnet_args = SimpleNamespace(**{name: args_dict_main[name] for name in controlnet_component_names()})
+    controlnet_args = SimpleNamespace()  # Empty namespace for backwards compatibility
 
     root.animation_prompts = json.loads(args_dict_main['animation_prompts'])
 
