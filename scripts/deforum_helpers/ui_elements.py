@@ -1170,13 +1170,41 @@ def get_tab_wan(dw: SimpleNamespace):
         
         # MODEL SETTINGS - Collapsed by default
         with gr.Accordion("🔧 Model Settings", open=False):
-            wan_t2v_model = gr.Dropdown(
-                label="TI2V Model (Wan 2.2)",
-                choices=["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
-                value="Auto-Detect",
-                info="Wan 2.2 unified text/image-to-video model. TI2V-5B: 720p@24fps, 24GB VRAM (recommended). TI2V-A14B: MoE, 32GB+ VRAM (highest quality)."
-            )
+            gr.Markdown("""
+            **⚡ For GPUs with <16GB VRAM**: Download FP8 quantized models for lower memory usage!
+
+            📥 **Download FP8 Models:**
+            - **TI2V-5B FP8**: Search Hugging Face for "Kijai Wan2.2-TI2V-5B FP8" (~12GB VRAM)
+            - Files needed: `*_fp8_e4m3fn_scaled_KJ.safetensors`, `wan2.2_vae.safetensors`, `umt5_xxl_fp8_e4m3fn_scaled.safetensors`
+            - Place in: `models/wan/Wan2.2-TI2V-5B-FP8/` directory
+
+            📦 **Full precision models** (~24GB VRAM): Search for "Wan2.2-TI2V-5B" official releases
+            """)
+
+            with FormRow():
+                wan_t2v_model = gr.Dropdown(
+                    label="TI2V Model (Wan 2.2)",
+                    choices=["Auto-Detect", "TI2V-5B", "TI2V-A14B", "Custom Path"],
+                    value="Auto-Detect",
+                    info="Wan 2.2 unified text/image-to-video model. Auto-Detect will find any model in models/wan/"
+                )
+
+                wan_quantization = gr.Dropdown(
+                    label="Quantization Preference",
+                    choices=["Auto (detect from filename)", "Prefer FP8 (low VRAM)", "Prefer FP16 (quality)"],
+                    value="Auto (detect from filename)",
+                    info="FP8: ~12GB VRAM, FP16: ~24GB VRAM. Auto detects fp8/e4m3fn in filename."
+                )
+
             wan_model_path = create_gr_elem(dw.wan_model_path)
+
+            with gr.Row():
+                wan_model_info = gr.Textbox(
+                    label="Detected Model Info",
+                    interactive=False,
+                    placeholder="Model information will appear here after loading",
+                    lines=2
+                )
         
         # OVERRIDES SECTION - Movement sensitivity moved here
         with gr.Accordion("🔧 Override Settings (Advanced)", open=False):
