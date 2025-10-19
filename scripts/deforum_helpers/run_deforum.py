@@ -53,22 +53,47 @@ def run_deforum(*args):
     if args_dict.get('resume_from_timestring', False) and args_dict.get('resume_timestring'):
         # Try to load settings from previous run to get correct animation_mode
         import json
-        outdir = args_dict.get('outdir', 'output')
-        timestring = args_dict.get('resume_timestring')
-        settings_file = os.path.join(outdir, f"{timestring}_settings.txt")
+        from pathlib import Path
         
-        if os.path.exists(settings_file):
-            try:
-                with open(settings_file, 'r') as f:
-                    saved_settings = json.load(f)
-                    saved_animation_mode = saved_settings.get('animation_mode')
-                    if saved_animation_mode:
-                        print(f"🔄 Resume detected: Loading animation_mode '{saved_animation_mode}' from {os.path.basename(settings_file)}")
-                        animation_mode = saved_animation_mode
-                        # Override in args_dict so it's used throughout
-                        args_dict['animation_mode'] = animation_mode
-            except Exception as e:
-                print(f"⚠️ Warning: Could not load animation_mode from settings file: {e}")
+        outdir = args_dict.get('outdir', 'output')
+        timestring = args_dict.get('resume_timestring', '').strip()
+        
+        if timestring:
+            # Try multiple possible paths for settings file
+            possible_paths = [
+                os.path.join(outdir, f"{timestring}_settings.txt"),
+                f"{outdir}/{timestring}/{timestring}_settings.txt",
+                f"output/{timestring}/{timestring}_settings.txt",
+                f"outputs/{timestring}/{timestring}_settings.txt",
+            ]
+            
+            print(f"🔄 Resume mode: Searching for settings file for timestring '{timestring}'...")
+            settings_file = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    settings_file = path
+                    print(f"   ✓ Found: {path}")
+                    break
+            
+            if settings_file:
+                try:
+                    with open(settings_file, 'r') as f:
+                        saved_settings = json.load(f)
+                        saved_animation_mode = saved_settings.get('animation_mode')
+                        if saved_animation_mode:
+                            print(f"🔄 Resume detected: Loading animation_mode '{saved_animation_mode}' from saved settings")
+                            animation_mode = saved_animation_mode
+                            # Override in args_dict so it's used throughout
+                            args_dict['animation_mode'] = animation_mode
+                        else:
+                            print(f"⚠️  Warning: No animation_mode found in settings file")
+                            print(f"   Using current UI setting: {animation_mode}")
+                except Exception as e:
+                    print(f"⚠️ Warning: Could not load animation_mode from settings file: {e}")
+                    print(f"   Using current UI setting: {animation_mode}")
+            else:
+                print(f"⚠️  Warning: Could not find settings file for timestring '{timestring}'")
+                print(f"   Tried: {possible_paths[0]}")
                 print(f"   Using current UI setting: {animation_mode}")
     
     # Check if this is Wan Only mode - no SD model needed
