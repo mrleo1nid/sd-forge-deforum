@@ -474,6 +474,12 @@ def DeforumAnimArgs():
             "value": "Keyframes Only",
             "info": "Allows for fast generations at high cadence or no cadence."
         },
+        "enable_wan_flf2v": {
+            "label": "Enable Wan FLF2V for Tweens",
+            "type": "checkbox",
+            "value": False,
+            "info": "Use Wan AI video interpolation (FLF2V) instead of depth-based tweening. Requires Wan FLF2V model. Best for < 20 tween frames between keyframes."
+        },
         "diffusion_cadence": {
             "label": "Cadence",
             "type": "slider",

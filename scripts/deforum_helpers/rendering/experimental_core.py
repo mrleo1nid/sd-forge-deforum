@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 from typing import List
 
+import numpy as np
+
 # noinspection PyUnresolvedReferences
 from modules import shared  # provided by Forge
 
@@ -70,11 +72,21 @@ def run_render_animation(data: RenderData, frames: List[DiffusionFrame]):
 
 def process_frame(data, frame):
     prepare_generation(data, frame)
-    emit_tweens(data, frame)
+
+    # Skip traditional tweens if using Wan FLF2V
+    use_wan_flf2v = should_use_wan_flf2v(data, frame)
+    if not use_wan_flf2v:
+        emit_tweens(data, frame)
+
     pre_process(data, frame)
     image = frame.generate(data, shared.total_tqdm)
     if image is None:
         raise NoImageGenerated()
+
+    # Emit Wan FLF2V tweens AFTER keyframe generation
+    if use_wan_flf2v:
+        emit_wan_flf2v_tweens(data, frame, image)
+
     post_process(data, frame, image)
 
 
@@ -89,6 +101,156 @@ def emit_tweens(data: RenderData, frame: DiffusionFrame):
     if frame.has_tween_frames():
         update_pseudo_cadence(data, len(frame.tweens) - 1)
         log_utils.print_tween_frame_from_to_info(frame)
+        [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
+
+
+def should_use_wan_flf2v(data: RenderData, frame: DiffusionFrame) -> bool:
+    """Check if this frame should use Wan FLF2V for tweens instead of traditional depth warping."""
+    # Only use Wan if explicitly enabled
+    if not hasattr(data.args.anim_args, 'enable_wan_flf2v') or not data.args.anim_args.enable_wan_flf2v:
+        return False
+
+    # Need tweens to fill in
+    if not frame.has_tween_frames():
+        return False
+
+    # Need a previous frame to interpolate from
+    if not data.images.has_previous():
+        return False
+
+    # Skip first frame (frame 0 has no previous)
+    if frame.i == 0:
+        return False
+
+    return True
+
+
+def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyframe_image):
+    """Generate tween frames using Wan FLF2V interpolation between previous and current keyframes."""
+    if not frame.has_tween_frames():
+        return
+
+    log_utils.info("🎬 Using Wan FLF2V for tween interpolation", log_utils.CYAN)
+    log_utils.info(f"   Interpolating {len(frame.tweens)} frames between keyframes", log_utils.CYAN)
+
+    try:
+        # Import Wan integration
+        from ...wan.wan_simple_integration import WanSimpleIntegration
+
+        # Get previous and current keyframe images
+        prev_keyframe = data.images.previous
+        curr_keyframe = current_keyframe_image
+
+        # Convert OpenCV images (BGR numpy array) to PIL Images (RGB)
+        import cv2
+        from PIL import Image
+        if isinstance(prev_keyframe, np.ndarray):
+            prev_keyframe_pil = Image.fromarray(cv2.cvtColor(prev_keyframe, cv2.COLOR_BGR2RGB))
+        else:
+            prev_keyframe_pil = prev_keyframe
+
+        if isinstance(curr_keyframe, np.ndarray):
+            curr_keyframe_pil = Image.fromarray(cv2.cvtColor(curr_keyframe, cv2.COLOR_BGR2RGB))
+        else:
+            curr_keyframe_pil = curr_keyframe
+
+        # Initialize Wan
+        wan = WanSimpleIntegration()
+
+        # Auto-discover and load Wan FLF2V model
+        models = wan.discover_models()
+        flf2v_model = None
+        for model in models:
+            if model['type'] == 'FLF2V':
+                flf2v_model = model
+                break
+
+        if not flf2v_model:
+            log_utils.error("❌ No Wan FLF2V model found!", log_utils.RED)
+            log_utils.info("   Download with: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/FLF2V", log_utils.YELLOW)
+            log_utils.info("   Falling back to traditional depth-based tweens", log_utils.YELLOW)
+            # Fallback to traditional tweens
+            update_pseudo_cadence(data, len(frame.tweens) - 1)
+            [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
+            return
+
+        # Load Wan FLF2V pipeline
+        wan_args = None  # Get from data if available
+        if hasattr(data.args, 'wan_args'):
+            wan_args = data.args.wan_args
+
+        if not wan.load_simple_wan_pipeline(flf2v_model, wan_args):
+            log_utils.error("❌ Failed to load Wan FLF2V pipeline", log_utils.RED)
+            # Fallback
+            update_pseudo_cadence(data, len(frame.tweens) - 1)
+            [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
+            return
+
+        # Get prompt for this frame
+        prompt = data.args.root.animation_prompts.get(str(frame.i), "")
+
+        # Get dimensions from data
+        width = data.args.args.W
+        height = data.args.args.H
+
+        # Number of frames to generate (all tweens + the current keyframe)
+        # FLF2V generates num_frames total, including start and end
+        num_frames = len(frame.tweens) + 1  # tweens + current keyframe
+
+        # Call FLF2V
+        log_utils.info(f"   Generating {num_frames} frames with Wan FLF2V...", log_utils.CYAN)
+        result = wan.pipeline.generate_flf2v(
+            first_frame=prev_keyframe_pil,
+            last_frame=curr_keyframe_pil,
+            prompt=prompt,
+            height=height,
+            width=width,
+            num_frames=num_frames,
+            num_inference_steps=20,  # Default, could be from settings
+            guidance_scale=7.5  # Default, could be from settings
+        )
+
+        # Extract frames from result
+        if hasattr(result, 'frames'):
+            generated_frames = result.frames[0]  # First (and only) video
+        elif isinstance(result, list):
+            generated_frames = result
+        else:
+            log_utils.error("❌ Unexpected FLF2V result format", log_utils.RED)
+            # Fallback
+            update_pseudo_cadence(data, len(frame.tweens) - 1)
+            [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
+            return
+
+        # Save tween frames (skip first and last as they're the keyframes)
+        for idx, tween in enumerate(frame.tweens):
+            # FLF2V frame index: skip first frame (prev keyframe), use frames 1 to len(tweens)
+            flf2v_frame = generated_frames[idx + 1]
+
+            # Convert PIL to OpenCV format (BGR numpy array)
+            if isinstance(flf2v_frame, Image.Image):
+                tween_image = cv2.cvtColor(np.array(flf2v_frame), cv2.COLOR_RGB2BGR)
+            else:
+                tween_image = flf2v_frame
+
+            # Save the tween frame
+            saved_image = image_utils.save_and_return_frame(data, tween, tween_image)
+            shared.total_tqdm.increment_tween_count()
+
+            # Update reference images
+            data.images.before_previous = data.images.previous
+            data.images.previous = saved_image
+            data.args.root.init_sample = saved_image
+
+        log_utils.success(f"✅ Wan FLF2V generated {len(frame.tweens)} tween frames", log_utils.GREEN)
+
+    except Exception as e:
+        log_utils.error(f"❌ Wan FLF2V failed: {e}", log_utils.RED)
+        import traceback
+        traceback.print_exc()
+        log_utils.info("   Falling back to traditional depth-based tweens", log_utils.YELLOW)
+        # Fallback to traditional tweens
+        update_pseudo_cadence(data, len(frame.tweens) - 1)
         [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
 
 

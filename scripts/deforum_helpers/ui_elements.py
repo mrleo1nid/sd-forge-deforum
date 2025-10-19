@@ -124,6 +124,29 @@ def get_tab_keyframes(d, da, dloopArgs):
         with gr.Tabs():
             with gr.TabItem(f"{emoji_utils.distribution()} Distribution"):
                 keyframe_distribution = create_row(da.keyframe_distribution)
+
+                # Wan FLF2V Integration
+                with gr.Accordion("🎬 Wan FLF2V Tween Mode (Experimental)", open=False):
+                    gr.Markdown("""
+                    **Use Wan AI video interpolation instead of depth-based tweening.**
+
+                    **When to use:**
+                    - Calm sections with few tween frames (< 20 frames between keyframes)
+                    - When depth warping creates artifacts
+                    - When you want cinematic AI-generated motion
+
+                    **How it works:**
+                    1. Flux generates keyframes as normal
+                    2. Wan FLF2V interpolates smooth video between keyframes
+                    3. No depth estimation needed
+
+                    **Requirements:**
+                    - Wan FLF2V model must be downloaded
+                    - Works best with keyframe distribution mode
+                    - VRAM: ~15-18GB (less than standalone Wan T2V)
+                    """)
+                    enable_wan_flf2v = create_row(da.enable_wan_flf2v)
+
                 create_keyframe_distribution_info_tab()
             with gr.TabItem(f"{emoji_utils.strength()} Strength"):
                 strength_schedule = create_row(da.strength_schedule)
