@@ -120,45 +120,11 @@ def get_tab_keyframes(d, da, dloopArgs):
                 blendFactorSlope = create_row(dloopArgs.blendFactorSlope)
                 tweening_frames_schedule = create_row(dloopArgs.tweening_frames_schedule)
                 color_correction_factor = create_row(dloopArgs.color_correction_factor)
-        # EXTRA SCHEDULES TABS
+        # KEYFRAME SCHEDULES - Single unified tab level
         # NOTE: Distribution promoted to main tab level - see get_tab_distribution()
+        # NOTE: Shakify and Depth Warping promoted to main tab level - see get_tab_shakify() and get_tab_depth_warping()
         with gr.Tabs():
-            with gr.TabItem(f"{emoji_utils.strength()} Strength"):
-                strength_schedule = create_row(da.strength_schedule)
-                keyframe_strength_schedule = create_row(da.keyframe_strength_schedule)
-            with gr.TabItem(f"{emoji_utils.scale()} CFG"):
-                cfg_scale_schedule = create_row(da.cfg_scale_schedule)
-                distilled_cfg_scale_schedule = create_row(da.distilled_cfg_scale_schedule)
-                enable_clipskip_scheduling = create_row(da.enable_clipskip_scheduling)
-                clipskip_schedule = create_row(da.clipskip_schedule)
-            with gr.TabItem(f"{emoji_utils.seed()} Seed & SubSeed") as subseed_sch_tab:
-                seed_behavior = create_row(d.seed_behavior)
-                with FormRow() as seed_iter_N_row:
-                    seed_iter_N = create_row(d.seed_iter_N)
-                with FormRow(visible=False) as seed_schedule_row:
-                    seed_schedule = create_gr_elem(da.seed_schedule)
-                enable_subseed_scheduling, subseed_schedule, subseed_strength_schedule = create_row(
-                    da, 'enable_subseed_scheduling', 'subseed_schedule', 'subseed_strength_schedule')
-                seed_resize_from_w, seed_resize_from_h = create_row(
-                    d, 'seed_resize_from_w', 'seed_resize_from_h')
-            # Steps Scheduling
-            with gr.TabItem('Step'):
-                enable_steps_scheduling = create_row(da.enable_steps_scheduling)
-                steps_schedule = create_row(da.steps_schedule)
-            # Sampler Scheduling
-            with gr.TabItem('Sampler'):
-                enable_sampler_scheduling = create_row(da.enable_sampler_scheduling)
-                sampler_schedule = create_row(da.sampler_schedule)
-            # Scheduler Scheduling
-            with gr.TabItem('Scheduler'):
-                enable_scheduler_scheduling = create_row(da.enable_scheduler_scheduling)
-                scheduler_schedule = create_row(da.scheduler_schedule)
-            # Checkpoint Scheduling
-            with gr.TabItem('Checkpoint'):
-                enable_checkpoint_scheduling = create_row(da.enable_checkpoint_scheduling)
-                checkpoint_schedule = create_row(da.checkpoint_schedule)
-        # MOTION INNER TAB
-        with gr.Tabs(elem_id='motion_noise_etc'):
+            # MOTION TAB - Most important for animation, placed first
             with gr.TabItem(f"{emoji_utils.bicycle()} Motion") as motion_tab:
                 with FormColumn() as only_2d_motion_column:
                     with FormRow(variant="compact"):
@@ -204,18 +170,45 @@ def get_tab_keyframes(d, da, dloopArgs):
                 with FormRow(visible=False) as per_f_f_row:
                     perspective_flip_fv = create_gr_elem(da.perspective_flip_fv)
 
-            with gr.TabItem(f"{emoji_utils.video_camera()} Shakify"):
-                with FormColumn(min_width=220):
-                    create_row(gr.Markdown(f"""
-                        Integrate dynamic camera shake effects into your renders with data sourced from EatTheFutures
-                         'Camera Shakify' Blender plugin. This feature enhances the realism of your animations
-                        by simulating natural camera movements, adding a layer of depth and engagement to your visuals. 
-                    """))
-                    shake_name = create_row(da.shake_name)
-                    shake_intensity = create_row(da.shake_intensity)
-                    shake_speed = create_row(da.shake_speed)
+            # SCHEDULE TABS
+            with gr.TabItem(f"{emoji_utils.strength()} Strength"):
+                strength_schedule = create_row(da.strength_schedule)
+                keyframe_strength_schedule = create_row(da.keyframe_strength_schedule)
 
-            # NOISE INNER TAB
+            with gr.TabItem(f"{emoji_utils.scale()} CFG"):
+                cfg_scale_schedule = create_row(da.cfg_scale_schedule)
+                distilled_cfg_scale_schedule = create_row(da.distilled_cfg_scale_schedule)
+                enable_clipskip_scheduling = create_row(da.enable_clipskip_scheduling)
+                clipskip_schedule = create_row(da.clipskip_schedule)
+
+            with gr.TabItem(f"{emoji_utils.seed()} Seed & SubSeed") as subseed_sch_tab:
+                seed_behavior = create_row(d.seed_behavior)
+                with FormRow() as seed_iter_N_row:
+                    seed_iter_N = create_row(d.seed_iter_N)
+                with FormRow(visible=False) as seed_schedule_row:
+                    seed_schedule = create_gr_elem(da.seed_schedule)
+                enable_subseed_scheduling, subseed_schedule, subseed_strength_schedule = create_row(
+                    da, 'enable_subseed_scheduling', 'subseed_schedule', 'subseed_strength_schedule')
+                seed_resize_from_w, seed_resize_from_h = create_row(
+                    d, 'seed_resize_from_w', 'seed_resize_from_h')
+
+            with gr.TabItem('Step'):
+                enable_steps_scheduling = create_row(da.enable_steps_scheduling)
+                steps_schedule = create_row(da.steps_schedule)
+
+            with gr.TabItem('Sampler'):
+                enable_sampler_scheduling = create_row(da.enable_sampler_scheduling)
+                sampler_schedule = create_row(da.sampler_schedule)
+
+            with gr.TabItem('Scheduler'):
+                enable_scheduler_scheduling = create_row(da.enable_scheduler_scheduling)
+                scheduler_schedule = create_row(da.scheduler_schedule)
+
+            with gr.TabItem('Checkpoint'):
+                enable_checkpoint_scheduling = create_row(da.enable_checkpoint_scheduling)
+                checkpoint_schedule = create_row(da.checkpoint_schedule)
+
+            # NOISE TAB
             with gr.TabItem(f"{emoji_utils.wave()} Noise"):
                 with FormColumn() as noise_tab_column:
                     noise_type = create_row(da.noise_type)
@@ -265,43 +258,12 @@ def get_tab_keyframes(d, da, dloopArgs):
                 # reroll with +1 seed, interrupt the animation generation, or do nothing
                 reroll_blank_frames, reroll_patience = create_row(
                     d, 'reroll_blank_frames', 'reroll_patience')
-            # ANTI BLUR INNER TAB
+            # ANTI BLUR TAB
             with gr.TabItem(f"{emoji_utils.broom()} Anti Blur", elem_id='anti_blur_accord') as anti_blur_tab:
                 amount_schedule = create_row(da.amount_schedule)
                 kernel_schedule = create_row(da.kernel_schedule)
                 sigma_schedule = create_row(da.sigma_schedule)
                 threshold_schedule = create_row(da.threshold_schedule)
-            with gr.TabItem(f"{emoji_utils.hole()} 3D Depth Warping & FOV", elem_id='depth_warp_fov_tab') \
-                    as depth_warp_fov_tab:
-
-                # FIXME this should only be visible if animation mode is "3D".
-                is_visible = True
-                is_info_visible = is_visible
-                depth_warp_msg_html = gr.HTML(value='Please switch to 3D animation mode to view this section.',
-                                              elem_id='depth_warp_msg_html', visible=is_info_visible)
-                with FormRow(visible=is_visible) as depth_warp_row_1:
-                    use_depth_warping = create_gr_elem(da.use_depth_warping)
-                    # *the following html only shows when LeReS depth is selected*
-                    leres_license_msg = gr.HTML(value=get_gradio_html('leres'), visible=False,
-                                                elem_id='leres_license_msg')
-                    depth_algorithm = create_gr_elem(da.depth_algorithm)
-                    midas_weight = create_gr_elem(da.midas_weight)
-                with FormRow(visible=is_visible) as depth_warp_row_2:
-                    padding_mode = create_gr_elem(da.padding_mode)
-                    sampling_mode = create_gr_elem(da.sampling_mode)
-                with FormRow(visible=is_visible):
-                    with gr.Accordion('Extended Depth Warp Settings', open=False):
-                        with FormRow() as depth_warp_row_3:
-                            aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
-                        with FormRow() as depth_warp_row_4:
-                            aspect_ratio_schedule = create_gr_elem(da.aspect_ratio_schedule)
-                with FormRow(visible=is_visible):
-                    with FormRow() as depth_warp_row_5:
-                        fov_schedule = create_gr_elem(da.fov_schedule)
-                    with FormRow() as depth_warp_row_6:
-                        near_schedule = create_gr_elem(da.near_schedule)
-                    with FormRow() as depth_warp_row_7:
-                        far_schedule = create_gr_elem(da.far_schedule)
 
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
@@ -330,6 +292,163 @@ def get_tab_prompts(da):
             mask_schedule = create_row(da.mask_schedule)
             use_noise_mask = create_row(da.use_noise_mask)
             noise_mask_schedule = create_row(da.noise_mask_schedule)
+
+    return {k: v for k, v in {**locals(), **vars()}.items()}
+
+
+def get_tab_qwen(dw: SimpleNamespace):
+    """AI Prompt Enhancement Tab - Qwen model for enhancing prompts"""
+    with gr.TabItem(f"🧠 AI Enhancement"):
+        gr.Markdown("""
+        ## AI Prompt Enhancement with Qwen
+
+        **Enhance your prompts using Qwen AI models** for better generation quality:
+        - Refines and expands prompt descriptions
+        - Analyzes Deforum movement schedules
+        - Translates technical motion into descriptive language
+        - Supports English and Chinese
+
+        **Usage:**
+        1. Write your base prompts in the Prompts tab above
+        2. Configure Qwen settings below
+        3. Enhancement integrates automatically when generating
+
+        **Note:** Qwen models are lazy-loaded only when needed and auto-cleanup before generation to free VRAM.
+        """)
+
+        # Qwen Settings
+        with gr.Accordion("⚙️ Qwen Settings", open=True):
+            with FormRow():
+                wan_qwen_model = create_gr_elem(dw.wan_qwen_model)
+                wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
+                wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
+
+        # Model Management
+        with gr.Accordion("🔧 Model Management", open=False):
+            gr.Markdown("""
+            **Model Information & Status**
+
+            Monitor Qwen model availability and manage downloads:
+            """)
+
+            qwen_model_status = gr.HTML(
+                label="Qwen Model Status",
+                value="⏳ Checking model availability...",
+                elem_id="wan_qwen_model_status"
+            )
+
+            with FormRow():
+                check_qwen_models_btn = gr.Button(
+                    "🔍 Check Model Status",
+                    variant="secondary",
+                    elem_id="wan_check_qwen_models_btn"
+                )
+                download_qwen_model_btn = gr.Button(
+                    "📥 Download Selected Model",
+                    variant="primary",
+                    elem_id="wan_download_qwen_model_btn"
+                )
+                cleanup_qwen_cache_btn = gr.Button(
+                    "🧹 Cleanup Model Cache",
+                    variant="secondary",
+                    elem_id="wan_cleanup_qwen_cache_btn"
+                )
+
+    return {k: v for k, v in {**locals(), **vars()}.items()}
+
+
+def get_tab_shakify(da):
+    """Camera Shakify Tab - Integrate realistic camera shake effects"""
+    with gr.TabItem(f"{emoji_utils.video_camera()} Shakify"):
+        gr.Markdown("""
+        ## Camera Shakify
+        **Integrate dynamic camera shake effects** into your renders with data sourced from EatTheFuture's 'Camera Shakify' Blender plugin.
+
+        This feature enhances the realism of your animations by simulating natural camera movements, adding a layer of depth and engagement to your visuals.
+
+        **Available Shake Patterns:**
+        - EARTHQUAKE - Violent, chaotic shaking
+        - FILM_GRAIN - Subtle analog film vibration
+        - GENTLE_HANDHELD - Natural handheld camera movement
+        - INVESTIGATION - Detective-style documentary camera work
+        - MOVING_HANDHELD - Active walking/running camera movement
+        - PANIC - Frantic, disoriented shaking
+        - ROLLING_SHUTTER - Digital camera sensor distortion
+        - And more...
+
+        **How It Works:**
+        - Shake patterns are layered on top of your scheduled movement (translation, rotation, zoom)
+        - Intensity controls the magnitude of shake
+        - Speed controls how fast the shake pattern plays
+        """)
+
+        with gr.Accordion("⚙️ Shakify Settings", open=True):
+            shake_name = create_row(da.shake_name)
+            shake_intensity = create_row(da.shake_intensity)
+            shake_speed = create_row(da.shake_speed)
+
+    return {k: v for k, v in {**locals(), **vars()}.items()}
+
+
+def get_tab_depth_warping(da):
+    """3D Depth Warping & FOV Tab - Configure depth estimation and 3D camera settings"""
+    with gr.TabItem(f"{emoji_utils.hole()} 3D Depth"):
+        gr.Markdown("""
+        ## 3D Depth Warping & FOV
+        **Transform 2D images into 3D space** using AI depth estimation for realistic camera movement.
+
+        **Depth Algorithms Available:**
+        - **Depth-Anything V2** - Latest, most accurate (recommended)
+        - **MiDaS** - Classic, reliable depth estimation
+        - **AdaBins** - Metric depth with good indoor/outdoor balance
+        - **LeReS** - High-quality depth with multi-resolution support
+        - **ZoeDepth** - Metric depth with zero-shot capability
+
+        **When to Use:**
+        - Required for **3D Animation Mode** to enable camera movement through space
+        - Creates parallax effects by warping images based on depth
+        - Enables true 3D camera controls (translation_z, rotation_3d_x/y/z)
+
+        **FOV (Field of View):**
+        - Controls perspective intensity (lower = more dramatic)
+        - Near/Far planes control depth clipping range
+        """)
+
+        # FIXME this should only be visible if animation mode is "3D".
+        is_visible = True
+        is_info_visible = is_visible
+
+        with gr.Accordion("⚙️ Depth Settings", open=True):
+            depth_warp_msg_html = gr.HTML(
+                value='Please switch to 3D animation mode to view this section.',
+                elem_id='depth_warp_msg_html',
+                visible=is_info_visible
+            )
+            with FormRow(visible=is_visible) as depth_warp_row_1:
+                use_depth_warping = create_gr_elem(da.use_depth_warping)
+                # *the following html only shows when LeReS depth is selected*
+                leres_license_msg = gr.HTML(
+                    value=get_gradio_html('leres'),
+                    visible=False,
+                    elem_id='leres_license_msg'
+                )
+                depth_algorithm = create_gr_elem(da.depth_algorithm)
+                midas_weight = create_gr_elem(da.midas_weight)
+            with FormRow(visible=is_visible) as depth_warp_row_2:
+                padding_mode = create_gr_elem(da.padding_mode)
+                sampling_mode = create_gr_elem(da.sampling_mode)
+
+        with gr.Accordion("⚙️ FOV & Advanced Settings", open=False):
+            with FormRow(visible=is_visible) as depth_warp_row_3:
+                aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
+            with FormRow(visible=is_visible) as depth_warp_row_4:
+                aspect_ratio_schedule = create_gr_elem(da.aspect_ratio_schedule)
+            with FormRow(visible=is_visible) as depth_warp_row_5:
+                fov_schedule = create_gr_elem(da.fov_schedule)
+            with FormRow(visible=is_visible) as depth_warp_row_6:
+                near_schedule = create_gr_elem(da.near_schedule)
+            with FormRow(visible=is_visible) as depth_warp_row_7:
+                far_schedule = create_gr_elem(da.far_schedule)
 
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
@@ -1333,21 +1452,6 @@ def get_tab_wan(dw: SimpleNamespace):
                     elem_id="wan_inference_steps_fixed_min_5",
                     info="Steps for generation quality (5-15: fast, 20-50: quality)"
                 )
-
-            # AI ENHANCEMENT SETTINGS - Collapsed by default
-            gr.Markdown("---")
-            gr.Markdown("### 🧠 AI Prompt Enhancement (Optional)")
-            gr.Markdown("""
-            **Enhance prompts using Qwen AI models** for better video quality:
-            - **🧠 AI Enhancement**: Refines and expands prompts
-            - **🎬 Movement Integration**: Uses movement descriptions from analysis
-            - **🌍 Multi-Language**: English and Chinese support
-            """)
-
-            with FormRow():
-                wan_qwen_model = create_gr_elem(dw.wan_qwen_model)
-                wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
-                wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
         # END DEPRECATED SECTION
         
         # MODEL SETTINGS - Collapsed by default

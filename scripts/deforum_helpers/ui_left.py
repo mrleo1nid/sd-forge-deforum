@@ -121,10 +121,13 @@ def setup_deforum_left_side_ui():
             # Get main tab contents:
             tab_run_params = get_tab_run(d, da)  # Run tab
             tab_keyframes_params = get_tab_keyframes(d, da, dloopArgs)  # Keyframes tab
-            # NEW: Distribution promoted to main tab level (was subtab under Keyframes)
-            from .ui_elements import get_tab_distribution
+            # NEW: Distribution, Qwen, Shakify, and Depth Warping promoted to main tab level
+            from .ui_elements import get_tab_distribution, get_tab_qwen, get_tab_shakify, get_tab_depth_warping
             tab_distribution_params = get_tab_distribution(da)  # Distribution tab
             tab_prompts_params = get_tab_prompts(da)  # Prompts tab
+            tab_qwen_params = get_tab_qwen(dw)  # AI Enhancement tab (Qwen)
+            tab_shakify_params = get_tab_shakify(da)  # Shakify tab (camera shake effects)
+            tab_depth_params = get_tab_depth_warping(da)  # 3D Depth tab (depth warping & FOV)
             tab_init_params = get_tab_init(d, da, dp)  # Init tab
             # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
             # controlnet_dict = setup_controlnet_ui()  # ControlNet tab
@@ -137,7 +140,7 @@ def setup_deforum_left_side_ui():
             tab_hybrid_params = get_tab_hybrid(da)  # Hybrid tab (hidden)
             tab_output_params = get_tab_output(da, dv)  # Output tab
             # add returned gradio elements from main tabs to locals()
-            for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_init_params, **controlnet_dict, **tab_freeu_params, **tab_kohya_hrfix_params, **tab_wan_params, **tab_hybrid_params, **tab_output_params}.items():
+            for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_qwen_params, **tab_shakify_params, **tab_depth_params, **tab_init_params, **controlnet_dict, **tab_freeu_params, **tab_kohya_hrfix_params, **tab_wan_params, **tab_hybrid_params, **tab_output_params}.items():
                 locals()[key] = value
 
     # Gradio's Change functions - hiding and renaming elements based on other elements
