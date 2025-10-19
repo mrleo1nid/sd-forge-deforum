@@ -1144,8 +1144,26 @@ def get_tab_wan(dw: SimpleNamespace):
         ---
         """)
 
+        # Deforum Integration Info - Shows what settings are used
+        with gr.Accordion("🔗 Deforum Integration Details", open=False):
+            gr.Markdown("""
+            **✅ Wan seamlessly integrates with your Deforum settings:**
+
+            - **📝 Prompts:** Uses prompts from Deforum Prompts tab
+            - **🎬 Movement:** Uses same movement schedules as normal Deforum renders
+            - **🎲 Seed & CFG:** Uses Deforum's seed and CFG schedules
+            - **💪 Strength:** Uses Deforum's strength schedule for I2V continuity
+            - **🎬 FPS:** Uses Output tab FPS setting
+
+            **Movement Integration:**
+            - ✅ Translation X/Y/Z, Rotation 3D X/Y/Z, Zoom schedules
+            - ✅ **Parseq schedules fully supported**
+            - ✅ Movement descriptions automatically calculated and added
+            - ✅ Motion intensity dynamically adapts to movement complexity
+            """)
+
         # DEPRECATED SECTION - Hide old standalone workflow
-        with gr.Accordion("⚠️ DEPRECATED: Standalone Wan Workflow", open=False, visible=False):
+        with gr.Accordion("⚠️ DEPRECATED: Standalone Wan Workflow (Hidden)", open=False, visible=False):
             gr.Markdown("""
             **🎯 Essential for Wan Generation:** These prompts define what video clips will be generated.
             
@@ -1240,36 +1258,20 @@ def get_tab_wan(dw: SimpleNamespace):
                 elem_id="wan_enhancement_progress_textbox",
                 visible=True
             )
-        
-        # DEFORUM INTEGRATION - ESSENTIAL (moved up)
-        with gr.Accordion("🔗 Deforum Integration", open=False):
-            gr.Markdown("""
-            **✅ Wan seamlessly integrates with your Deforum settings:**
-            
-            - **📝 Prompts:** Uses prompts from Deforum Prompts tab
-            - **🎬 Movement:** Uses same movement schedules as normal Deforum renders
-            - **🎲 Seed & CFG:** Uses Deforum's seed and CFG schedules
-            - **💪 Strength:** Uses Deforum's strength schedule for I2V continuity
-            - **🎬 FPS:** Uses Output tab FPS setting
-            
-            **Movement Integration:**
-            - ✅ Translation X/Y/Z, Rotation 3D X/Y/Z, Zoom schedules
-            - ✅ **Parseq schedules fully supported**
-            - ✅ Movement descriptions automatically calculated and added
-            - ✅ Motion intensity dynamically adapts to movement complexity
-            """)
-        
-        # GENERATION SECTION
-        with gr.Accordion("🎬 Generate Wan Video", open=True):
+
+            # GENERATION SECTION
+            gr.Markdown("---")
+            gr.Markdown("### 🎬 Generate Wan Video")
+
             # Generate Button with Validation
             with FormRow():
                 wan_generate_button = gr.Button(
                     "🎬 Generate Wan Video (I2V Chaining)",
-                    variant="primary", 
+                    variant="primary",
                     size="lg",
                     elem_id="wan_generate_button"
                 )
-                
+
             # Status output for Wan generation
             wan_generation_status = gr.Textbox(
                 label="Generation Status",
@@ -1278,9 +1280,11 @@ def get_tab_wan(dw: SimpleNamespace):
                 placeholder="⚠️ Prompts required! Load prompts above first, then click Generate.",
                 info="Status updates will appear here during generation."
             )
-        
-        # ESSENTIAL SETTINGS - Compact
-        with gr.Accordion("⚙️ Essential Settings", open=True):
+
+            # ESSENTIAL SETTINGS - Compact
+            gr.Markdown("---")
+            gr.Markdown("### ⚙️ Essential Settings")
+
             with FormRow():
                 wan_auto_download = create_gr_elem(dw.wan_auto_download)
                 wan_resolution = gr.Dropdown(
@@ -1289,7 +1293,7 @@ def get_tab_wan(dw: SimpleNamespace):
                     value="1280x736 (Landscape, 720p)",
                     info="Wan 2.2 TI2V models require resolutions divisible by 32 (VAE=16x * Patch=2x). These are optimized for 720p."
                 )
-                
+
             with FormRow():
                 wan_inference_steps = gr.Slider(
                     label="Inference Steps",
@@ -1300,20 +1304,22 @@ def get_tab_wan(dw: SimpleNamespace):
                     elem_id="wan_inference_steps_fixed_min_5",
                     info="Steps for generation quality (5-15: fast, 20-50: quality)"
                 )
-        
-        # AI ENHANCEMENT SETTINGS - Collapsed by default
-        with gr.Accordion("🧠 AI Prompt Enhancement (Optional)", open=False):
+
+            # AI ENHANCEMENT SETTINGS - Collapsed by default
+            gr.Markdown("---")
+            gr.Markdown("### 🧠 AI Prompt Enhancement (Optional)")
             gr.Markdown("""
             **Enhance prompts using Qwen AI models** for better video quality:
             - **🧠 AI Enhancement**: Refines and expands prompts
             - **🎬 Movement Integration**: Uses movement descriptions from analysis
             - **🌍 Multi-Language**: English and Chinese support
             """)
-            
+
             with FormRow():
                 wan_qwen_model = create_gr_elem(dw.wan_qwen_model)
                 wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
                 wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
+        # END DEPRECATED SECTION
         
         # MODEL SETTINGS - Collapsed by default
         with gr.Accordion("🔧 Model Settings", open=False):
@@ -1819,39 +1825,30 @@ def get_tab_wan(dw: SimpleNamespace):
     # Get all component names for the handlers
     from .args import get_component_names
     component_names = get_component_names()
-    
-    print(f"🔗 Connecting Wan generate button...")
-    print(f"📊 Found {len(component_names)} UI components for Wan generation")
-    
-    # NOTE: enhance_prompts_btn connection is now handled in ui_left.py for proper component access
-    
-    # Connect event handlers for movement analysis - updated with Camera Shakify and sensitivity controls
-    analyze_movement_btn.click(
-        fn=analyze_movement_handler,
-        inputs=[wan_enhanced_prompts, wan_enable_shakify, wan_movement_sensitivity_override, wan_manual_sensitivity],
-        outputs=[wan_enhanced_prompts, wan_movement_description]
-    )
-    
-    # Connect sensitivity override toggle to show/hide manual sensitivity slider
-    wan_movement_sensitivity_override.change(
-        fn=lambda override_enabled: gr.update(visible=override_enabled),
-        inputs=[wan_movement_sensitivity_override],
-        outputs=[manual_sensitivity_row]
-    )
-    
-    # Connect generate button with validation
-    wan_generate_button.click(
-        fn=validate_wan_generation,
-        inputs=[wan_enhanced_prompts],
-        outputs=[wan_generation_status]
-    )
 
-    # Add automatic validation status updates when prompts change
-    wan_enhanced_prompts.change(
-        fn=validate_wan_generation,
-        inputs=[wan_enhanced_prompts],
-        outputs=[wan_generation_status]
-    )
+    # DEPRECATED EVENT HANDLERS - Commented out for hidden standalone workflow
+    # These are no longer needed as Wan is now integrated with main Deforum workflow
+
+    # # Connect sensitivity override toggle to show/hide manual sensitivity slider
+    # wan_movement_sensitivity_override.change(
+    #     fn=lambda override_enabled: gr.update(visible=override_enabled),
+    #     inputs=[wan_movement_sensitivity_override],
+    #     outputs=[manual_sensitivity_row]
+    # )
+    #
+    # # Connect generate button with validation
+    # wan_generate_button.click(
+    #     fn=validate_wan_generation,
+    #     inputs=[wan_enhanced_prompts],
+    #     outputs=[wan_generation_status]
+    # )
+    #
+    # # Add automatic validation status updates when prompts change
+    # wan_enhanced_prompts.change(
+    #     fn=validate_wan_generation,
+    #     inputs=[wan_enhanced_prompts],
+    #     outputs=[wan_generation_status]
+    # )
 
     # Connect model download buttons
     from .wan.wan_model_downloader import download_wan_model
@@ -1865,20 +1862,20 @@ def get_tab_wan(dw: SimpleNamespace):
         fn=lambda: download_wan_model("TI2V-A14B"),
         outputs=[download_status]
     )
-    
-    # Connect new Wan prompt loading buttons
-    load_deforum_to_wan_btn.click(
-        fn=load_deforum_to_wan_prompts_handler,
-        inputs=[],
-        outputs=[wan_enhanced_prompts]
-    )
-    
-    load_wan_defaults_btn.click(
-        fn=load_wan_defaults_handler,
-        inputs=[],
-        outputs=[wan_enhanced_prompts]
-    )
-    
+
+    # DEPRECATED: Standalone prompt loading buttons (now use main Prompts tab)
+    # load_deforum_to_wan_btn.click(
+    #     fn=load_deforum_to_wan_prompts_handler,
+    #     inputs=[],
+    #     outputs=[wan_enhanced_prompts]
+    # )
+    #
+    # load_wan_defaults_btn.click(
+    #     fn=load_wan_defaults_handler,
+    #     inputs=[],
+    #     outputs=[wan_enhanced_prompts]
+    # )
+
     # Connect event handlers for Qwen model management
     check_qwen_models_btn.click(
         fn=check_qwen_models_handler,
