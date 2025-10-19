@@ -1635,14 +1635,11 @@ def get_tab_wan(dw: SimpleNamespace):
                 elem_id="wan_vram_optimization_info"
             )
 
-        # OVERRIDES SECTION - Movement sensitivity moved here
-        with gr.Accordion("🔧 Override Settings (Advanced)", open=False):
-            gr.Markdown("""
-            **Override automatic calculations with fixed values:**
-            
-            By default, Wan calculates these values from your Deforum schedules. Enable overrides only if you need manual control.
-            """)
-            
+        # GENERATION SETTINGS - More prominent and open by default
+        gr.Markdown("---")
+        gr.Markdown("### ⚙️ Generation Settings")
+        
+        with gr.Accordion("🎨 T2V / Keyframe Generation", open=True):
             with FormRow():
                 wan_strength_override = create_gr_elem(dw.wan_strength_override)
                 wan_fixed_strength = create_gr_elem(dw.wan_fixed_strength)
@@ -1650,11 +1647,19 @@ def get_tab_wan(dw: SimpleNamespace):
             with FormRow():
                 wan_guidance_override = create_gr_elem(dw.wan_guidance_override)
                 wan_guidance_scale = create_gr_elem(dw.wan_guidance_scale)
+        
+        with gr.Accordion("🎞️ FLF2V Interpolation Settings", open=True):
+            gr.Markdown("""
+            **FLF2V interpolates smooth transitions between keyframes.**
             
-            # FLF2V Interpolation Settings
+            - Lower guidance (0.5-1.0) = smoother, more natural transitions
+            - Prompt mode 'none' = pure visual interpolation (recommended)
+            """)
             with FormRow():
                 wan_flf2v_guidance_scale = create_gr_elem(dw.wan_flf2v_guidance_scale)
                 wan_flf2v_prompt_mode = create_gr_elem(dw.wan_flf2v_prompt_mode)
+        
+        with gr.Accordion("🔧 Advanced Generation", open=False):
 
             # Advanced Generation Settings
             with FormRow():
@@ -1678,8 +1683,7 @@ def get_tab_wan(dw: SimpleNamespace):
                 wan_movement_sensitivity = create_gr_elem(dw.wan_movement_sensitivity)
                 wan_movement_sensitivity.interactive = False  # Start disabled
         
-        # Advanced Settings - Other advanced features
-        with gr.Accordion("⚡ Advanced Settings", open=False):
+        with gr.Accordion("⚡ Timing & Interpolation", open=False):
             with FormRow():
                 wan_frame_overlap = create_gr_elem(dw.wan_frame_overlap)
                 

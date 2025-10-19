@@ -136,13 +136,21 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         if len(keyframe_images) > 0:
             log_utils.info(f"✅ Found {len(keyframe_images)}/{len(keyframes)} existing keyframes", log_utils.GREEN)
 
+    # Count how many keyframes need to be generated
+    keyframes_to_generate = [f for f in keyframes if f.i not in keyframe_images]
+    keyframes_existing = [f for f in keyframes if f.i in keyframe_images]
+    
+    if keyframes_existing:
+        log_utils.info(f"✅ Found {len(keyframes_existing)} existing keyframes from previous run", log_utils.GREEN)
+    if keyframes_to_generate:
+        log_utils.info(f"📸 Need to generate {len(keyframes_to_generate)} new keyframes", log_utils.YELLOW)
+    
     for idx, frame in enumerate(keyframes):
         # Skip if keyframe already exists (resume mode)
         if frame.i in keyframe_images:
-            log_utils.info(f"\n⏭️  Skipping keyframe {idx + 1}/{len(keyframes)} (frame {frame.i}) - already exists", log_utils.YELLOW)
             continue
             
-        log_utils.info(f"\n📸 Generating keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
+        log_utils.info(f"\n📸 Generating NEW keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
         # Get prompt for this keyframe (handle 0-based indexing and bounds)
         prompt_idx = min(frame.i, len(data.prompt_series) - 1)
@@ -167,10 +175,14 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         keyframe_images[frame.i] = keyframe_path
         log_utils.info(f"✅ Keyframe {idx + 1} saved: {os.path.basename(keyframe_path)}", log_utils.GREEN)
 
-    if is_resuming:
-        log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes ready ({len([k for k in keyframes if k.i not in keyframe_images or not os.path.exists(keyframe_images[k.i])])} generated, {len([k for k in keyframes if k.i in keyframe_images and os.path.exists(keyframe_images[k.i])])} from resume)", log_utils.GREEN)
+    newly_generated = len(keyframes_to_generate)
+    from_resume = len(keyframes_existing)
+    
+    log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes ready", log_utils.GREEN)
+    if from_resume > 0:
+        log_utils.info(f"   ({newly_generated} newly generated, {from_resume} from previous run)", log_utils.GREEN)
     else:
-        log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes generated with Wan T2V", log_utils.GREEN)
+        log_utils.info(f"   (All {newly_generated} keyframes newly generated with Wan T2V)", log_utils.GREEN)
 
     # ====================
     # PHASE 2: Batch Wan FLF2V Interpolation
