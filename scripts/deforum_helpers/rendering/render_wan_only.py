@@ -102,7 +102,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         log_utils.info(f"\n📸 Generating keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
         # Get prompt for this keyframe
-        prompt = frame.animation_prompts.positive_prompt
+        prompt = data.prompt_series[frame.i]
         log_utils.info(f"   Prompt: {prompt[:80]}{'...' if len(prompt) > 80 else ''}", log_utils.YELLOW)
 
         # Generate keyframe using Wan T2V
@@ -147,7 +147,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.MAGENTA)
 
         # Get prompt for this segment (use first keyframe's prompt)
-        prompt = first_kf.animation_prompts.positive_prompt
+        prompt = data.prompt_series[first_frame_idx]
 
         # Load keyframe images (load_image returns cv2/numpy format)
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
