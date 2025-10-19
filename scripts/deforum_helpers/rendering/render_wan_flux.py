@@ -238,6 +238,37 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
     if isinstance(frames, list) and len(frames) > 0:
         # Already a list of PIL Images
         frame_list = frames
+    elif hasattr(frames, 'shape'):
+        # It's a tensor or numpy array
+        import torch
+        import numpy as np
+        from PIL import Image
+        
+        log_utils.info(f"   Processing FLF2V tensor/array with shape: {frames.shape}", log_utils.BLUE)
+        
+        if hasattr(frames, 'cpu'):
+            frames_np = frames.cpu().numpy()
+        else:
+            frames_np = np.array(frames)
+        
+        # Handle different tensor formats
+        if len(frames_np.shape) == 5:
+            frames_np = frames_np.squeeze(0)
+        if len(frames_np.shape) == 4 and frames_np.shape[0] <= 4:
+            frames_np = np.transpose(frames_np, (1, 2, 3, 0))
+        
+        # Extract individual frames
+        frame_list = []
+        for i in range(frames_np.shape[0]):
+            frame = frames_np[i]
+            if frame.dtype in [np.float32, np.float64]:
+                if frame.min() < 0:
+                    frame = (frame + 1.0) / 2.0
+                frame = np.clip(frame * 255, 0, 255).astype(np.uint8)
+            frame_list.append(Image.fromarray(frame))
+        
+        log_utils.info(f"   Extracted {len(frame_list)} FLF2V frames", log_utils.BLUE)
+        
     elif hasattr(frames, '__getitem__') and hasattr(frames, '__len__'):
         # It's indexable and has length (like a tensor or array)
         log_utils.info(f"   Converting indexable FLF2V output (length: {len(frames)})", log_utils.BLUE)
