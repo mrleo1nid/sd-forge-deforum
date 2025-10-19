@@ -73,6 +73,7 @@ class DeformAnimKeys():
         self.hybrid_comp_mask_auto_contrast_cutoff_high_schedule_series = self.fi.parse_inbetweens(anim_args.hybrid_comp_mask_auto_contrast_cutoff_high_schedule, 'hybrid_comp_mask_auto_contrast_cutoff_high_schedule')
         self.hybrid_comp_mask_auto_contrast_cutoff_low_schedule_series = self.fi.parse_inbetweens(anim_args.hybrid_comp_mask_auto_contrast_cutoff_low_schedule, 'hybrid_comp_mask_auto_contrast_cutoff_low_schedule')
         self.hybrid_flow_factor_schedule_series = self.fi.parse_inbetweens(anim_args.hybrid_flow_factor_schedule, 'hybrid_flow_factor_schedule')
+        self.keyframe_type_schedule_series = self.fi.parse_inbetweens(anim_args.keyframe_type_schedule, 'keyframe_type_schedule', is_single_string=True)
 
 class ControlNetKeys():
     def __init__(self, anim_args, controlnet_args):

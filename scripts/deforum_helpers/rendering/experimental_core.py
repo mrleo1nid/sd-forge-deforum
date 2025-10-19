@@ -105,24 +105,46 @@ def emit_tweens(data: RenderData, frame: DiffusionFrame):
 
 
 def should_use_wan_flf2v(data: RenderData, frame: DiffusionFrame) -> bool:
-    """Check if this frame should use Wan FLF2V for tweens instead of traditional depth warping."""
-    # Only use Wan if explicitly enabled
-    if not hasattr(data.args.anim_args, 'enable_wan_flf2v') or not data.args.anim_args.enable_wan_flf2v:
+    """Check if this frame should use Wan FLF2V for tweens instead of traditional depth warping.
+
+    Respects keyframe_type from keyframe_type_schedule:
+    - "tween": Always use depth tweening
+    - "flf2v": Always use FLF2V (if conditions met)
+    - "auto": Auto-decide based on tween count and chunk_size
+    """
+    # Basic conditions required for FLF2V
+    has_tweens = frame.has_tween_frames()
+    has_previous = data.images.has_previous()
+    is_not_first_frame = frame.i != 0
+
+    if not (has_tweens and has_previous and is_not_first_frame):
         return False
 
-    # Need tweens to fill in
-    if not frame.has_tween_frames():
+    # Check keyframe_type from schedule
+    keyframe_type = frame.keyframe_type.lower() if hasattr(frame, 'keyframe_type') else "tween"
+
+    # Explicit tween: never use FLF2V
+    if keyframe_type == "tween":
         return False
 
-    # Need a previous frame to interpolate from
-    if not data.images.has_previous():
-        return False
+    # Explicit flf2v: use FLF2V if global enable is on
+    if keyframe_type == "flf2v":
+        return hasattr(data.args.anim_args, 'enable_wan_flf2v') and data.args.anim_args.enable_wan_flf2v
 
-    # Skip first frame (frame 0 has no previous)
-    if frame.i == 0:
-        return False
+    # Auto mode: decide based on tween count and chunk size
+    if keyframe_type == "auto":
+        if not (hasattr(data.args.anim_args, 'enable_wan_flf2v') and data.args.anim_args.enable_wan_flf2v):
+            return False
 
-    return True
+        # Auto-decide: use FLF2V for short sections (< 80% of chunk_size)
+        num_tweens = len(frame.tweens)
+        chunk_size = getattr(data.args.anim_args, 'wan_flf2v_chunk_size', 81)
+        threshold = int(chunk_size * 0.8)  # 80% of chunk_size
+
+        return num_tweens <= threshold
+
+    # Default to tween for unknown types
+    return False
 
 
 def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyframe_image):

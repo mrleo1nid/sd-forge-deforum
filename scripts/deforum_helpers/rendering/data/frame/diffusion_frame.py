@@ -317,6 +317,8 @@ class DiffusionFrame:
             diffusion_frames[i].i = key_i
             diffusion_frames[i].is_keyframe = is_kf
             diffusion_frames[i].strength = DiffusionFrame._select_keyframe_or_cadence_strength(data, key_i, is_kf)
+            # Assign keyframe type from schedule (for Wan FLF2V vs depth tween selection)
+            diffusion_frames[i].keyframe_type = DiffusionFrame._get_keyframe_type_from_schedule(data, key_i)
 
         diffusion_frames = DiffusionFrame.add_tweens_to_diffusion_frames(diffusion_frames)
         log_utils.print_key_frame_debug_info_if_verbose(diffusion_frames)
@@ -343,15 +345,39 @@ class DiffusionFrame:
         # schedule series indices shifted to start at 0.
         keys = data.animation_keys.deform_keys
         idx = index - 1
-        
+
         # Check if index is within bounds
         if idx >= len(keys.strength_schedule_series) or idx >= len(keys.keyframe_strength_schedule_series):
             log_utils.warn(f"Frame index {index} (0-indexed: {idx}) exceeds strength schedule series length, using default value.")
             return 0.85  # Default strength value
-        
+
         return (keys.strength_schedule_series[idx]
                 if data.parseq_adapter.use_parseq or is_keyframe
                 else keys.keyframe_strength_schedule_series[idx])
+
+    @staticmethod
+    def _get_keyframe_type_from_schedule(data: RenderData, index):
+        """
+        Get keyframe type from keyframe_type_schedule for Wan FLF2V vs depth tween selection.
+        Returns: "tween", "flf2v", or "auto"
+        """
+        keys = data.animation_keys.deform_keys
+        idx = index - 1
+
+        # Check if index is within bounds
+        if idx >= len(keys.keyframe_type_schedule_series):
+            # Default to tween for backwards compatibility
+            return "tween"
+
+        keyframe_type = keys.keyframe_type_schedule_series[idx]
+        # Normalize to lowercase and validate
+        if isinstance(keyframe_type, str):
+            keyframe_type = keyframe_type.lower().strip()
+            if keyframe_type in ["tween", "flf2v", "auto"]:
+                return keyframe_type
+
+        # Default to tween if invalid
+        return "tween"
 
     @staticmethod
     def _assign_initial_seeds_and_schedules(data: RenderData, diffusion_frames):
