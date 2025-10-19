@@ -141,12 +141,12 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
             last_image=last_image,
             prompt=prompt,
             num_frames=num_tween_frames,
-            height=data.args.anim_args.H,
-            width=data.args.anim_args.W,
+            height=data.height(),
+            width=data.width(),
             num_inference_steps=wan_args.wan_inference_steps,
             guidance_scale=wan_args.wan_guidance_scale,
             first_frame_idx=first_frame_idx,
-            output_dir=data.args.outdir
+            output_dir=data.output_directory
         )
 
         all_segment_frames.extend(segment_frames)
@@ -179,7 +179,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
 def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
     """Save keyframe image to disk"""
     filename = filename_utils.get_filename(data, frame.i)
-    filepath = os.path.join(data.args.outdir, filename)
+    filepath = os.path.join(data.output_directory, filename)
     image_utils.save_image(image, filepath, data.args.video_args)
     return filepath
 
@@ -222,14 +222,14 @@ def stitch_wan_only_video(data, frame_paths, video_args):
     """Stitch all frames into final video"""
 
     # Create frame list file for ffmpeg
-    frame_list_file = os.path.join(data.args.outdir, "frame_list.txt")
+    frame_list_file = os.path.join(data.output_directory, "frame_list.txt")
     with open(frame_list_file, 'w') as f:
         for path in frame_paths:
             f.write(f"file '{path}'\n")
 
     # Output video path
-    output_filename = f"{data.args.timestring}_wan_only.mp4"
-    output_path = os.path.join(data.args.outdir, output_filename)
+    output_filename = f"{data.args.root.timestring}_wan_only.mp4"
+    output_path = os.path.join(data.output_directory, output_filename)
 
     # Stitch with ffmpeg
     log_utils.info(f"🎬 Stitching {len(frame_paths)} frames...", log_utils.BLUE)
