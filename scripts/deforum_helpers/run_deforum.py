@@ -138,6 +138,9 @@ def run_deforum(*args):
         args_dict['p'] = p
         try:
             args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args = process_args(args_dict, i)
+            # Ensure animation_mode from args_dict (possibly loaded from resume) is reflected in anim_args
+            if 'animation_mode' in args_dict:
+                anim_args.animation_mode = args_dict['animation_mode']
         except Exception as e:
             JobStatusTracker().fail_job(job_id, error_type="TERMINAL", message="Invalid arguments.")
             print("\n*START OF TRACEBACK*")
