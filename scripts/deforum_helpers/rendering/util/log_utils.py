@@ -33,6 +33,7 @@ ORANGE = from_hex_color(HEX_ORANGE)
 YELLOW = from_hex_color(HEX_YELLOW)
 GREEN = from_hex_color(HEX_GREEN)
 BLUE = from_hex_color(HEX_BLUE)
+CYAN = from_hex_color(HEX_BLUE)  # We don't use cyan, but it's here for consistency.
 PURPLE = from_hex_color(HEX_PURPLE)
 
 BOLD = f"{ESC}1{TERM}"

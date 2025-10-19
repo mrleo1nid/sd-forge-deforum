@@ -168,10 +168,10 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
     use_chaining = total_frames > chunk_size
 
     if use_chaining:
-        log_utils.info(f"🎬 Using Wan FLF2V CHAINING mode for {num_tweens} tween frames", log_utils.CYAN)
-        log_utils.info(f"   Chunk size: {chunk_size} frames, will chain multiple FLF2V calls", log_utils.CYAN)
+        log_utils.info(f"🎬 Using Wan FLF2V CHAINING mode for {num_tweens} tween frames", log_utils.BLUE)
+        log_utils.info(f"   Chunk size: {chunk_size} frames, will chain multiple FLF2V calls", log_utils.BLUE)
     else:
-        log_utils.info(f"🎬 Using Wan FLF2V DIRECT mode for {num_tweens} tween frames", log_utils.CYAN)
+        log_utils.info(f"🎬 Using Wan FLF2V DIRECT mode for {num_tweens} tween frames", log_utils.BLUE)
 
     try:
         # Import Wan integration
@@ -288,7 +288,7 @@ def _emit_wan_flf2v_direct(data, frame, wan, first_frame_pil, last_frame_pil, wi
     """Direct FLF2V: Single call to interpolate between two keyframes."""
     prompt = data.args.root.animation_prompts.get(str(frame.i), "")
 
-    log_utils.info(f"   Generating {num_frames} frames with single FLF2V call...", log_utils.CYAN)
+    log_utils.info(f"   Generating {num_frames} frames with single FLF2V call...", log_utils.BLUE)
 
     try:
         result = wan.pipeline.generate_flf2v(
@@ -329,7 +329,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
     - FLF2V: 0→80 (81 frames), 80→160 (81 frames), 160→200 (41 frames)
     - Concatenate: frames 1-79, frames 81-159, frames 161-199 = 200 tweens
     """
-    log_utils.info(f"   Generating intermediate depth-tween keyframes for chaining...", log_utils.CYAN)
+    log_utils.info(f"   Generating intermediate depth-tween keyframes for chaining...", log_utils.BLUE)
 
     # Calculate chunk positions
     chunk_positions = []  # Frame indices where we need intermediate keyframes
@@ -347,7 +347,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
 
     chunk_positions.append(num_tweens)  # Final position (current keyframe)
 
-    log_utils.info(f"   Chunk positions: {chunk_positions} (total: {len(chunk_positions)-1} chunks)", log_utils.CYAN)
+    log_utils.info(f"   Chunk positions: {chunk_positions} (total: {len(chunk_positions)-1} chunks)", log_utils.BLUE)
 
     # Generate intermediate keyframes using depth warping
     intermediate_keyframes = [first_frame_pil]  # Start with first keyframe
@@ -357,7 +357,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
         tween_at_pos = frame.tweens[chunk_pos - 1]  # -1 because tweens are 0-indexed
 
         # Generate this tween frame using traditional depth warping
-        log_utils.info(f"   Generating intermediate keyframe at position {chunk_pos}...", log_utils.CYAN)
+        log_utils.info(f"   Generating intermediate keyframe at position {chunk_pos}...", log_utils.BLUE)
 
         # Use traditional tween generation for this intermediate keyframe
         tween_image = tween_at_pos._generate(data, frame, data.images.previous)
@@ -374,7 +374,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
 
     intermediate_keyframes.append(last_frame_pil)  # End with last keyframe
 
-    log_utils.info(f"   Generated {len(intermediate_keyframes)} intermediate keyframes", log_utils.CYAN)
+    log_utils.info(f"   Generated {len(intermediate_keyframes)} intermediate keyframes", log_utils.BLUE)
 
     # Now FLF2V between each pair of intermediate keyframes
     all_generated_frames = []
@@ -386,7 +386,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
 
         prompt = data.args.root.animation_prompts.get(str(frame.i), "")
 
-        log_utils.info(f"   FLF2V chunk {i+1}/{len(intermediate_keyframes)-1}: frames {chunk_start}→{chunk_end} ({chunk_num_frames} frames)", log_utils.CYAN)
+        log_utils.info(f"   FLF2V chunk {i+1}/{len(intermediate_keyframes)-1}: frames {chunk_start}→{chunk_end} ({chunk_num_frames} frames)", log_utils.BLUE)
 
         try:
             result = wan.pipeline.generate_flf2v(
@@ -423,7 +423,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
             traceback.print_exc()
             return None
 
-    log_utils.info(f"   Chaining complete: {len(all_generated_frames)} frames generated", log_utils.CYAN)
+    log_utils.info(f"   Chaining complete: {len(all_generated_frames)} frames generated", log_utils.BLUE)
     return all_generated_frames
 
 

@@ -35,7 +35,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     2. Interpolate between keyframes with Wan FLF2V
     3. Stitch final video
     """
-    log_utils.info("🎬 Wan Only Mode: Batch Keyframe Generation + Batch FLF2V Interpolation", log_utils.CYAN)
+    log_utils.info("🎬 Wan Only Mode: Batch Keyframe Generation + Batch FLF2V Interpolation", log_utils.BLUE)
 
     # Create render data
     data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args,
@@ -52,10 +52,10 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     # Extract only keyframes (frames with is_keyframe=True)
     keyframes = [f for f in all_frames if f.is_keyframe]
 
-    log_utils.info(f"📊 Wan Only Workflow:", log_utils.CYAN)
-    log_utils.info(f"   Total frames: {anim_args.max_frames}", log_utils.CYAN)
-    log_utils.info(f"   Keyframes to generate: {len(keyframes)}", log_utils.CYAN)
-    log_utils.info(f"   FLF2V segments: {len(keyframes) - 1}", log_utils.CYAN)
+    log_utils.info(f"📊 Wan Only Workflow:", log_utils.BLUE)
+    log_utils.info(f"   Total frames: {anim_args.max_frames}", log_utils.BLUE)
+    log_utils.info(f"   Keyframes to generate: {len(keyframes)}", log_utils.BLUE)
+    log_utils.info(f"   FLF2V segments: {len(keyframes) - 1}", log_utils.BLUE)
 
     # ====================
     # PHASE 1: Batch Generate All Keyframes with Flux
@@ -95,7 +95,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     wan_integration = WanSimpleIntegration(device='cuda')
 
     # Discover and load Wan model
-    log_utils.info("🔍 Discovering Wan FLF2V models...", log_utils.CYAN)
+    log_utils.info("🔍 Discovering Wan FLF2V models...", log_utils.BLUE)
     models_dir = os.path.join(shared.cmd_opts.ckpt_dir or "models", "wan")
     discovered_models = wan_integration.discover_models(models_dir)
 
@@ -108,7 +108,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         raise RuntimeError("No FLF2V-capable Wan models found. Please download Wan 2.1+ model.")
 
     model_info = flf2v_models[0]
-    log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.CYAN)
+    log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
     wan_integration.load_pipeline_lazy(model_info['path'], model_info)
 
     # Generate FLF2V segments
@@ -158,9 +158,9 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     # ====================
     # PHASE 3: Stitch Final Video
     # ====================
-    log_utils.info("\n" + "="*60, log_utils.CYAN)
-    log_utils.info("PHASE 3: Stitching Final Video", log_utils.CYAN)
-    log_utils.info("="*60, log_utils.CYAN)
+    log_utils.info("\n" + "="*60, log_utils.BLUE)
+    log_utils.info("PHASE 3: Stitching Final Video", log_utils.BLUE)
+    log_utils.info("="*60, log_utils.BLUE)
 
     # Stitch video using existing utilities
     output_video_path = stitch_wan_only_video(
@@ -232,7 +232,7 @@ def stitch_wan_only_video(data, frame_paths, video_args):
     output_path = os.path.join(data.args.outdir, output_filename)
 
     # Stitch with ffmpeg
-    log_utils.info(f"🎬 Stitching {len(frame_paths)} frames...", log_utils.CYAN)
+    log_utils.info(f"🎬 Stitching {len(frame_paths)} frames...", log_utils.BLUE)
 
     ffmpeg_stitch_video(
         frame_pattern=None,  # Use frame list instead
