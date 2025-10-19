@@ -62,8 +62,8 @@ For now, you can test model discovery is working.
 
 💡 Next steps:
 1. Ensure your prompts are configured in the Prompts tab
-2. Set your desired FPS in the Output tab  
-3. Choose animation mode 'Wan Video' in the Keyframes tab
+2. Set your desired FPS in the Output tab
+3. Choose animation mode 'Wan Only' in the Keyframes tab
 4. Click the main Generate button in Deforum
 
 📁 Models found in: {models[0]['path']}"""

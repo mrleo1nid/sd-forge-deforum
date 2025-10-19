@@ -48,12 +48,12 @@ def run_deforum(*args):
     component_names = get_component_names()
     args_dict = {component_names[i]: args[i+2] for i in range(0, len(component_names))}
 
-    # Check if this is Wan Video mode - if so, skip loading Flux/SD models
+    # Check if this is Wan Only mode - Flux needed for keyframes, Wan for interpolation
     animation_mode = args_dict.get('animation_mode', '2D')
-    is_wan_mode = (animation_mode == 'Wan Video')
+    is_wan_only_mode = (animation_mode == 'Wan Only')
 
-    if is_wan_mode:
-        print("🎬 Wan Video mode detected - skipping Flux/SD model loading")
+    if is_wan_only_mode:
+        print("🎬 Wan Only mode detected - will use Flux for keyframes + Wan FLF2V for interpolation")
     elif isinstance(shared.sd_model, FakeInitialModel):
         print("Loading Models...")
         forge_model_reload()
@@ -136,35 +136,10 @@ def run_deforum(*args):
                 render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)#TODO: prettify code
             elif anim_args.animation_mode == 'Interpolation':
                 render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)
-            elif anim_args.animation_mode == 'Wan Video':
-                # Use direct Wan integration
-                try:
-                    # Simple Wan validation (inline replacement)
-                    def validate_wan_settings(wan_args):
-                        """Simple Wan settings validation"""
-                        if video_args.fps <= 0:
-                            raise ValueError("FPS must be greater than 0 (set in Output tab)")
-                            
-                        print("✅ Wan settings validated")
-                    
-                    # Import generation function from ui_elements
-                    from .ui_elements import generate_wan_video
-                    
-                    # Validate Wan settings before proceeding
-                    validate_wan_settings(wan_args)
-                    
-                    print(f"{YELLOW}Starting Wan Video Generation (AUTO-DISCOVERY)...{RESET_COLOR}")
-                    print(f"Using smart model discovery and direct integration.")
-                    
-                    # Use the generate function that handles everything
-                    output_dir = generate_wan_video(args, anim_args, video_args, 0, False, False, root, root.animation_prompts, loop_args, parseq_args, freeu_args, controlnet_args, None, None, None, wan_args, None)
-                    
-                    print(f"✅ Wan video generation completed successfully!")
-                    print(f"📁 Output directory: {output_dir}")
-                    
-                except Exception as e:
-                    print(f"{RED}Wan video generation failed: {e}{RESET_COLOR}")
-                    raise
+            elif anim_args.animation_mode == 'Wan Only':
+                # Wan Only mode: Batch keyframe generation + Batch FLF2V interpolation
+                from .rendering.render_wan_only import render_wan_only
+                render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, root)
             else:
                 print('Other modes are not available yet!')
         except Exception as e:

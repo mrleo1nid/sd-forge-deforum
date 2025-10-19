@@ -64,7 +64,7 @@ def DeforumAnimArgs():
         "animation_mode": {
             "label": "Animation mode",
             "type": "radio",
-            "choices": ['2D', '3D', 'Video Input', 'Interpolation', 'Wan Video'],
+            "choices": ['2D', '3D', 'Video Input', 'Interpolation', 'Wan Only'],
             "value": "2D",
             "info": "control animation mode, will hide non relevant params upon change"
         },
