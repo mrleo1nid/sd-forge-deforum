@@ -133,9 +133,13 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         # Get prompt for this segment (use first keyframe's prompt)
         prompt = first_kf.animation_prompts.positive_prompt
 
-        # Load keyframe images
-        first_image = image_utils.load_image(keyframe_images[first_frame_idx])
-        last_image = image_utils.load_image(keyframe_images[last_frame_idx])
+        # Load keyframe images (load_image returns cv2/numpy format)
+        first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
+        last_image_cv2 = image_utils.load_image(keyframe_images[last_frame_idx])
+        
+        # Convert to PIL for Wan FLF2V
+        first_image = image_utils.numpy_to_pil(first_image_cv2)
+        last_image = image_utils.numpy_to_pil(last_image_cv2)
 
         # Call Wan FLF2V
         segment_frames = generate_flf2v_segment(
@@ -181,9 +185,17 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
 
 def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
     """Save keyframe image to disk"""
-    filename = filename_utils.get_filename(data, frame.i)
+    filename = filename_utils.frame_filename(data, frame.i)
     filepath = os.path.join(data.output_directory, filename)
-    image_utils.save_image(image, filepath, data.args.video_args)
+    
+    # Convert CV2 image to PIL if needed, then save
+    if image_utils.is_PIL(image):
+        image.save(filepath)
+    else:
+        # Convert numpy/cv2 image to PIL
+        pil_image = image_utils.numpy_to_pil(image)
+        pil_image.save(filepath)
+    
     return filepath
 
 
