@@ -268,7 +268,7 @@ def get_tab_keyframes(d, da, dloopArgs):
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
-def get_tab_prompts(da):
+def get_tab_prompts(da, dw):
     with gr.TabItem(f"{emoji_utils.prompts()} Prompts"):
         # PROMPTS INFO ACCORD
         with gr.Accordion(label='*Important* notes on Prompts', elem_id='prompts_info_accord',
@@ -286,6 +286,83 @@ def get_tab_prompts(da):
         animation_prompts_negative = create_row(
             gr.Textbox(label="Prompts negative", value="nsfw, nude", lines=1, interactive=True,
                        placeholder="words here will be added to the end of all negative prompts.  ignored with Flux."))
+
+        # AI PROMPT ENHANCEMENT - Qwen integration
+        with gr.Accordion("🧠 AI Prompt Enhancement (Qwen)", open=False):
+            gr.Markdown("""
+            **Enhance your prompts using Qwen AI models** for better generation quality:
+            - Refines and expands prompt descriptions
+            - Analyzes Deforum movement schedules (translation, rotation, zoom)
+            - Translates technical motion into descriptive language
+            - Supports English and Chinese output
+
+            **Note:** Qwen models are lazy-loaded only when needed and auto-cleanup before generation to free VRAM.
+            """)
+
+            # Qwen Settings
+            with gr.Accordion("⚙️ Qwen Settings", open=True):
+                with FormRow():
+                    wan_qwen_model = create_gr_elem(dw.wan_qwen_model)
+                    wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
+                    wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
+
+            # Model Management
+            with gr.Accordion("🔧 Model Management", open=False):
+                gr.Markdown("""
+                **Model Information & Status**
+
+                Monitor Qwen model availability and manage downloads:
+                """)
+
+                qwen_model_status = gr.HTML(
+                    label="Qwen Model Status",
+                    value="⏳ Checking model availability...",
+                    elem_id="wan_qwen_model_status"
+                )
+
+                with FormRow():
+                    check_qwen_models_btn = gr.Button(
+                        "🔍 Check Model Status",
+                        variant="secondary",
+                        elem_id="wan_check_qwen_models_btn"
+                    )
+                    download_qwen_model_btn = gr.Button(
+                        "📥 Download Selected Model",
+                        variant="primary",
+                        elem_id="wan_download_qwen_model_btn"
+                    )
+                    cleanup_qwen_cache_btn = gr.Button(
+                        "🧹 Cleanup Model Cache",
+                        variant="secondary",
+                        elem_id="wan_cleanup_qwen_cache_btn"
+                    )
+
+            # Connect event handlers for Qwen model management
+            check_qwen_models_btn.click(
+                fn=check_qwen_models_handler,
+                inputs=[wan_qwen_model],
+                outputs=[qwen_model_status]
+            )
+
+            download_qwen_model_btn.click(
+                fn=download_qwen_model_handler,
+                inputs=[wan_qwen_model, wan_qwen_auto_download],
+                outputs=[qwen_model_status]
+            )
+
+            cleanup_qwen_cache_btn.click(
+                fn=cleanup_qwen_cache_handler,
+                inputs=[],
+                outputs=[qwen_model_status]
+            )
+
+            # Auto-update model status when model selection changes
+            wan_qwen_model.change(
+                fn=check_qwen_models_handler,
+                inputs=[wan_qwen_model],
+                outputs=[qwen_model_status]
+            )
+
         # COMPOSABLE MASK SCHEDULING ACCORD
         with gr.Accordion('Composable Mask scheduling', open=False):
             gr.HTML(value=get_gradio_html('composable_masks'))
