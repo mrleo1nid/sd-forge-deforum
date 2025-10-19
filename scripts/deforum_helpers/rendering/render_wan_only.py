@@ -242,6 +242,12 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         use_prompt_for_flf2v = getattr(wan_args, 'wan_flf2v_use_prompt', False)
         flf2v_prompt = prompt if use_prompt_for_flf2v else ""
         
+        # Show what we're actually using
+        log_utils.info(f"   🎯 FLF2V Settings:", log_utils.BLUE)
+        log_utils.info(f"      Guidance scale: {flf2v_guidance}", log_utils.BLUE)
+        log_utils.info(f"      Prompt: '{flf2v_prompt}' (empty = pure interpolation)", log_utils.BLUE)
+        log_utils.info(f"      Inference steps: {wan_args.wan_inference_steps}", log_utils.BLUE)
+        
         # Call Wan FLF2V
         segment_frames = generate_flf2v_segment(
             wan_integration=wan_integration,

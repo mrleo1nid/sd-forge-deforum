@@ -1041,6 +1041,18 @@ class WanSimpleIntegration:
                         print_wan_info(f"   Last frame: {last_frame.size}")
                         print_wan_info(f"   Frames to generate: {num_frames}")
                         print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+                        
+                        # Verify images are different
+                        import numpy as np
+                        first_array = np.array(first_frame)
+                        last_array = np.array(last_frame)
+                        images_identical = np.array_equal(first_array, last_array)
+                        if images_identical:
+                            print_wan_error("⚠️  WARNING: First and last frames are IDENTICAL!")
+                            print_wan_error("   FLF2V will not interpolate properly.")
+                        else:
+                            pixel_diff = np.abs(first_array - last_array).mean()
+                            print_wan_info(f"   ✓ Images are different (avg pixel diff: {pixel_diff:.2f})")
 
                         generation_kwargs = {
                             "image": first_frame,           # Start keyframe
@@ -1054,7 +1066,9 @@ class WanSimpleIntegration:
                         }
 
                         print_wan_success("✅ Generating FLF2V interpolation...")
-                        print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
+                        print_wan_info(f"   Prompt: '{prompt}' (empty = pure interpolation)")
+                        print_wan_info(f"   Guidance scale: {guidance_scale}")
+                        print_wan_info(f"   Inference steps: {num_inference_steps}")
 
                         with torch.no_grad():
                             return self.i2v_pipeline(**generation_kwargs)
