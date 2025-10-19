@@ -206,25 +206,33 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         prompt_idx = min(first_frame_idx, len(data.prompt_series) - 1)
         prompt = data.prompt_series[prompt_idx]
 
-        # Load keyframe images (load_image returns cv2/numpy format)
+        # Load keyframe images
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
         last_image_cv2 = image_utils.load_image(keyframe_images[last_frame_idx])
 
         # Convert to PIL for Wan FLF2V
         first_image = image_utils.numpy_to_pil(first_image_cv2)
         last_image = image_utils.numpy_to_pil(last_image_cv2)
+        
+        # For FLF2V interpolation, use minimal guidance to let model smoothly transition
+        # High guidance forces prompt adherence, low guidance allows natural interpolation
+        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 1.0)  # Much lower than T2V
+        
+        # Optional: Use empty prompt for pure image-to-image interpolation
+        use_prompt_for_flf2v = getattr(wan_args, 'wan_flf2v_use_prompt', False)
+        flf2v_prompt = prompt if use_prompt_for_flf2v else ""
 
         # Call Wan FLF2V
         segment_frames = generate_flf2v_segment(
             wan_integration=wan_integration,
             first_image=first_image,
             last_image=last_image,
-            prompt=prompt,
+            prompt=flf2v_prompt,
             num_frames=num_tween_frames,
             height=data.height(),
             width=data.width(),
             num_inference_steps=wan_args.wan_inference_steps,
-            guidance_scale=wan_args.wan_guidance_scale,
+            guidance_scale=flf2v_guidance,
             first_frame_idx=first_frame_idx,
             output_dir=data.output_directory
         )
