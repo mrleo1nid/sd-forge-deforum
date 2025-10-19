@@ -354,6 +354,32 @@ def get_tab_qwen(dw: SimpleNamespace):
                     elem_id="wan_cleanup_qwen_cache_btn"
                 )
 
+        # Connect event handlers for Qwen model management
+        check_qwen_models_btn.click(
+            fn=check_qwen_models_handler,
+            inputs=[wan_qwen_model],
+            outputs=[qwen_model_status]
+        )
+
+        download_qwen_model_btn.click(
+            fn=download_qwen_model_handler,
+            inputs=[wan_qwen_model, wan_qwen_auto_download],
+            outputs=[qwen_model_status]
+        )
+
+        cleanup_qwen_cache_btn.click(
+            fn=cleanup_qwen_cache_handler,
+            inputs=[],
+            outputs=[qwen_model_status]
+        )
+
+        # Auto-update model status when model selection changes
+        wan_qwen_model.change(
+            fn=check_qwen_models_handler,
+            inputs=[wan_qwen_model],
+            outputs=[qwen_model_status]
+        )
+
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
@@ -2009,32 +2035,6 @@ def get_tab_wan(dw: SimpleNamespace):
     #     outputs=[wan_enhanced_prompts]
     # )
 
-    # Connect event handlers for Qwen model management
-    check_qwen_models_btn.click(
-        fn=check_qwen_models_handler,
-        inputs=[wan_qwen_model],
-        outputs=[qwen_model_status]
-    )
-    
-    download_qwen_model_btn.click(
-        fn=download_qwen_model_handler,
-        inputs=[wan_qwen_model, wan_qwen_auto_download],
-        outputs=[qwen_model_status]
-    )
-    
-    cleanup_qwen_cache_btn.click(
-        fn=cleanup_qwen_cache_handler,
-        inputs=[],
-        outputs=[qwen_model_status]
-    )
-    
-    # Auto-update model status when model selection changes
-    wan_qwen_model.change(
-        fn=check_qwen_models_handler,
-        inputs=[wan_qwen_model],
-        outputs=[qwen_model_status]
-    )
-    
     # Connect prompt template loading buttons
     # NOTE: These will be properly connected in ui_left.py where animation_prompts is accessible
     
