@@ -63,10 +63,16 @@ def load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlne
             args_dict_main['animation_prompts_negative'] = jdata["animation_prompts_negative"]
         keys_to_exclude = get_keys_to_exclude()
         for args_namespace in [args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, video_args]:
+            namespace_name = type(args_namespace).__name__
             for k, v in vars(args_namespace).items():
                 if k not in keys_to_exclude:
                     if k in jdata:
+                        old_val = getattr(args_namespace, k)
+                        new_val = jdata[k]
                         setattr(args_namespace, k, jdata[k])
+                        # Debug logging for wan_flf2v settings
+                        if k.startswith('wan_flf2v'):
+                            print(f"🔍 LOAD_ARGS: Setting {k} in {namespace_name}: {old_val} → {new_val}")
                     else:
                         print(f"Key {k} doesn't exist in the custom settings data! Using default value of {v}")
         print(args, anim_args, parseq_args, loop_args)

@@ -249,7 +249,15 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         
         # For FLF2V interpolation, use minimal guidance to let model smoothly transition
         # High guidance forces prompt adherence, low guidance allows natural interpolation
+        
+        # DEBUG: Check all wan_args attributes
+        log_utils.info(f"   🔍 DEBUG wan_args attributes:", log_utils.YELLOW)
+        for attr in sorted(dir(wan_args)):
+            if not attr.startswith('_') and 'flf2v' in attr.lower():
+                log_utils.info(f"      {attr} = {getattr(wan_args, attr, 'N/A')}", log_utils.YELLOW)
+        
         flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 0.0)  # Default 0.0 = pure interpolation
+        log_utils.info(f"   🔍 DEBUG: flf2v_guidance final value = {flf2v_guidance}", log_utils.YELLOW)
         
         # Decide how to handle prompts for FLF2V
         # Options: 'none', 'first', 'last', 'blend'
