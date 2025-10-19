@@ -221,9 +221,11 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
                 all_segment_frames.extend(segment_existing_frames)
                 continue
 
-        # Get prompt for this segment (use first keyframe's prompt)
-        prompt_idx = min(first_frame_idx, len(data.prompt_series) - 1)
-        prompt = data.prompt_series[prompt_idx]
+        # Get prompts for BOTH keyframes
+        first_prompt_idx = min(first_frame_idx, len(data.prompt_series) - 1)
+        last_prompt_idx = min(last_frame_idx, len(data.prompt_series) - 1)
+        first_prompt = data.prompt_series[first_prompt_idx]
+        last_prompt = data.prompt_series[last_prompt_idx]
 
         # Load keyframe images
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
@@ -237,15 +239,29 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         # High guidance forces prompt adherence, low guidance allows natural interpolation
         flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 1.0)  # Much lower than T2V
         
-        # Optional: Use empty prompt for pure image-to-image interpolation
-        # Or interpolate between first and last keyframe prompts
-        use_prompt_for_flf2v = getattr(wan_args, 'wan_flf2v_use_prompt', False)
-        flf2v_prompt = prompt if use_prompt_for_flf2v else ""
+        # Decide how to handle prompts for FLF2V
+        # Options: 'none', 'first', 'last', 'blend'
+        flf2v_prompt_mode = getattr(wan_args, 'wan_flf2v_prompt_mode', 'none')
+        
+        if flf2v_prompt_mode == 'none':
+            flf2v_prompt = ""
+        elif flf2v_prompt_mode == 'first':
+            flf2v_prompt = first_prompt
+        elif flf2v_prompt_mode == 'last':
+            flf2v_prompt = last_prompt
+        elif flf2v_prompt_mode == 'blend':
+            # Create a blended prompt describing the transition
+            flf2v_prompt = f"{first_prompt} transitioning to {last_prompt}"
+        else:
+            flf2v_prompt = ""  # Default to no prompt
         
         # Show what we're actually using
         log_utils.info(f"   🎯 FLF2V Settings:", log_utils.BLUE)
+        log_utils.info(f"      Prompt mode: {flf2v_prompt_mode}", log_utils.BLUE)
+        log_utils.info(f"      First keyframe prompt: {first_prompt[:60]}...", log_utils.BLUE)
+        log_utils.info(f"      Last keyframe prompt: {last_prompt[:60]}...", log_utils.BLUE)
+        log_utils.info(f"      → Using: '{flf2v_prompt[:80]}...' {'(empty = pure interpolation)' if not flf2v_prompt else ''}", log_utils.BLUE)
         log_utils.info(f"      Guidance scale: {flf2v_guidance}", log_utils.BLUE)
-        log_utils.info(f"      Prompt: '{flf2v_prompt}' (empty = pure interpolation)", log_utils.BLUE)
         log_utils.info(f"      Inference steps: {wan_args.wan_inference_steps}", log_utils.BLUE)
         
         # Call Wan FLF2V
