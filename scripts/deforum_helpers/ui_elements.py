@@ -144,8 +144,14 @@ def get_tab_keyframes(d, da, dloopArgs):
                     - Wan FLF2V model must be downloaded
                     - Works best with keyframe distribution mode
                     - VRAM: ~15-18GB (less than standalone Wan T2V)
+
+                    **For longer sections (> 81 frames):**
+                    - Automatically uses FLF2V chaining mode
+                    - Generates depth-tween intermediate keyframes
+                    - Chains FLF2V between them for smooth motion
                     """)
                     enable_wan_flf2v = create_row(da.enable_wan_flf2v)
+                    wan_flf2v_chunk_size = create_row(da.wan_flf2v_chunk_size)
 
                 create_keyframe_distribution_info_tab()
             with gr.TabItem(f"{emoji_utils.strength()} Strength"):

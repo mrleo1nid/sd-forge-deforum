@@ -478,7 +478,16 @@ def DeforumAnimArgs():
             "label": "Enable Wan FLF2V for Tweens",
             "type": "checkbox",
             "value": False,
-            "info": "Use Wan AI video interpolation (FLF2V) instead of depth-based tweening. Requires Wan FLF2V model. Best for < 20 tween frames between keyframes."
+            "info": "Use Wan AI video interpolation (FLF2V) instead of depth-based tweening. Requires Wan FLF2V model. Auto-chains for long sections."
+        },
+        "wan_flf2v_chunk_size": {
+            "label": "Wan FLF2V Chunk Size",
+            "type": "slider",
+            "minimum": 21,
+            "maximum": 161,
+            "step": 20,
+            "value": 81,
+            "info": "Max frames per FLF2V call. For longer sections, generates depth-tween intermediate keyframes and chains FLF2V between them. Must be 4n+1 format (21, 41, 61, 81, 101, 121, 141, 161)."
         },
         "diffusion_cadence": {
             "label": "Cadence",

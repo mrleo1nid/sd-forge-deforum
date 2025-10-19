@@ -126,12 +126,30 @@ def should_use_wan_flf2v(data: RenderData, frame: DiffusionFrame) -> bool:
 
 
 def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyframe_image):
-    """Generate tween frames using Wan FLF2V interpolation between previous and current keyframes."""
+    """Generate tween frames using Wan FLF2V interpolation between previous and current keyframes.
+
+    For short sections (< chunk_size): Direct FLF2V interpolation
+    For long sections (>= chunk_size): Chaining mode with intermediate depth-tween keyframes
+    """
     if not frame.has_tween_frames():
         return
 
-    log_utils.info("🎬 Using Wan FLF2V for tween interpolation", log_utils.CYAN)
-    log_utils.info(f"   Interpolating {len(frame.tweens)} frames between keyframes", log_utils.CYAN)
+    num_tweens = len(frame.tweens)
+    total_frames = num_tweens + 1  # tweens + current keyframe
+
+    # Get chunk size from settings
+    chunk_size = 81  # Default
+    if hasattr(data.args.anim_args, 'wan_flf2v_chunk_size'):
+        chunk_size = data.args.anim_args.wan_flf2v_chunk_size
+
+    # Determine if we need chaining
+    use_chaining = total_frames > chunk_size
+
+    if use_chaining:
+        log_utils.info(f"🎬 Using Wan FLF2V CHAINING mode for {num_tweens} tween frames", log_utils.CYAN)
+        log_utils.info(f"   Chunk size: {chunk_size} frames, will chain multiple FLF2V calls", log_utils.CYAN)
+    else:
+        log_utils.info(f"🎬 Using Wan FLF2V DIRECT mode for {num_tweens} tween frames", log_utils.CYAN)
 
     try:
         # Import Wan integration
@@ -186,46 +204,35 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
             [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
             return
 
-        # Get prompt for this frame
-        prompt = data.args.root.animation_prompts.get(str(frame.i), "")
-
         # Get dimensions from data
         width = data.args.args.W
         height = data.args.args.H
 
-        # Number of frames to generate (all tweens + the current keyframe)
-        # FLF2V generates num_frames total, including start and end
-        num_frames = len(frame.tweens) + 1  # tweens + current keyframe
-
-        # Call FLF2V
-        log_utils.info(f"   Generating {num_frames} frames with Wan FLF2V...", log_utils.CYAN)
-        result = wan.pipeline.generate_flf2v(
-            first_frame=prev_keyframe_pil,
-            last_frame=curr_keyframe_pil,
-            prompt=prompt,
-            height=height,
-            width=width,
-            num_frames=num_frames,
-            num_inference_steps=20,  # Default, could be from settings
-            guidance_scale=7.5  # Default, could be from settings
-        )
-
-        # Extract frames from result
-        if hasattr(result, 'frames'):
-            generated_frames = result.frames[0]  # First (and only) video
-        elif isinstance(result, list):
-            generated_frames = result
+        # Branch: Direct vs Chaining mode
+        if use_chaining:
+            # CHAINING MODE: Generate intermediate depth-tween keyframes, then FLF2V between them
+            generated_frames = _emit_wan_flf2v_chaining(
+                data, frame, wan, prev_keyframe_pil, curr_keyframe_pil,
+                width, height, chunk_size, num_tweens
+            )
         else:
-            log_utils.error("❌ Unexpected FLF2V result format", log_utils.RED)
-            # Fallback
+            # DIRECT MODE: Single FLF2V call
+            generated_frames = _emit_wan_flf2v_direct(
+                data, frame, wan, prev_keyframe_pil, curr_keyframe_pil,
+                width, height, total_frames
+            )
+
+        if generated_frames is None:
+            # Fallback to traditional tweens
             update_pseudo_cadence(data, len(frame.tweens) - 1)
             [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
             return
 
-        # Save tween frames (skip first and last as they're the keyframes)
+        # Save tween frames
         for idx, tween in enumerate(frame.tweens):
-            # FLF2V frame index: skip first frame (prev keyframe), use frames 1 to len(tweens)
-            flf2v_frame = generated_frames[idx + 1]
+            # Get corresponding frame from generated_frames
+            # (skip first frame if it's the prev keyframe)
+            flf2v_frame = generated_frames[idx]
 
             # Convert PIL to OpenCV format (BGR numpy array)
             if isinstance(flf2v_frame, Image.Image):
@@ -242,7 +249,8 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
             data.images.previous = saved_image
             data.args.root.init_sample = saved_image
 
-        log_utils.success(f"✅ Wan FLF2V generated {len(frame.tweens)} tween frames", log_utils.GREEN)
+        mode_str = "CHAINING" if use_chaining else "DIRECT"
+        log_utils.success(f"✅ Wan FLF2V ({mode_str}) generated {len(frame.tweens)} tween frames", log_utils.GREEN)
 
     except Exception as e:
         log_utils.error(f"❌ Wan FLF2V failed: {e}", log_utils.RED)
@@ -252,6 +260,149 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
         # Fallback to traditional tweens
         update_pseudo_cadence(data, len(frame.tweens) - 1)
         [tween.emit_frame(data, shared.total_tqdm, frame) for tween in frame.tweens]
+
+
+def _emit_wan_flf2v_direct(data, frame, wan, first_frame_pil, last_frame_pil, width, height, num_frames):
+    """Direct FLF2V: Single call to interpolate between two keyframes."""
+    prompt = data.args.root.animation_prompts.get(str(frame.i), "")
+
+    log_utils.info(f"   Generating {num_frames} frames with single FLF2V call...", log_utils.CYAN)
+
+    try:
+        result = wan.pipeline.generate_flf2v(
+            first_frame=first_frame_pil,
+            last_frame=last_frame_pil,
+            prompt=prompt,
+            height=height,
+            width=width,
+            num_frames=num_frames,
+            num_inference_steps=20,
+            guidance_scale=7.5
+        )
+
+        # Extract frames from result
+        if hasattr(result, 'frames'):
+            all_frames = result.frames[0]  # First (and only) video
+        elif isinstance(result, list):
+            all_frames = result
+        else:
+            log_utils.error("❌ Unexpected FLF2V result format", log_utils.RED)
+            return None
+
+        # Return frames excluding first and last (they're the keyframes)
+        return all_frames[1:-1]
+
+    except Exception as e:
+        log_utils.error(f"❌ Direct FLF2V failed: {e}", log_utils.RED)
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, width, height, chunk_size, num_tweens):
+    """Chaining FLF2V: Generate depth-tween intermediate keyframes, then FLF2V between each pair.
+
+    Example: 200 tweens with chunk_size=81
+    - Create intermediate keyframes at: 0, 80, 160, 200
+    - FLF2V: 0→80 (81 frames), 80→160 (81 frames), 160→200 (41 frames)
+    - Concatenate: frames 1-79, frames 81-159, frames 161-199 = 200 tweens
+    """
+    log_utils.info(f"   Generating intermediate depth-tween keyframes for chaining...", log_utils.CYAN)
+
+    # Calculate chunk positions
+    chunk_frames = []  # Frame indices where we need intermediate keyframes
+    remaining = num_tweens
+    pos = 0
+
+    while remaining > 0:
+        chunk_frames.append(pos)
+        if remaining > chunk_size - 1:
+            pos += chunk_size - 1  # -1 because chunk includes both endpoints
+            remaining -= (chunk_size - 1)
+        else:
+            pos += remaining
+            remaining = 0
+
+    chunk_frames.append(num_tweens)  # Final position (current keyframe)
+
+    log_utils.info(f"   Chunk positions: {chunk_frames} (total: {len(chunk_frames)-1} chunks)", log_utils.CYAN)
+
+    # Generate intermediate keyframes using depth warping
+    intermediate_keyframes = [first_frame_pil]  # Start with first keyframe
+
+    for i in range(1, len(chunk_frames) - 1):
+        chunk_pos = chunk_frames[i]
+        tween_at_pos = frame.tweens[chunk_pos - 1]  # -1 because tweens are 0-indexed
+
+        # Generate this tween frame using traditional depth warping
+        log_utils.info(f"   Generating intermediate keyframe at position {chunk_pos}...", log_utils.CYAN)
+
+        # Use traditional tween generation for this intermediate keyframe
+        tween_image = tween_at_pos._generate(data, frame, data.images.previous)
+
+        # Convert to PIL
+        import cv2
+        from PIL import Image
+        if isinstance(tween_image, np.ndarray):
+            intermediate_pil = Image.fromarray(cv2.cvtColor(tween_image, cv2.COLOR_BGR2RGB))
+        else:
+            intermediate_pil = tween_image
+
+        intermediate_keyframes.append(intermediate_pil)
+
+    intermediate_keyframes.append(last_frame_pil)  # End with last keyframe
+
+    log_utils.info(f"   Generated {len(intermediate_keyframes)} intermediate keyframes", log_utils.CYAN)
+
+    # Now FLF2V between each pair of intermediate keyframes
+    all_generated_frames = []
+
+    for i in range(len(intermediate_keyframes) - 1):
+        chunk_start = chunk_frames[i]
+        chunk_end = chunk_frames[i + 1]
+        chunk_num_frames = chunk_end - chunk_start + 1  # +1 to include both endpoints
+
+        prompt = data.args.root.animation_prompts.get(str(frame.i), "")
+
+        log_utils.info(f"   FLF2V chunk {i+1}/{len(intermediate_keyframes)-1}: frames {chunk_start}→{chunk_end} ({chunk_num_frames} frames)", log_utils.CYAN)
+
+        try:
+            result = wan.pipeline.generate_flf2v(
+                first_frame=intermediate_keyframes[i],
+                last_frame=intermediate_keyframes[i + 1],
+                prompt=prompt,
+                height=height,
+                width=width,
+                num_frames=chunk_num_frames,
+                num_inference_steps=20,
+                guidance_scale=7.5
+            )
+
+            # Extract frames
+            if hasattr(result, 'frames'):
+                chunk_frames_result = result.frames[0]
+            elif isinstance(result, list):
+                chunk_frames_result = result
+            else:
+                log_utils.error(f"❌ Unexpected FLF2V result format for chunk {i+1}", log_utils.RED)
+                return None
+
+            # Append frames (excluding first for subsequent chunks to avoid duplicates)
+            if i == 0:
+                # First chunk: skip first and last frame (keyframes)
+                all_generated_frames.extend(chunk_frames_result[1:-1])
+            else:
+                # Subsequent chunks: skip first and last frame
+                all_generated_frames.extend(chunk_frames_result[1:-1])
+
+        except Exception as e:
+            log_utils.error(f"❌ FLF2V chunk {i+1} failed: {e}", log_utils.RED)
+            import traceback
+            traceback.print_exc()
+            return None
+
+    log_utils.info(f"   Chaining complete: {len(all_generated_frames)} frames generated", log_utils.CYAN)
+    return all_generated_frames
 
 
 def pre_process(data: RenderData, frame: DiffusionFrame):
