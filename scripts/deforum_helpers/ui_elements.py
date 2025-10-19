@@ -1650,6 +1650,11 @@ def get_tab_wan(dw: SimpleNamespace):
             with FormRow():
                 wan_guidance_override = create_gr_elem(dw.wan_guidance_override)
                 wan_guidance_scale = create_gr_elem(dw.wan_guidance_scale)
+            
+            # FLF2V Interpolation Settings
+            with FormRow():
+                wan_flf2v_guidance_scale = create_gr_elem(dw.wan_flf2v_guidance_scale)
+                wan_flf2v_prompt_mode = create_gr_elem(dw.wan_flf2v_prompt_mode)
 
             # Advanced Generation Settings
             with FormRow():
