@@ -249,11 +249,11 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
             flf2v_prompt = ""  # Default to no prompt
         
         log_utils.info(f"   🎯 FLF2V Settings:", log_utils.BLUE)
+        log_utils.info(f"      Guidance scale: {flf2v_guidance} {'(pure interpolation)' if flf2v_guidance == 0.0 else ''}", log_utils.BLUE)
         log_utils.info(f"      Prompt mode: {flf2v_prompt_mode}", log_utils.BLUE)
         log_utils.info(f"      First keyframe prompt: {first_prompt[:60]}...", log_utils.BLUE)
         log_utils.info(f"      Last keyframe prompt: {last_prompt[:60]}...", log_utils.BLUE)
         log_utils.info(f"      → Using: '{flf2v_prompt[:80]}...' {'(empty = pure interpolation)' if not flf2v_prompt else ''}", log_utils.BLUE)
-        log_utils.info(f"      Guidance scale: {flf2v_guidance}", log_utils.BLUE)
         log_utils.info(f"      Inference steps: {wan_args.wan_inference_steps}", log_utils.BLUE)
 
         # Call Wan FLF2V
