@@ -1587,7 +1587,7 @@ def process_args(args_dict_main, run_id):
     args_loaded_ok = True
     if override_settings_with_file:
         args_loaded_ok = load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args,
-                                   kohya_hrfix_args, video_args, custom_settings_file, root, run_id)
+                                   kohya_hrfix_args, wan_args, video_args, custom_settings_file, root, run_id)
 
     positive_prompts = args_dict_main['animation_prompts_positive']
     negative_prompts = args_dict_main['animation_prompts_negative']

@@ -44,7 +44,7 @@ def get_keys_to_exclude():
     # image_path and outdir are in use, not to be deleted
     # init_image_box is PIL object not string, so ignore.
 
-def load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, video_args, custom_settings_file, root, run_id):
+def load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, video_args, custom_settings_file, root, run_id):
     custom_settings_file = custom_settings_file[run_id]
     print(f"reading custom settings from {custom_settings_file.name}")
     if not os.path.isfile(custom_settings_file.name):
@@ -62,7 +62,7 @@ def load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlne
         if "animation_prompts_negative" in jdata:
             args_dict_main['animation_prompts_negative'] = jdata["animation_prompts_negative"]
         keys_to_exclude = get_keys_to_exclude()
-        for args_namespace in [args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, video_args]:
+        for args_namespace in [args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, video_args]:
             for k, v in vars(args_namespace).items():
                 if k not in keys_to_exclude:
                     if k in jdata:
