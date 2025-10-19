@@ -61,6 +61,20 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info(f"   Keyframes to generate: {len(keyframes)}", log_utils.BLUE)
     log_utils.info(f"   FLF2V segments: {len(keyframes) - 1}", log_utils.BLUE)
 
+    # DEBUG: Show resume and path info
+    log_utils.info(f"\n🔍 DEBUG Resume Info:", log_utils.YELLOW)
+    log_utils.info(f"   resume_from_timestring: {anim_args.resume_from_timestring}", log_utils.YELLOW)
+    log_utils.info(f"   resume_timestring: {anim_args.resume_timestring if hasattr(anim_args, 'resume_timestring') else 'N/A'}", log_utils.YELLOW)
+    log_utils.info(f"   root.timestring: {root.timestring}", log_utils.YELLOW)
+    log_utils.info(f"   args.outdir: {args.outdir}", log_utils.YELLOW)
+    log_utils.info(f"   data.output_directory: {data.output_directory}", log_utils.YELLOW)
+    log_utils.info(f"   Directory exists: {os.path.exists(data.output_directory)}", log_utils.YELLOW)
+    if os.path.exists(data.output_directory):
+        files_in_dir = [f for f in os.listdir(data.output_directory) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        log_utils.info(f"   Image files in directory: {len(files_in_dir)}", log_utils.YELLOW)
+        if len(files_in_dir) > 0:
+            log_utils.info(f"   First few files: {files_in_dir[:5]}", log_utils.YELLOW)
+
     # ====================
     # PHASE 0: Initialize Wan
     # ====================
