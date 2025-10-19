@@ -1,14 +1,16 @@
 """
-Wan Only Mode: Batch Keyframe Generation + Batch FLF2V Interpolation
+Wan Only Mode: Pure Wan T2V + FLF2V Interpolation
 
 Architecture:
-  Phase 1: Batch generate ALL keyframes with Flux
+  Phase 1: Batch generate ALL keyframes with Wan T2V
   Phase 2: Batch run Wan FLF2V between each consecutive keyframe pair
   Phase 3: Stitch final video
 
 This is fundamentally different from the integrated FLF2V approach:
 - Sequential (2D/3D): Keyframe → Tweens → Keyframe → Tweens
-- Wan Only (this): ALL Keyframes → ALL FLF2V interpolations → Stitch
+- Wan Only (this): ALL Keyframes (Wan T2V) → ALL FLF2V interpolations → Stitch
+
+No SD model required - 100% Wan-powered generation!
 """
 
 import os
@@ -29,13 +31,15 @@ from ..video_audio_utilities import ffmpeg_stitch_video
 def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args,
                     freeu_args, kohya_hrfix_args, wan_args, root):
     """
-    Wan Only rendering mode: Pure AI interpolation workflow
+    Wan Only rendering mode: Pure Wan AI video generation
 
-    1. Generate all keyframes with Flux
+    1. Generate all keyframes with Wan T2V
     2. Interpolate between keyframes with Wan FLF2V
     3. Stitch final video
+    
+    No SD model required!
     """
-    log_utils.info("🎬 Wan Only Mode: Batch Keyframe Generation + Batch FLF2V Interpolation", log_utils.BLUE)
+    log_utils.info("🎬 Wan Only Mode: Pure Wan T2V + FLF2V Workflow", log_utils.BLUE)
 
     # Create render data
     data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args,
@@ -58,10 +62,38 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info(f"   FLF2V segments: {len(keyframes) - 1}", log_utils.BLUE)
 
     # ====================
-    # PHASE 1: Batch Generate All Keyframes with Flux
+    # PHASE 0: Initialize Wan
+    # ====================
+    log_utils.info("\n" + "="*60, log_utils.CYAN)
+    log_utils.info("PHASE 0: Initializing Wan Pipeline", log_utils.CYAN)
+    log_utils.info("="*60, log_utils.CYAN)
+    
+    wan_integration = WanSimpleIntegration(device='cuda')
+    
+    # Discover and load Wan model
+    log_utils.info("🔍 Discovering Wan models...", log_utils.BLUE)
+    discovered_models = wan_integration.discover_models()
+    
+    if not discovered_models:
+        raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
+    
+    # Use best available model (T2V capable)
+    model_info = wan_integration.get_best_model()
+    if not model_info:
+        model_info = discovered_models[0]
+    
+    log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
+    success = wan_integration.load_simple_wan_pipeline(model_info, wan_args)
+    if not success:
+        raise RuntimeError(f"Failed to load Wan model: {model_info['name']}")
+    
+    log_utils.info("✅ Wan pipeline loaded successfully", log_utils.GREEN)
+
+    # ====================
+    # PHASE 1: Batch Generate All Keyframes with Wan T2V
     # ====================
     log_utils.info("\n" + "="*60, log_utils.GREEN)
-    log_utils.info("PHASE 1: Batch Keyframe Generation with Flux", log_utils.GREEN)
+    log_utils.info("PHASE 1: Batch Keyframe Generation with Wan T2V", log_utils.GREEN)
     log_utils.info("="*60, log_utils.GREEN)
 
     keyframe_images = {}  # {frame_index: image_path}
@@ -69,20 +101,27 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     for idx, frame in enumerate(keyframes):
         log_utils.info(f"\n📸 Generating keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
-        # Generate keyframe image using Flux
-        web_ui_utils.update_job(data, frame.i)
-        image = frame.generate(data, shared.total_tqdm)
+        # Get prompt for this keyframe
+        prompt = frame.animation_prompts.positive_prompt
+        log_utils.info(f"   Prompt: {prompt[:80]}{'...' if len(prompt) > 80 else ''}", log_utils.YELLOW)
 
-        if image is None:
-            raise RuntimeError(f"Failed to generate keyframe at frame {frame.i}")
+        # Generate keyframe using Wan T2V
+        keyframe_path = generate_wan_t2v_keyframe(
+            wan_integration=wan_integration,
+            prompt=prompt,
+            height=data.height(),
+            width=data.width(),
+            num_inference_steps=wan_args.wan_inference_steps,
+            guidance_scale=wan_args.wan_guidance_scale,
+            frame_idx=frame.i,
+            output_dir=data.output_directory,
+            timestring=data.args.root.timestring
+        )
 
-        # Save keyframe
-        keyframe_path = save_keyframe(data, frame, image)
         keyframe_images[frame.i] = keyframe_path
-
         log_utils.info(f"✅ Keyframe {idx + 1} saved: {os.path.basename(keyframe_path)}", log_utils.GREEN)
 
-    log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes generated", log_utils.GREEN)
+    log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes generated with Wan T2V", log_utils.GREEN)
 
     # ====================
     # PHASE 2: Batch Wan FLF2V Interpolation
@@ -91,30 +130,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("PHASE 2: Batch Wan FLF2V Interpolation", log_utils.BLUE)
     log_utils.info("="*60, log_utils.BLUE)
 
-    # Initialize Wan
-    wan_integration = WanSimpleIntegration(device='cuda')
-
-    # Discover and load Wan model
-    log_utils.info("🔍 Discovering Wan FLF2V models...", log_utils.BLUE)
-    discovered_models = wan_integration.discover_models()
-
-    if not discovered_models:
-        raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
-
-    # Use first FLF2V-capable model
-    flf2v_models = [m for m in discovered_models if m['supports_flf2v']]
-    if not flf2v_models:
-        raise RuntimeError("No FLF2V-capable Wan models found. Please download Wan 2.1+ model.")
-
-    model_info = flf2v_models[0]
-    log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
-    
-    # Load the Wan pipeline
-    success = wan_integration.load_simple_wan_pipeline(model_info, wan_args)
-    if not success:
-        raise RuntimeError(f"Failed to load Wan model: {model_info['name']}")
-
-    # Generate FLF2V segments
+    # Generate FLF2V segments (using already-loaded Wan model from Phase 0)
     all_segment_frames = []
 
     for idx in range(len(keyframes) - 1):
@@ -195,6 +211,40 @@ def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
         # Convert numpy/cv2 image to PIL
         pil_image = image_utils.numpy_to_pil(image)
         pil_image.save(filepath)
+    
+    return filepath
+
+
+def generate_wan_t2v_keyframe(wan_integration, prompt, height, width, num_inference_steps,
+                               guidance_scale, frame_idx, output_dir, timestring):
+    """Generate a single keyframe using Wan T2V"""
+    
+    # Wan generates short videos (e.g. 17 frames), we'll extract the middle frame as keyframe
+    # This gives better quality than single image generation
+    num_frames_for_video = 17  # Standard Wan T2V output
+    
+    log_utils.info(f"   Generating {num_frames_for_video}-frame video clip to extract keyframe...", log_utils.CYAN)
+    
+    # Generate short video with Wan T2V
+    video_frames = wan_integration.pipeline(
+        prompt=prompt,
+        height=height,
+        width=width,
+        num_frames=num_frames_for_video,
+        num_inference_steps=num_inference_steps,
+        guidance_scale=guidance_scale
+    )
+    
+    # Extract middle frame as the keyframe (best quality/consistency)
+    middle_idx = num_frames_for_video // 2
+    keyframe = video_frames[middle_idx]
+    
+    # Save keyframe
+    filename = f"{frame_idx:09d}.png"
+    filepath = os.path.join(output_dir, filename)
+    keyframe.save(filepath)
+    
+    log_utils.info(f"   Extracted frame {middle_idx+1}/{num_frames_for_video} as keyframe", log_utils.CYAN)
     
     return filepath
 
