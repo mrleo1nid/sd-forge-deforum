@@ -64,9 +64,9 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     # ====================
     # PHASE 0: Initialize Wan
     # ====================
-    log_utils.info("\n" + "="*60, log_utils.CYAN)
-    log_utils.info("PHASE 0: Initializing Wan Pipeline", log_utils.CYAN)
-    log_utils.info("="*60, log_utils.CYAN)
+    log_utils.info("\n" + "="*60, log_utils.PURPLE)
+    log_utils.info("PHASE 0: Initializing Wan Pipeline", log_utils.PURPLE)
+    log_utils.info("="*60, log_utils.PURPLE)
     
     wan_integration = WanSimpleIntegration(device='cuda')
     
@@ -223,7 +223,7 @@ def generate_wan_t2v_keyframe(wan_integration, prompt, height, width, num_infere
     # This gives better quality than single image generation
     num_frames_for_video = 17  # Standard Wan T2V output
     
-    log_utils.info(f"   Generating {num_frames_for_video}-frame video clip to extract keyframe...", log_utils.CYAN)
+    log_utils.info(f"   Generating {num_frames_for_video}-frame video clip to extract keyframe...", log_utils.BLUE)
     
     # Generate short video with Wan T2V
     video_frames = wan_integration.pipeline(
@@ -244,7 +244,7 @@ def generate_wan_t2v_keyframe(wan_integration, prompt, height, width, num_infere
     filepath = os.path.join(output_dir, filename)
     keyframe.save(filepath)
     
-    log_utils.info(f"   Extracted frame {middle_idx+1}/{num_frames_for_video} as keyframe", log_utils.CYAN)
+    log_utils.info(f"   Extracted frame {middle_idx+1}/{num_frames_for_video} as keyframe", log_utils.BLUE)
     
     return filepath
 
