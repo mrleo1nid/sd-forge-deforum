@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Camera Shakify integration** for realistic camera shake effects from Blender data
 - **QwenPromptExpander** for AI-powered prompt enhancement and movement analysis
 
-The extension operates as a Forge extension that hooks into WebUI's script system to provide animation capabilities across 5 modes: 2D, 3D, Video Input, Interpolation, and Wan Video.
+The extension operates as a Forge extension that hooks into WebUI's script system to provide animation capabilities across 6 modes: 2D, 3D, Video Input, Interpolation, Wan Only, and Wan Flux.
 
 ## Running the Extension
 
@@ -69,8 +69,11 @@ pip install -r requirements.txt
    - Registers UI tabs via `script_callbacks.on_ui_tabs(on_ui_tabs)`
    - Registers settings via `script_callbacks.on_ui_settings(on_ui_settings)`
 
-3. **UI Creation** (`scripts/deforum_helpers/ui_right.py:28`)
-   - Builds Gradio interface with tabs for Prompts, Keyframes, Output, Wan Video, etc.
+3. **UI Creation** (`scripts/deforum_helpers/ui_elements.py`, `scripts/deforum_helpers/ui_left.py`)
+   - Builds Gradio interface with main tabs: Run, Keyframes, Distribution, Prompts (with AI Enhancement accordion), Shakify, 3D Depth, Init, Wan Models, Output
+   - Keyframes tab has flattened single-level navigation (Motion, Strength, CFG, Seed, etc.)
+   - Distribution tab promoted to main level for render mode selection
+   - Shakify and 3D Depth promoted from buried subtabs to dedicated main tabs
    - Returns tuple: `(deforum_interface, "Deforum", "deforum")`
 
 4. **Main Orchestrator** (`scripts/deforum_helpers/run_deforum.py:43`)
@@ -82,7 +85,8 @@ pip install -r requirements.txt
 
 5. **Rendering Pipelines**
    - **Standard modes (2D/3D/Video/Interpolation):** `scripts/deforum_helpers/rendering/experimental_core.py:22` - `render_animation()`
-   - **Wan Video mode:** `scripts/deforum_helpers/wan/wan_simple_integration.py:29` - `generate_wan_video()`
+   - **Wan Only mode:** `scripts/deforum_helpers/rendering/render_wan_only.py` - `render_wan_only()` - Pure Wan T2V + FLF2V batch processing
+   - **Wan Flux mode:** `scripts/deforum_helpers/rendering/render_wan_flux.py` - `render_wan_flux()` - Flux keyframes + Wan FLF2V interpolation
 
 ### Core Systems
 
@@ -104,13 +108,22 @@ pip install -r requirements.txt
   5. Handles hybrid video, masks, and noise schedules
   6. Stitches final video with ffmpeg
 
-**3. Wan Video Pipeline** (`scripts/deforum_helpers/wan/`)
-- **wan_simple_integration.py:29** - Main Wan video generation
+**3. Wan Video Pipeline** (`scripts/deforum_helpers/wan/`, `scripts/deforum_helpers/rendering/`)
+- **wan_simple_integration.py** - Wan FLF2V wrapper and utilities
   - Auto-discovers models from `models/wan/` directory
-  - Handles T2V (text-to-video) and I2V (image-to-video) chaining
+  - Handles T2V (text-to-video), I2V (image-to-video), and FLF2V (first-last-frame-to-video)
   - Calculates frame counts as 4n+1 per Wan requirements
   - Integrates Deforum prompt scheduling, FPS, seed, and strength
-- **qwen_prompt_expander.py** - AI prompt enhancement
+- **render_wan_only.py** - Wan Only mode batch pipeline
+  - Phase 1: Generate ALL keyframes with Wan T2V
+  - Phase 2: Interpolate ALL tweens with Wan FLF2V
+  - Phase 3: Stitch final video
+  - Resume capability - can restart from Phase 2
+- **render_wan_flux.py** - Wan Flux mode hybrid pipeline
+  - Phase 1: Generate keyframes with Flux
+  - Phase 2: Interpolate tweens with Wan FLF2V
+  - Phase 3: Stitch final video
+- **qwen_prompt_expander.py** - AI prompt enhancement (integrated into Prompts tab)
   - Auto-selects Qwen model (3B/7B/14B) based on VRAM
   - Analyzes Deforum movement schedules, translates to English
   - Lazy-loads models only when "Enhance Prompts" clicked
@@ -189,10 +202,20 @@ pytest.ini                              # Pytest settings
 
 **Animation Modes:**
 1. **2D** - Flat transformations (pan, zoom, rotate)
+   - Optional Wan FLF2V integration for AI tween interpolation (via Distribution tab)
 2. **3D** - Depth-based warping with camera movement
+   - Optional Wan FLF2V integration for AI tween interpolation (via Distribution tab)
 3. **Video Input** - Use existing video as initialization
 4. **Interpolation** - Generate between two prompts
-5. **Wan Video** - AI video generation with Deforum scheduling
+5. **Wan Only** - Pure Wan T2V + FLF2V batch processing (no SD model required)
+   - Phase 1: ALL keyframes with Wan T2V
+   - Phase 2: ALL tweens with Wan FLF2V (guidance_scale=3.5 default)
+   - Phase 3: Stitch final video
+   - Resume capability at Phase 2
+6. **Wan Flux** - Hybrid Flux + Wan workflow
+   - Phase 1: Keyframes with Flux
+   - Phase 2: Tweens with Wan FLF2V (guidance_scale=3.5 default)
+   - Phase 3: Stitch final video
 
 **Keyframe Distribution:**
 - Replaces traditional cadence-based rendering
@@ -207,16 +230,36 @@ pytest.ini                              # Pytest settings
 
 **Wan Integration Points:**
 - Prompts from "Prompts" tab with frame numbers
+- AI Prompt Enhancement in "Prompts" tab → "AI Prompt Enhancement" accordion (Qwen)
 - FPS from "Output" tab
 - Optional seed scheduling from "Keyframes → Seed" tab
 - Optional strength scheduling from "Keyframes → Strength" tab for I2V chaining
-- Configuration and enhancement in "Wan Video" tab
+- Model selection and configuration in "Wan Models" tab
+- FLF2V settings in "Distribution" tab (for 2D/3D modes) or "Wan Models" tab (for Wan Only/Flux modes)
 
 **I2V Chaining (Wan):**
 - Uses last frame of previous clip as initialization for next clip
 - VACE models (Video Adaptive Conditional Enhancement) recommended for best continuity
 - Strength schedule controls how much previous frame influences next clip
 - Automatically handles 4n+1 frame requirements per Wan spec
+
+**FLF2V (First-Last-Frame-to-Video):**
+- AI-powered interpolation between two keyframes using Wan's FLF2V pipeline
+- **Critical Parameter: guidance_scale**
+  - **3.5** (Default) - Smooth visual morphing, prioritizes seamless transitions
+  - **5.5** - Official example value, balanced prompt adherence
+  - **3.0-7.0** - Safe range for smooth transitions
+  - **7.0+** - Risk of jitter, flicker, temporal inconsistency
+  - **0.0** - ⚠️ **NEVER USE** - Breaks interpolation completely (ignores all conditioning including last_image)
+- **Why 0.0 Breaks FLF2V:** When guidance_scale=0.0, the model ignores ALL conditioning inputs, including the `last_image` parameter, causing it to just extend the first frame instead of interpolating
+- **Prompt Modes:**
+  - **"none"** - No text prompting (recommended for smooth interpolation)
+  - **"keyframe"** - Use keyframe prompts during interpolation
+  - **"interpolated"** - Blend prompts between keyframes
+- Used in:
+  - 2D/3D modes with "Enable Wan FLF2V for Tweens" (Distribution tab)
+  - Wan Only mode Phase 2 (ALL tween interpolation)
+  - Wan Flux mode Phase 2 (Flux→Wan→Flux interpolation)
 
 ## Common Development Tasks
 
@@ -310,11 +353,14 @@ pytest tests/deforum_test.py::test_name -v
 When discussing code, use `file_path:line_number` format:
 - Extension init: `scripts/deforum.py:24`
 - Main orchestrator: `scripts/deforum_helpers/run_deforum.py:43`
-- Render pipeline: `scripts/deforum_helpers/rendering/experimental_core.py:22`
+- Standard render pipeline (2D/3D/Video/Interpolation): `scripts/deforum_helpers/rendering/experimental_core.py:22`
+- Wan Only pipeline: `scripts/deforum_helpers/rendering/render_wan_only.py:1`
+- Wan Flux pipeline: `scripts/deforum_helpers/rendering/render_wan_flux.py:1`
 - Central state: `scripts/deforum_helpers/rendering/data/render_data.py:42`
-- Wan integration: `scripts/deforum_helpers/wan/wan_simple_integration.py:29`
-- Qwen enhancement: `scripts/deforum_helpers/wan/qwen_prompt_expander.py:1`
-- UI creation: `scripts/deforum_helpers/ui_right.py:28`
+- Wan FLF2V wrapper: `scripts/deforum_helpers/wan/wan_simple_integration.py:1`
+- Qwen enhancement (in Prompts tab): `scripts/deforum_helpers/wan/qwen_prompt_expander.py:1`
+- UI elements: `scripts/deforum_helpers/ui_elements.py:1`
+- UI left panel: `scripts/deforum_helpers/ui_left.py:1`
 - Keyframe distribution: `scripts/deforum_helpers/rendering/data/frame/key_frame_distribution.py:1`
 
 ## Dependencies
@@ -373,3 +419,10 @@ huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan
 - Use quantized Flux model (bnb-nf4)
 - Reduce max_frames or frame count
 - For Wan: Use 1.3B instead of 14B model
+
+**FLF2V interpolation not working:**
+- Check guidance_scale is NOT 0.0 (default should be 3.5)
+- Try guidance_scale values between 3.0-7.0
+- Use prompt_mode="none" for smoothest interpolation
+- Verify both first and last keyframes are properly generated
+- Check console for FLF2V DEBUG logs in Wan Only/Flux modes
