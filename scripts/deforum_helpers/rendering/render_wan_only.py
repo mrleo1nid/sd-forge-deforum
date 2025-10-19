@@ -226,7 +226,7 @@ def generate_wan_t2v_keyframe(wan_integration, prompt, height, width, num_infere
     log_utils.info(f"   Generating {num_frames_for_video}-frame video clip to extract keyframe...", log_utils.BLUE)
     
     # Generate short video with Wan T2V
-    video_frames = wan_integration.pipeline(
+    result = wan_integration.pipeline(
         prompt=prompt,
         height=height,
         width=width,
@@ -235,16 +235,46 @@ def generate_wan_t2v_keyframe(wan_integration, prompt, height, width, num_infere
         guidance_scale=guidance_scale
     )
     
+    # Extract frames from result (handle different output formats)
+    frames = None
+    if isinstance(result, tuple):
+        frames = result[0]
+    elif hasattr(result, 'frames'):
+        frames = result.frames
+    elif hasattr(result, 'images'):
+        frames = result.images
+    elif hasattr(result, 'videos'):
+        frames = result.videos
+    else:
+        frames = result
+    
+    # Convert frames if needed
+    if isinstance(frames, list) and len(frames) > 0:
+        # Already a list of PIL Images
+        frame_list = frames
+    else:
+        log_utils.error("Unable to extract frames from Wan T2V output")
+        raise RuntimeError(f"Unexpected Wan output format: {type(result)}")
+    
     # Extract middle frame as the keyframe (best quality/consistency)
     middle_idx = num_frames_for_video // 2
-    keyframe = video_frames[middle_idx]
+    if middle_idx >= len(frame_list):
+        middle_idx = len(frame_list) - 1
+    
+    keyframe = frame_list[middle_idx]
     
     # Save keyframe
     filename = f"{frame_idx:09d}.png"
     filepath = os.path.join(output_dir, filename)
-    keyframe.save(filepath)
     
-    log_utils.info(f"   Extracted frame {middle_idx+1}/{num_frames_for_video} as keyframe", log_utils.BLUE)
+    # Ensure it's a PIL Image
+    if hasattr(keyframe, 'save'):
+        keyframe.save(filepath)
+    else:
+        from PIL import Image
+        Image.fromarray(keyframe).save(filepath)
+    
+    log_utils.info(f"   Extracted frame {middle_idx+1}/{len(frame_list)} as keyframe", log_utils.BLUE)
     
     return filepath
 
@@ -260,7 +290,7 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
         log_utils.info(f"   Adjusted frame count: {num_frames} → {adjusted_frames} (4n+1 requirement)", log_utils.YELLOW)
 
     # Generate FLF2V interpolation
-    frames = wan_integration.pipeline.generate_flf2v(
+    result = wan_integration.pipeline.generate_flf2v(
         first_frame=first_image,
         last_frame=last_image,
         prompt=prompt,
@@ -271,13 +301,41 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
         guidance_scale=guidance_scale
     )
 
+    # Extract frames from result (handle different output formats)
+    frames = None
+    if isinstance(result, tuple):
+        frames = result[0]
+    elif hasattr(result, 'frames'):
+        frames = result.frames
+    elif hasattr(result, 'images'):
+        frames = result.images
+    elif hasattr(result, 'videos'):
+        frames = result.videos
+    else:
+        frames = result
+
+    # Convert frames if needed
+    if isinstance(frames, list) and len(frames) > 0:
+        # Already a list of PIL Images
+        frame_list = frames
+    else:
+        log_utils.error("Unable to extract frames from FLF2V output")
+        raise RuntimeError(f"Unexpected FLF2V output format: {type(result)}")
+
     # Save frames
     frame_paths = []
-    for local_idx, frame in enumerate(frames):
+    for local_idx, frame in enumerate(frame_list):
         global_frame_idx = first_frame_idx + local_idx
         filename = f"{global_frame_idx:09d}.png"
         filepath = os.path.join(output_dir, filename)
-        frame.save(filepath)
+        
+        # Ensure it's a PIL Image
+        if hasattr(frame, 'save'):
+            frame.save(filepath)
+        else:
+            from PIL import Image
+            Image.fromarray(frame).save(filepath)
+        
         frame_paths.append(filepath)
 
     return frame_paths
