@@ -228,13 +228,13 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         first_image = image_utils.numpy_to_pil(first_image_cv2)
         last_image = image_utils.numpy_to_pil(last_image_cv2)
         
-        # For FLF2V interpolation, use minimal guidance to let model smoothly transition
+        # For FLF2V interpolation, use balanced guidance for semantic interpolation
         # High guidance forces prompt adherence, low guidance allows natural interpolation
-        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 0.0)  # Default 0.0 = pure interpolation
-        
+        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 5.5)  # Default 5.5 = balanced (official example)
+
         # Decide how to handle prompts for FLF2V
         # Options: 'none', 'first', 'last', 'blend'
-        flf2v_prompt_mode = getattr(wan_args, 'wan_flf2v_prompt_mode', 'none')
+        flf2v_prompt_mode = getattr(wan_args, 'wan_flf2v_prompt_mode', 'blend')  # Default to blend for semantic guidance
         
         if flf2v_prompt_mode == 'none':
             flf2v_prompt = ""

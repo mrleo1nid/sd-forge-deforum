@@ -1262,15 +1262,15 @@ def WanArgs():
             "minimum": 0.0,
             "maximum": 7.0,
             "step": 0.1,
-            "value": 3.5,
-            "info": "Guidance scale for FLF2V interpolation. Recommended: 3.5-5.5 for smooth transitions. 3.5 = smooth visual morphing, 5.5 = balanced prompt adherence. NEVER use 0.0 (breaks last_image conditioning)."
+            "value": 5.5,
+            "info": "Guidance scale for FLF2V interpolation. Recommended: 5.5 (official example) for balanced prompt adherence, 3.5 for smoother visual morphing. NEVER use 0.0 (breaks last_image conditioning). Range: 3.0-7.0."
         },
         "wan_flf2v_prompt_mode": {
             "label": "FLF2V Prompt Mode",
             "type": "dropdown",
             "choices": ["none", "first", "last", "blend"],
-            "value": "none",
-            "info": "How to use prompts for FLF2V interpolation: 'none' (empty, pure visual transition), 'first' (use start keyframe prompt), 'last' (use end keyframe prompt), 'blend' (combine both prompts describing transition)"
+            "value": "blend",
+            "info": "How to use prompts for FLF2V interpolation: 'blend' (RECOMMENDED - combine both prompts describing transition), 'last' (use end keyframe prompt as target), 'first' (use start keyframe prompt), 'none' (empty prompt, may not interpolate correctly)"
         },
 
         # Advanced Generation Settings

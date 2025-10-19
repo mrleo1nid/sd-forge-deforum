@@ -256,12 +256,12 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
             if not attr.startswith('_') and 'flf2v' in attr.lower():
                 log_utils.info(f"      {attr} = {getattr(wan_args, attr, 'N/A')}", log_utils.YELLOW)
         
-        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 0.0)  # Default 0.0 = pure interpolation
+        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 5.5)  # Default 5.5 = balanced (official example)
         log_utils.info(f"   🔍 DEBUG: flf2v_guidance final value = {flf2v_guidance}", log_utils.YELLOW)
-        
+
         # Decide how to handle prompts for FLF2V
         # Options: 'none', 'first', 'last', 'blend'
-        flf2v_prompt_mode = getattr(wan_args, 'wan_flf2v_prompt_mode', 'none')
+        flf2v_prompt_mode = getattr(wan_args, 'wan_flf2v_prompt_mode', 'blend')  # Default to blend for semantic guidance
         
         if flf2v_prompt_mode == 'none':
             flf2v_prompt = ""
