@@ -1651,9 +1651,12 @@ def get_tab_wan(dw: SimpleNamespace):
         with gr.Accordion("🎞️ FLF2V Interpolation Settings", open=True):
             gr.Markdown("""
             **FLF2V interpolates smooth transitions between keyframes.**
-            
-            - Lower guidance (0.5-1.0) = smoother, more natural transitions
-            - Prompt mode 'none' = pure visual interpolation (recommended)
+
+            **IMPORTANT:** FLF2V needs semantic guidance to interpolate correctly!
+            - **Guidance Scale:** 5.5 (official example) = balanced, 3.5 = smoother. Range: 3.0-7.0
+            - **Prompt Mode:** **'blend' (RECOMMENDED)** - combines keyframe prompts for semantic guidance
+            - **⚠️ NEVER use guidance_scale=0.0** (breaks last_image conditioning)
+            - **⚠️ 'none' mode may not work** (empty prompts often cause first-frame extension)
             """)
             with FormRow():
                 wan_flf2v_guidance_scale = create_gr_elem(dw.wan_flf2v_guidance_scale)
