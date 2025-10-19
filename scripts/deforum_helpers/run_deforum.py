@@ -93,6 +93,19 @@ def run_deforum(*args):
                             animation_mode = saved_animation_mode
                             # Override in args_dict so it's used throughout
                             args_dict['animation_mode'] = animation_mode
+                        
+                        # Also load ALL wan settings from saved file (critical for FLF2V settings)
+                        wan_settings_loaded = 0
+                        for key, value in saved_settings.items():
+                            if key.startswith('wan_'):
+                                if key in args_dict:
+                                    args_dict[key] = value
+                                    wan_settings_loaded += 1
+                                    if 'flf2v' in key.lower():
+                                        print(f"   ✓ Loaded {key}: {value}")
+                        
+                        if wan_settings_loaded > 0:
+                            print(f"🔄 Resume detected: Loaded {wan_settings_loaded} wan_* settings from saved file")
                         else:
                             print(f"⚠️  Warning: No animation_mode found in settings file")
                             print(f"   Using current UI setting: {animation_mode}")
