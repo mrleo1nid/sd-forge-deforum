@@ -253,6 +253,31 @@ def setup_deforum_left_side_ui():
             import traceback
             traceback.print_exc()
 
+    # Set up Auto-Assign Keyframe Types button
+    if 'auto_assign_keyframe_types_btn' in locals() and 'keyframe_type_schedule' in locals():
+        try:
+            print("🔗 Connecting auto-assign keyframe types button...")
+
+            from .ui_elements import auto_assign_keyframe_types_handler
+
+            # Check if animation_prompts and wan_flf2v_chunk_size are available
+            if 'animation_prompts' in locals() and 'wan_flf2v_chunk_size' in locals():
+                locals()['auto_assign_keyframe_types_btn'].click(
+                    fn=auto_assign_keyframe_types_handler,
+                    inputs=[
+                        locals()['animation_prompts'],
+                        locals()['wan_flf2v_chunk_size']
+                    ],
+                    outputs=[locals()['keyframe_type_schedule']]
+                )
+                print("✅ Auto-assign keyframe types button connected successfully")
+            else:
+                print("⚠️ Warning: animation_prompts or wan_flf2v_chunk_size not found in locals()")
+        except Exception as e:
+            print(f"⚠️ Warning: Failed to connect auto-assign keyframe types button: {e}")
+            import traceback
+            traceback.print_exc()
+
     # Set up movement component references for analyze_movement_handler
     try:
         from .ui_elements import analyze_movement_handler, enhance_prompts_handler

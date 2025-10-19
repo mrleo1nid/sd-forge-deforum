@@ -1090,6 +1090,66 @@ The auto-discovery will find your models automatically!
         raise
 
 
+def auto_assign_keyframe_types_handler(animation_prompts_json, chunk_size):
+    """
+    Auto-assign keyframe types based on tween distances between keyframes.
+
+    Logic:
+    - Short sections (< 80% of chunk_size): Use "flf2v"
+    - Long sections (>= 80% of chunk_size): Use "tween"
+
+    Returns: keyframe_type_schedule string in format "0:(tween), 60:(flf2v), 120:(tween)"
+    """
+    import json
+    import re
+
+    try:
+        # Parse animation prompts JSON
+        if isinstance(animation_prompts_json, str):
+            animation_prompts = json.loads(animation_prompts_json)
+        else:
+            animation_prompts = animation_prompts_json
+
+        # Extract frame numbers and sort them
+        frame_numbers = []
+        for key in animation_prompts.keys():
+            # Handle both numeric keys and expressions like "max_f-2"
+            if key.isdigit():
+                frame_numbers.append(int(key))
+            elif re.match(r'^\d+$', str(key)):
+                frame_numbers.append(int(key))
+
+        if not frame_numbers:
+            return "0:(tween)"
+
+        frame_numbers.sort()
+
+        # Calculate threshold (80% of chunk_size)
+        threshold = int(chunk_size * 0.8)
+
+        # Build keyframe type schedule
+        schedule_parts = []
+        for i, frame in enumerate(frame_numbers):
+            if i == 0:
+                # First keyframe always starts with tween
+                schedule_parts.append(f"{frame}:(tween)")
+            else:
+                # Calculate distance to previous keyframe
+                distance = frame - frame_numbers[i - 1]
+
+                # Suggest flf2v for short sections, tween for long sections
+                suggested_type = "flf2v" if distance <= threshold else "tween"
+                schedule_parts.append(f"{frame}:({suggested_type})")
+
+        result = ", ".join(schedule_parts)
+        print(f"🤖 Auto-assigned keyframe types: {result}")
+        return result
+
+    except Exception as e:
+        print(f"❌ Error auto-assigning keyframe types: {e}")
+        return "0:(tween)"
+
+
 def get_tab_wan(dw: SimpleNamespace):
     """Wan Model & Settings Tab - FLF2V integration enabled in Keyframes → Distribution"""
     with gr.TabItem(f"{emoji_utils.wan_video()} Wan Models"):
@@ -1993,6 +2053,15 @@ def get_tab_distribution(da):
 
             gr.Markdown("**Per-Keyframe Type Control (Advanced):**")
             keyframe_type_schedule = create_row(da.keyframe_type_schedule)
+
+            with FormRow():
+                auto_assign_keyframe_types_btn = gr.Button(
+                    "🤖 Auto-Assign Types",
+                    variant="secondary",
+                    size="sm",
+                    elem_id="auto_assign_keyframe_types_btn"
+                )
+                gr.Markdown("*Analyzes tween distances and suggests optimal types based on chunk size*")
 
         create_keyframe_distribution_info_tab()
 
