@@ -21,6 +21,17 @@ class NoImageGenerated(Exception):
     pass
 
 
+def _strip_negative_prompt(prompt_text):
+    """Remove --neg ... portion from Deforum prompts to avoid Wan interpreting them as positive.
+
+    Wan doesn't understand Deforum's --neg syntax and will interpret negative prompts as positive,
+    potentially generating unwanted content (e.g., "nsfw" in negative becomes positive).
+    """
+    if '--neg' in prompt_text:
+        return prompt_text.split('--neg')[0].strip()
+    return prompt_text.strip()
+
+
 def render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args,
                      freeu_args, kohya_hrfix_args, root):
     log_utils.info("Using experimental render core.", log_utils.RED)
@@ -286,7 +297,8 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
 
 def _emit_wan_flf2v_direct(data, frame, wan, first_frame_pil, last_frame_pil, width, height, num_frames):
     """Direct FLF2V: Single call to interpolate between two keyframes."""
-    prompt = data.args.root.animation_prompts.get(str(frame.i), "")
+    prompt_raw = data.args.root.animation_prompts.get(str(frame.i), "")
+    prompt = _strip_negative_prompt(prompt_raw)
 
     log_utils.info(f"   Generating {num_frames} frames with single FLF2V call...", log_utils.BLUE)
 
@@ -384,7 +396,8 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
         chunk_end = chunk_positions[i + 1]
         chunk_num_frames = chunk_end - chunk_start + 1  # +1 to include both endpoints
 
-        prompt = data.args.root.animation_prompts.get(str(frame.i), "")
+        prompt_raw = data.args.root.animation_prompts.get(str(frame.i), "")
+        prompt = _strip_negative_prompt(prompt_raw)
 
         log_utils.info(f"   FLF2V chunk {i+1}/{len(intermediate_keyframes)-1}: frames {chunk_start}→{chunk_end} ({chunk_num_frames} frames)", log_utils.BLUE)
 

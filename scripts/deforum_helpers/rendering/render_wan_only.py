@@ -236,8 +236,18 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         # Get prompts for BOTH keyframes
         first_prompt_idx = min(first_frame_idx, len(data.prompt_series) - 1)
         last_prompt_idx = min(last_frame_idx, len(data.prompt_series) - 1)
-        first_prompt = data.prompt_series[first_prompt_idx]
-        last_prompt = data.prompt_series[last_prompt_idx]
+        first_prompt_raw = data.prompt_series[first_prompt_idx]
+        last_prompt_raw = data.prompt_series[last_prompt_idx]
+
+        # Strip --neg negative prompts (Wan doesn't understand this syntax and will interpret them positively!)
+        def strip_negative_prompt(prompt_text):
+            """Remove --neg ... portion from Deforum prompts to avoid Wan interpreting them as positive."""
+            if '--neg' in prompt_text:
+                return prompt_text.split('--neg')[0].strip()
+            return prompt_text.strip()
+
+        first_prompt = strip_negative_prompt(first_prompt_raw)
+        last_prompt = strip_negative_prompt(last_prompt_raw)
 
         # Load keyframe images
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
