@@ -48,12 +48,34 @@ def run_deforum(*args):
     component_names = get_component_names()
     args_dict = {component_names[i]: args[i+2] for i in range(0, len(component_names))}
 
-    # Check if this is Wan Only mode - Flux needed for keyframes, Wan for interpolation
+    # Check if resuming - load animation_mode from saved settings
     animation_mode = args_dict.get('animation_mode', '2D')
+    if args_dict.get('resume_from_timestring', False) and args_dict.get('resume_timestring'):
+        # Try to load settings from previous run to get correct animation_mode
+        import json
+        outdir = args_dict.get('outdir', 'output')
+        timestring = args_dict.get('resume_timestring')
+        settings_file = os.path.join(outdir, f"{timestring}_settings.txt")
+        
+        if os.path.exists(settings_file):
+            try:
+                with open(settings_file, 'r') as f:
+                    saved_settings = json.load(f)
+                    saved_animation_mode = saved_settings.get('animation_mode')
+                    if saved_animation_mode:
+                        print(f"🔄 Resume detected: Loading animation_mode '{saved_animation_mode}' from {os.path.basename(settings_file)}")
+                        animation_mode = saved_animation_mode
+                        # Override in args_dict so it's used throughout
+                        args_dict['animation_mode'] = animation_mode
+            except Exception as e:
+                print(f"⚠️ Warning: Could not load animation_mode from settings file: {e}")
+                print(f"   Using current UI setting: {animation_mode}")
+    
+    # Check if this is Wan Only mode - no SD model needed
     is_wan_only_mode = (animation_mode == 'Wan Only')
 
     if is_wan_only_mode:
-        print("🎬 Wan Only mode detected - will use Flux for keyframes + Wan FLF2V for interpolation")
+        print("🎬 Wan Only mode detected - will use Wan T2V for keyframes + Wan FLF2V for interpolation")
     elif isinstance(shared.sd_model, FakeInitialModel):
         print("Loading Models...")
         forge_model_reload()
