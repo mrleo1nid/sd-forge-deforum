@@ -1358,6 +1358,20 @@ def WanArgs():
             "step": 0.1,
             "value": 1.0,
             "info": "Fixed motion strength value (only used when Motion Strength Override is enabled). Dynamic calculation from schedules is recommended."
+        },
+
+        # VRAM Optimization Settings
+        "wan_t5_cpu_offload": {
+            "label": "T5 CPU Offload",
+            "type": "checkbox",
+            "value": False,
+            "info": "Keep T5 text encoder on CPU to save ~3-4GB VRAM (slightly slower text encoding). Helpful for 16GB GPUs."
+        },
+        "wan_gradient_checkpointing": {
+            "label": "Gradient Checkpointing",
+            "type": "checkbox",
+            "value": False,
+            "info": "Trade compute speed for VRAM (~15-20% slower, saves ~2-3GB). Enable if you get OOM errors on 16GB GPUs."
         }
     }
 

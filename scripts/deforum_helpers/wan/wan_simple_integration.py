@@ -432,7 +432,38 @@ class WanSimpleIntegration:
                         print_wan_info("🔧 Enabling model CPU offload to save VRAM...")
                         pipeline.enable_model_cpu_offload()
                         print_wan_success("✅ CPU offload enabled - model will stream to GPU during inference")
-                
+
+                    # User-controlled VRAM optimizations (from UI settings)
+                    if wan_args:
+                        # T5 CPU Offload
+                        if hasattr(wan_args, 'wan_t5_cpu_offload') and wan_args.wan_t5_cpu_offload:
+                            try:
+                                if hasattr(pipeline, 'text_encoder'):
+                                    print_wan_info("🔧 Enabling T5 CPU offload (user setting)...")
+                                    pipeline.text_encoder.to('cpu')
+                                    print_wan_success("✅ T5 text encoder moved to CPU - saves ~3-4GB VRAM")
+                                elif hasattr(pipeline, 'text_encoder_2'):
+                                    print_wan_info("🔧 Enabling T5 CPU offload for text_encoder_2...")
+                                    pipeline.text_encoder_2.to('cpu')
+                                    print_wan_success("✅ T5 text encoder moved to CPU - saves ~3-4GB VRAM")
+                            except Exception as e:
+                                print_wan_warning(f"T5 CPU offload failed: {e}")
+
+                        # Gradient Checkpointing
+                        if hasattr(wan_args, 'wan_gradient_checkpointing') and wan_args.wan_gradient_checkpointing:
+                            try:
+                                print_wan_info("🔧 Enabling gradient checkpointing (user setting)...")
+                                if hasattr(pipeline, 'transformer') and hasattr(pipeline.transformer, 'enable_gradient_checkpointing'):
+                                    pipeline.transformer.enable_gradient_checkpointing()
+                                    print_wan_success("✅ Gradient checkpointing enabled - saves ~2-3GB VRAM (~15-20% slower)")
+                                elif hasattr(pipeline, 'unet') and hasattr(pipeline.unet, 'enable_gradient_checkpointing'):
+                                    pipeline.unet.enable_gradient_checkpointing()
+                                    print_wan_success("✅ Gradient checkpointing enabled - saves ~2-3GB VRAM (~15-20% slower)")
+                                else:
+                                    print_wan_warning("Gradient checkpointing not supported by this model architecture")
+                            except Exception as e:
+                                print_wan_warning(f"Gradient checkpointing failed: {e}")
+
                 # Load I2V pipeline if available and model supports I2V
                 # Check if model has I2V support by checking for transformer config or model type
                 model_supports_i2v = False
@@ -500,7 +531,35 @@ class WanSimpleIntegration:
                             else:
                                 i2v_pipeline.enable_model_cpu_offload()
                                 print_wan_success("✅ I2V pipeline: CPU offload enabled")
-                        
+
+                            # User-controlled VRAM optimizations for I2V pipeline
+                            if wan_args:
+                                # T5 CPU Offload
+                                if hasattr(wan_args, 'wan_t5_cpu_offload') and wan_args.wan_t5_cpu_offload:
+                                    try:
+                                        if hasattr(i2v_pipeline, 'text_encoder'):
+                                            print_wan_info("🔧 I2V pipeline: Enabling T5 CPU offload...")
+                                            i2v_pipeline.text_encoder.to('cpu')
+                                            print_wan_success("✅ I2V pipeline: T5 text encoder on CPU")
+                                        elif hasattr(i2v_pipeline, 'text_encoder_2'):
+                                            i2v_pipeline.text_encoder_2.to('cpu')
+                                            print_wan_success("✅ I2V pipeline: T5 text encoder on CPU")
+                                    except Exception as e:
+                                        print_wan_warning(f"I2V pipeline T5 CPU offload failed: {e}")
+
+                                # Gradient Checkpointing
+                                if hasattr(wan_args, 'wan_gradient_checkpointing') and wan_args.wan_gradient_checkpointing:
+                                    try:
+                                        print_wan_info("🔧 I2V pipeline: Enabling gradient checkpointing...")
+                                        if hasattr(i2v_pipeline, 'transformer') and hasattr(i2v_pipeline.transformer, 'enable_gradient_checkpointing'):
+                                            i2v_pipeline.transformer.enable_gradient_checkpointing()
+                                            print_wan_success("✅ I2V pipeline: Gradient checkpointing enabled")
+                                        elif hasattr(i2v_pipeline, 'unet') and hasattr(i2v_pipeline.unet, 'enable_gradient_checkpointing'):
+                                            i2v_pipeline.unet.enable_gradient_checkpointing()
+                                            print_wan_success("✅ I2V pipeline: Gradient checkpointing enabled")
+                                    except Exception as e:
+                                        print_wan_warning(f"I2V pipeline gradient checkpointing failed: {e}")
+
                         print_wan_success("✅ WanImageToVideoPipeline loaded successfully for I2V chaining")
                     except Exception as i2v_e:
                         print_wan_warning(f"⚠️ Failed to load I2V pipeline: {i2v_e}")
@@ -594,43 +653,45 @@ class WanSimpleIntegration:
                                 print_wan_info(f"✅ I2V conditioning: Using 'image' parameter")
                                 print_wan_info(f"📝 Using original prompt (image handles continuity, prompt guides changes)")
                             
-                            # Check if strength parameter is supported
+                            # Check if strength parameter is supported and if we should use I2V
+                            use_i2v_pipeline = True
+                            
                             if 'strength' not in pipeline_signature.parameters:
                                 # I2V pipeline doesn't support strength parameter
-                                # Apply noise to the image in pixel space instead!
-                                if strength < 0.99:  # Only if strength is not maximum
-                                    print_wan_info(f"ℹ️ I2V pipeline lacks strength control, applying pixel-space noise for strength {strength:.2f}")
-                                    image = self._add_noise_to_image(image, strength)
-                                    generation_kwargs['image'] = image  # Update with noised image
-                                    print_wan_info(f"   → Noised image by {(1.0 - strength) * 100:.0f}% before I2V")
+                                if strength >= 0.70:
+                                    # High strength - I2V pipeline is naturally good at continuity
+                                    print_wan_info(f"ℹ️ I2V pipeline lacks strength control, but strength is high ({strength:.2f})")
+                                    print_wan_info(f"   → Using I2V as-is (naturally high continuity)")
                                 else:
-                                    print_wan_info(f"ℹ️ I2V pipeline lacks strength control but strength is maximum ({strength:.2f})")
-                                    print_wan_info(f"   → Using image as-is (no noise needed)")
+                                    # Low/medium strength - I2V is too sticky, use T2V with latents instead
+                                    print_wan_info(f"⚠️ I2V pipeline too sticky for strength {strength:.2f}, falling back to T2V with latent control")
+                                    use_i2v_pipeline = False
                             else:
                                 # Pipeline supports strength - use it!
                                 generation_kwargs['strength'] = strength
                                 print_wan_info(f"✅ Strength parameter supported: {strength:.2f}")
                             
-                            # Use I2V pipeline
-                            # Add resolution parameters
-                            if 'height' in pipeline_signature.parameters:
-                                generation_kwargs['height'] = aligned_height
-                            if 'width' in pipeline_signature.parameters:
-                                generation_kwargs['width'] = aligned_width
-                            if 'num_frames' in pipeline_signature.parameters:
-                                generation_kwargs['num_frames'] = num_frames
-                            elif 'video_length' in pipeline_signature.parameters:
-                                generation_kwargs['video_length'] = num_frames
-                            
-                            print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
-                            print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
-                            print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
-                            print_wan_info(f"   Frames: {num_frames}")
-                            print_wan_info(f"   I2V Strength: {strength:.2f}")
-                            print_wan_info(f"   CFG: {guidance_scale}")
-                            
-                            with torch.no_grad():
-                                return self.i2v_pipeline(**generation_kwargs)
+                            # Only use I2V pipeline if we decided to
+                            if use_i2v_pipeline:
+                                # Add resolution parameters
+                                if 'height' in pipeline_signature.parameters:
+                                    generation_kwargs['height'] = aligned_height
+                                if 'width' in pipeline_signature.parameters:
+                                    generation_kwargs['width'] = aligned_width
+                                if 'num_frames' in pipeline_signature.parameters:
+                                    generation_kwargs['num_frames'] = num_frames
+                                elif 'video_length' in pipeline_signature.parameters:
+                                    generation_kwargs['video_length'] = num_frames
+                                
+                                print_wan_info(f"🎬 I2V Generation with dedicated pipeline:")
+                                print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
+                                print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+                                print_wan_info(f"   Frames: {num_frames}")
+                                print_wan_info(f"   I2V Strength: {strength:.2f}")
+                                print_wan_info(f"   CFG: {guidance_scale}")
+                                
+                                with torch.no_grad():
+                                    return self.i2v_pipeline(**generation_kwargs)
                         
                         # Fall back to T2V pipeline with I2V conditioning
                         print_wan_info("ℹ️ Using T2V pipeline with I2V conditioning fallback")
@@ -738,7 +799,7 @@ class WanSimpleIntegration:
                 
                     def _add_noise_to_image(self, image, strength):
                         """
-                        Add noise to image in pixel space for strength control
+                        Add subtle noise to image in pixel space for strength control
                         
                         Args:
                             image: PIL Image
@@ -746,6 +807,9 @@ class WanSimpleIntegration:
                         
                         Returns:
                             PIL Image with noise applied
+                        
+                        Note: Uses very subtle noise to avoid artifacts. The noise level is
+                        intentionally much lower than (1-strength) to work well with I2V models.
                         """
                         import numpy as np
                         from PIL import Image
@@ -753,18 +817,22 @@ class WanSimpleIntegration:
                         # Convert to numpy array [0, 1]
                         img_array = np.array(image).astype(np.float32) / 255.0
                         
-                        # Generate random noise
-                        noise = np.random.randn(*img_array.shape).astype(np.float32) * 0.5 + 0.5  # Gaussian noise centered at 0.5
+                        # Calculate noise amount - linear scale for more predictable control
+                        # I2V pipeline is very sticky, so we need more aggressive noise
+                        noise_amount = 1.0 - strength  # Linear, not squared
+                        noise_scale = noise_amount * 0.5  # Scale to max 50% noise at strength 0.0
                         
-                        # Blend: image * strength + noise * (1 - strength)
-                        noise_scale = 1.0 - strength
-                        blended = img_array * strength + noise * noise_scale
+                        # Generate Gaussian noise [-1, 1] range
+                        noise = np.random.randn(*img_array.shape).astype(np.float32) * 0.5
+                        
+                        # Add noise (not blend!) - this preserves more of the original image
+                        noisy = img_array + (noise * noise_scale)
                         
                         # Clip to valid range and convert back
-                        blended = np.clip(blended, 0, 1)
-                        blended = (blended * 255).astype(np.uint8)
+                        noisy = np.clip(noisy, 0, 1)
+                        noisy = (noisy * 255).astype(np.uint8)
                         
-                        return Image.fromarray(blended)
+                        return Image.fromarray(noisy)
                     
                     def _encode_image_to_latents_with_noise(self, image, width, height, strength, num_frames):
                         """
@@ -936,7 +1004,61 @@ class WanSimpleIntegration:
                             import traceback
                             traceback.print_exc()
                             return None
-                
+
+                    def generate_flf2v(self, first_frame, last_frame, prompt, height, width, num_frames, num_inference_steps, guidance_scale, **kwargs):
+                        """
+                        First-Last-Frame-to-Video (FLF2V) generation
+
+                        Interpolates smooth video between two keyframes.
+                        Perfect for Flux keyframe → Wan fill-in workflow!
+
+                        Args:
+                            first_frame: PIL Image - starting keyframe
+                            last_frame: PIL Image - ending keyframe
+                            prompt: Text prompt for interpolation guidance
+                            num_frames: Number of frames to generate between keyframes
+
+                        Note: Uses WanImageToVideoPipeline's 'last_image' parameter for FLF2V mode.
+                        This should use less VRAM than T2V since both frames already exist.
+                        """
+                        # Wan 2.2 requires dimensions divisible by 32
+                        aligned_width = ((width + 31) // 32) * 32
+                        aligned_height = ((height + 31) // 32) * 32
+
+                        # FLF2V requires I2V pipeline with last_image support
+                        if self.i2v_pipeline is None:
+                            raise RuntimeError("FLF2V requires WanImageToVideoPipeline - not available for this model")
+
+                        import inspect
+                        pipeline_signature = inspect.signature(self.i2v_pipeline.__call__)
+
+                        # Check if pipeline supports last_image parameter (FLF2V mode)
+                        if 'last_image' not in pipeline_signature.parameters:
+                            raise RuntimeError("FLF2V mode requires 'last_image' parameter - not supported by this I2V pipeline")
+
+                        print_wan_info("🎬 FLF2V Mode: Interpolating between two keyframes")
+                        print_wan_info(f"   First frame: {first_frame.size}")
+                        print_wan_info(f"   Last frame: {last_frame.size}")
+                        print_wan_info(f"   Frames to generate: {num_frames}")
+                        print_wan_info(f"   Resolution: {aligned_width}x{aligned_height}")
+
+                        generation_kwargs = {
+                            "image": first_frame,           # Start keyframe
+                            "last_image": last_frame,       # End keyframe
+                            "prompt": prompt,
+                            "num_inference_steps": num_inference_steps,
+                            "guidance_scale": guidance_scale,
+                            "height": aligned_height,
+                            "width": aligned_width,
+                            "num_frames": num_frames,
+                        }
+
+                        print_wan_success("✅ Generating FLF2V interpolation...")
+                        print_wan_info(f"   Prompt: {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
+
+                        with torch.no_grad():
+                            return self.i2v_pipeline(**generation_kwargs)
+
                 self.pipeline = DiffusersWrapper(pipeline, i2v_pipeline)
                 print("✅ Diffusers model loaded successfully")
                 
@@ -1078,6 +1200,9 @@ Error: {diffusers_e}
                                             strength=i2v_strength,  # Control image conditioning strength
                                         )
                                         inference_progress.update(steps)
+
+                                        # Free the image immediately after generation
+                                        del last_frame_image
                                     else:
                                         # Fallback to T2V with enhanced prompt
                                         print_wan_warning("⚠️ Pipeline does not support I2V - using enhanced T2V")
@@ -1105,7 +1230,15 @@ Error: {diffusers_e}
                                 print_wan_success(f"Generated {len(clip_frames)} frames for clip {clip_idx + 1}")
                             else:
                                 raise RuntimeError(f"No frames generated for clip {clip_idx + 1}")
-                    
+
+                            # Aggressive VRAM cleanup after each clip to prevent OOM on long generations
+                            import gc
+                            if torch.cuda.is_available():
+                                torch.cuda.empty_cache()
+                                torch.cuda.synchronize()
+                            gc.collect()
+                            print_wan_info(f"🧹 Cleaned up VRAM after clip {clip_idx + 1}")
+
                     except Exception as e:
                         print_wan_error(f"Clip {clip_idx + 1} generation failed: {e}")
                         raise

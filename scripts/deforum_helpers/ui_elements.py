@@ -1310,7 +1310,41 @@ def get_tab_wan(dw: SimpleNamespace):
                     placeholder="Model information will appear here after loading",
                     lines=2
                 )
-        
+
+        # VRAM OPTIMIZATION SETTINGS
+        with gr.Accordion("💾 VRAM Optimization", open=False):
+            gr.Markdown("""
+            **Reduce VRAM usage for 16GB GPUs:**
+
+            These settings can help run larger models on GPUs with limited VRAM.
+            All settings are OFF by default for maximum compatibility.
+
+            **⚠️ Trade-offs:**
+            - T5 CPU Offload: Slightly slower text encoding, saves ~3-4GB VRAM
+            - Gradient Checkpointing: Slower inference (~15-20%), saves ~2-3GB VRAM
+            - Both combined: Can reduce peak VRAM by ~5-7GB
+
+            **Recommended for 16GB VRAM:**
+            - Try T5 CPU Offload first
+            - Add Gradient Checkpointing if still getting OOM errors
+            """)
+
+            with FormRow():
+                wan_t5_cpu_offload = create_gr_elem(dw.wan_t5_cpu_offload)
+                wan_gradient_checkpointing = create_gr_elem(dw.wan_gradient_checkpointing)
+
+            vram_optimization_info = gr.HTML(
+                value="""
+                <div style='padding: 10px; background: #1a1a1a; border-radius: 5px; margin-top: 10px;'>
+                    <p style='margin: 0; color: #aaa;'>
+                        💡 <strong>Tip:</strong> Enable these if you see "CUDA out of memory" errors on 16GB GPUs.
+                        <br/>📊 Current setup enables automatic CPU offload based on model size (5B vs A14B).
+                    </p>
+                </div>
+                """,
+                elem_id="wan_vram_optimization_info"
+            )
+
         # OVERRIDES SECTION - Movement sensitivity moved here
         with gr.Accordion("🔧 Override Settings (Advanced)", open=False):
             gr.Markdown("""
