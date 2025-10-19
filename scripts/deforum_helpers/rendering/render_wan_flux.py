@@ -238,6 +238,10 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
     if isinstance(frames, list) and len(frames) > 0:
         # Already a list of PIL Images
         frame_list = frames
+    elif hasattr(frames, '__getitem__') and hasattr(frames, '__len__'):
+        # It's indexable and has length (like a tensor or array)
+        log_utils.info(f"   Converting indexable FLF2V output (length: {len(frames)})", log_utils.BLUE)
+        frame_list = [frames[i] for i in range(len(frames))]
     else:
         log_utils.error("Unable to extract frames from FLF2V output")
         raise RuntimeError(f"Unexpected FLF2V output format: {type(result)}")

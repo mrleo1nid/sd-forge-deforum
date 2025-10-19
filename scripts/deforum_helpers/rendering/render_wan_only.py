@@ -236,24 +236,38 @@ def generate_wan_t2v_keyframe(wan_integration, prompt, height, width, num_infere
     )
     
     # Extract frames from result (handle different output formats)
+    log_utils.info(f"   Output type: {type(result)}", log_utils.BLUE)
+    log_utils.info(f"   Available attributes: {[a for a in dir(result) if not a.startswith('_')][:10]}", log_utils.BLUE)
+    
     frames = None
     if isinstance(result, tuple):
+        log_utils.info("   Extracting from tuple", log_utils.BLUE)
         frames = result[0]
     elif hasattr(result, 'frames'):
+        log_utils.info("   Extracting from .frames", log_utils.BLUE)
         frames = result.frames
     elif hasattr(result, 'images'):
+        log_utils.info("   Extracting from .images", log_utils.BLUE)
         frames = result.images
     elif hasattr(result, 'videos'):
+        log_utils.info("   Extracting from .videos", log_utils.BLUE)
         frames = result.videos
     else:
+        log_utils.info("   Using result directly", log_utils.BLUE)
         frames = result
     
     # Convert frames if needed
     if isinstance(frames, list) and len(frames) > 0:
         # Already a list of PIL Images
         frame_list = frames
+    elif hasattr(frames, '__getitem__') and hasattr(frames, '__len__'):
+        # It's indexable and has length (like a tensor or array)
+        log_utils.info(f"   Converting indexable object (length: {len(frames)})", log_utils.BLUE)
+        frame_list = [frames[i] for i in range(len(frames))]
     else:
-        log_utils.error("Unable to extract frames from Wan T2V output")
+        log_utils.error(f"Unable to extract frames from Wan T2V output")
+        log_utils.error(f"Result type: {type(result)}, Frames type: {type(frames)}")
+        log_utils.error(f"Has __getitem__: {hasattr(frames, '__getitem__')}, Has __len__: {hasattr(frames, '__len__')}")
         raise RuntimeError(f"Unexpected Wan output format: {type(result)}")
     
     # Extract middle frame as the keyframe (best quality/consistency)
@@ -318,6 +332,10 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
     if isinstance(frames, list) and len(frames) > 0:
         # Already a list of PIL Images
         frame_list = frames
+    elif hasattr(frames, '__getitem__') and hasattr(frames, '__len__'):
+        # It's indexable and has length (like a tensor or array)
+        log_utils.info(f"   Converting indexable FLF2V output (length: {len(frames)})", log_utils.BLUE)
+        frame_list = [frames[i] for i in range(len(frames))]
     else:
         log_utils.error("Unable to extract frames from FLF2V output")
         raise RuntimeError(f"Unexpected FLF2V output format: {type(result)}")
