@@ -96,11 +96,10 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
 
     # Discover and load Wan model
     log_utils.info("🔍 Discovering Wan FLF2V models...", log_utils.BLUE)
-    models_dir = os.path.join(shared.cmd_opts.ckpt_dir or "models", "wan")
-    discovered_models = wan_integration.discover_models(models_dir)
+    discovered_models = wan_integration.discover_models()
 
     if not discovered_models:
-        raise RuntimeError(f"No Wan models found in {models_dir}. Please download a model first.")
+        raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
 
     # Use first FLF2V-capable model
     flf2v_models = [m for m in discovered_models if m['supports_flf2v']]
@@ -109,7 +108,11 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
 
     model_info = flf2v_models[0]
     log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
-    wan_integration.load_pipeline_lazy(model_info['path'], model_info)
+    
+    # Load the Wan pipeline
+    success = wan_integration.load_simple_wan_pipeline(model_info, wan_args)
+    if not success:
+        raise RuntimeError(f"Failed to load Wan model: {model_info['name']}")
 
     # Generate FLF2V segments
     all_segment_frames = []
@@ -173,7 +176,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info(f"📁 Output: {output_video_path}", log_utils.GREEN)
 
     # Cleanup
-    wan_integration.cleanup()
+    wan_integration.unload_model()
 
 
 def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
