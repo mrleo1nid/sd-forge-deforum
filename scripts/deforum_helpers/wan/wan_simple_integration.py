@@ -183,7 +183,7 @@ class WanSimpleIntegration:
             try:
                 progress.update(10, "Initializing...")
                 progress.update(30, "Loading model...")
-                success = self._load_standard_wan_model(model_info)
+                success = self._load_standard_wan_model(model_info, wan_args)
 
                 if success:
                     progress.update(80, "Configuring...")
@@ -202,7 +202,7 @@ class WanSimpleIntegration:
                 print_wan_error(f"Model loading failed: {e}")
                 return False
     
-    def _load_standard_wan_model(self, model_info: Dict) -> bool:
+    def _load_standard_wan_model(self, model_info: Dict, wan_args=None) -> bool:
         """Load standard T2V/I2V Wan model"""
         try:
             # Strategy 1: Try official Wan implementation
