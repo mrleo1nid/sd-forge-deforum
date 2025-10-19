@@ -46,6 +46,7 @@ class DiffusionFrame:
     depth: Any  # assigned during generation
     last_preview_frame: int
     tweens: List[Tween]
+    keyframe_type: str  # Type of interpolation for this keyframe's tweens: "tween", "flf2v", or "auto"
 
     def actual_steps(self, data):
         if self.i == 1 and not data.args.args.use_init:
@@ -209,10 +210,10 @@ class DiffusionFrame:
         return list(map(lambda _: _.value, self.tweens))
 
     @staticmethod
-    def create(data: RenderData, i):
+    def create(data: RenderData, i, keyframe_type="tween"):
         initial_index = i  # replaced once keyframes are arranged.
         frame_data = DiffusionFrameData.create(data, initial_index)
-        return DiffusionFrame(initial_index, False, -1, -1, 1.0, 0.0, frame_data, None, "", 0, list())
+        return DiffusionFrame(initial_index, False, -1, -1, 1.0, 0.0, frame_data, None, "", 0, list(), keyframe_type)
 
     @staticmethod
     def apply_color_matching(data: RenderData, image):

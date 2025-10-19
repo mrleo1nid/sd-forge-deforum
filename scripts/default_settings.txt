@@ -312,6 +312,7 @@
     "wan_flash_attention_mode": "Auto (Recommended)",
     "enable_wan_flf2v": false,
     "wan_flf2v_chunk_size": 81,
+    "keyframe_type_schedule": "0:(tween)",
     "wan_t5_cpu_offload": false,
     "wan_gradient_checkpointing": false,
     "skip_video_creation": false,

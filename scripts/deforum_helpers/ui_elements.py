@@ -1991,6 +1991,9 @@ def get_tab_distribution(da):
             enable_wan_flf2v = create_row(da.enable_wan_flf2v)
             wan_flf2v_chunk_size = create_row(da.wan_flf2v_chunk_size)
 
+            gr.Markdown("**Per-Keyframe Type Control (Advanced):**")
+            keyframe_type_schedule = create_row(da.keyframe_type_schedule)
+
         create_keyframe_distribution_info_tab()
 
     return {k: v for k, v in {**locals(), **vars()}.items()}

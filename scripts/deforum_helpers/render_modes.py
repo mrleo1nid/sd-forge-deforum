@@ -113,7 +113,7 @@ def render_interpolation(args, anim_args, video_args, parseq_args, loop_args, co
     if parseq_adapter.manages_prompts():
         print("Parseq prompts are assumed to already be interpolated - not doing any additional prompt interpolation")
         prompt_series = keys.prompts
-    else: 
+    else:
         print("Generating interpolated prompts for all frames")
         prompt_series = interpolate_prompts(root.animation_prompts, anim_args.max_frames)
     

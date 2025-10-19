@@ -489,6 +489,12 @@ def DeforumAnimArgs():
             "value": 81,
             "info": "Max frames per FLF2V call. For longer sections, generates depth-tween intermediate keyframes and chains FLF2V between them. Must be 4n+1 format (21, 41, 61, 81, 101, 121, 141, 161)."
         },
+        "keyframe_type_schedule": {
+            "label": "Keyframe Type Schedule",
+            "type": "textbox",
+            "value": "0:(tween)",
+            "info": "Per-keyframe tween interpolation method: 'tween' (depth-based), 'flf2v' (Wan FLF2V), or 'auto' (decide based on tween count). Example: 0:(tween), 60:(flf2v), 120:(auto)"
+        },
         "diffusion_cadence": {
             "label": "Cadence",
             "type": "slider",
