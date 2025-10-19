@@ -131,7 +131,8 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.MAGENTA)
 
         # Get prompt for this segment (use first keyframe's prompt)
-        prompt = data.prompt_series[first_frame_idx]
+        prompt_idx = min(first_frame_idx, len(data.prompt_series) - 1)
+        prompt = data.prompt_series[prompt_idx]
 
         # Load keyframe images (load_image returns cv2/numpy format)
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
