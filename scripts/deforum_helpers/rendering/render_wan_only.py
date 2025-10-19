@@ -190,10 +190,10 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         last_frame_idx = last_kf.i
         num_tween_frames = last_frame_idx - first_frame_idx + 1  # Total frames including both keyframes
 
-        log_utils.info(f"\n🎞️ FLF2V Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.MAGENTA)
-        log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.MAGENTA)
-        log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.MAGENTA)
-        log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.MAGENTA)
+        log_utils.info(f"\n🎞️ FLF2V Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.RED)
+        log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.RED)
+        log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.RED)
+        log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.RED)
 
         # Check if all frames in this segment already exist (resume mode)
         if is_resuming:
@@ -226,13 +226,27 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         prompt = data.prompt_series[prompt_idx]
 
         # Load keyframe images (load_image returns cv2/numpy format)
+        log_utils.info(f"   Loading first keyframe from: {keyframe_images[first_frame_idx]}", log_utils.BLUE)
+        log_utils.info(f"   Loading last keyframe from: {keyframe_images[last_frame_idx]}", log_utils.BLUE)
+        
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
         last_image_cv2 = image_utils.load_image(keyframe_images[last_frame_idx])
+        
+        log_utils.info(f"   First image shape: {first_image_cv2.shape}", log_utils.BLUE)
+        log_utils.info(f"   Last image shape: {last_image_cv2.shape}", log_utils.BLUE)
+        log_utils.info(f"   Images are different: {not (first_image_cv2 == last_image_cv2).all()}", log_utils.BLUE)
         
         # Convert to PIL for Wan FLF2V
         first_image = image_utils.numpy_to_pil(first_image_cv2)
         last_image = image_utils.numpy_to_pil(last_image_cv2)
 
+        # Debug: Show FLF2V parameters
+        log_utils.info(f"   FLF2V Parameters:", log_utils.BLUE)
+        log_utils.info(f"     Prompt: {prompt[:80]}{'...' if len(prompt) > 80 else ''}", log_utils.BLUE)
+        log_utils.info(f"     Inference steps: {wan_args.wan_inference_steps}", log_utils.BLUE)
+        log_utils.info(f"     Guidance scale: {wan_args.wan_guidance_scale}", log_utils.BLUE)
+        log_utils.info(f"     Resolution: {data.width()}x{data.height()}", log_utils.BLUE)
+        
         # Call Wan FLF2V
         segment_frames = generate_flf2v_segment(
             wan_integration=wan_integration,

@@ -171,10 +171,10 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         last_frame_idx = last_kf.i
         num_tween_frames = last_frame_idx - first_frame_idx + 1  # Total frames including both keyframes
 
-        log_utils.info(f"\n🎞️ FLF2V Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.MAGENTA)
-        log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.MAGENTA)
-        log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.MAGENTA)
-        log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.MAGENTA)
+        log_utils.info(f"\n🎞️ FLF2V Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.RED)
+        log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.RED)
+        log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.RED)
+        log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.RED)
 
         # Check if all frames in this segment already exist (resume mode)
         if is_resuming:
