@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from modules import shared
+from modules import shared  # type: ignore
 
 from .data.render_data import RenderData
 from .data.frame import KeyFrameDistribution, DiffusionFrame

@@ -6,7 +6,7 @@ Updated to use experimental render core styling for progress indicators
 
 from pathlib import Path
 from typing import List, Dict, Optional
-import torch
+import torch  # type: ignore
 import os
 import numpy as np
 import time
@@ -216,8 +216,8 @@ class WanSimpleIntegration:
                     sys.path.insert(0, str(wan_repo_path))
                 
                 try:
-                    import wan
-                    from wan.text2video import WanT2V
+                    import wan  # type: ignore
+                    from wan.text2video import WanT2V  # type: ignore
                     
                     # Apply Flash Attention patches AFTER Wan modules are imported
                     try:
@@ -327,11 +327,11 @@ class WanSimpleIntegration:
                         import traceback
                         traceback.print_exc()
 
-                    from diffusers import WanPipeline, AutoencoderKLWan
+                    from diffusers import WanPipeline, AutoencoderKLWan  # type: ignore
 
                     # Also try to import I2V pipeline for chaining support
                     try:
-                        from diffusers import WanImageToVideoPipeline
+                        from diffusers import WanImageToVideoPipeline  # type: ignore
                         has_i2v_pipeline = True
                         print_wan_info("✅ WanImageToVideoPipeline available for I2V chaining")
                     except ImportError:
@@ -380,7 +380,7 @@ class WanSimpleIntegration:
                 else:
                     # Fallback to generic DiffusionPipeline
                     print("🔄 Loading with generic DiffusionPipeline...")
-                    from diffusers import DiffusionPipeline
+                    from diffusers import DiffusionPipeline  # type: ignore
 
                     pipeline = DiffusionPipeline.from_pretrained(
                         model_info['path'],
@@ -852,7 +852,7 @@ class WanSimpleIntegration:
                         """
                         try:
                             from PIL import Image
-                            import torchvision.transforms as T
+                            import torchvision.transforms as T  # type: ignore
                             
                             # Resize image to match target resolution
                             if image.size != (width, height):
@@ -950,7 +950,7 @@ class WanSimpleIntegration:
                         """
                         try:
                             from PIL import Image
-                            import torchvision.transforms as T
+                            import torchvision.transforms as T  # type: ignore
                             
                             # Resize image to match target resolution
                             if image.size != (width, height):

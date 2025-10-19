@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 
 # noinspection PyUnresolvedReferences
-from modules import shared  # provided by Forge
+from modules import shared  # type: ignore  # provided by Forge
 
 from . import img_2_img_tubes
 from .data.frame import KeyFrameDistribution, DiffusionFrame
@@ -175,14 +175,14 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
 
     try:
         # Import Wan integration
-        from ...wan.wan_simple_integration import WanSimpleIntegration
+        from ...wan.wan_simple_integration import WanSimpleIntegration  # type: ignore
 
         # Get previous and current keyframe images
         prev_keyframe = data.images.previous
         curr_keyframe = current_keyframe_image
 
         # Convert OpenCV images (BGR numpy array) to PIL Images (RGB)
-        import cv2
+        import cv2  # type: ignore
         from PIL import Image
         if isinstance(prev_keyframe, np.ndarray):
             prev_keyframe_pil = Image.fromarray(cv2.cvtColor(prev_keyframe, cv2.COLOR_BGR2RGB))
@@ -363,7 +363,7 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
         tween_image = tween_at_pos._generate(data, frame, data.images.previous)
 
         # Convert to PIL
-        import cv2
+        import cv2  # type: ignore
         from PIL import Image
         if isinstance(tween_image, np.ndarray):
             intermediate_pil = Image.fromarray(cv2.cvtColor(tween_image, cv2.COLOR_BGR2RGB))
