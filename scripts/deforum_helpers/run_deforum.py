@@ -61,6 +61,10 @@ def run_deforum(*args):
         if timestring:
             # Try multiple possible paths for settings file
             possible_paths = [
+                # Standard Deforum output paths
+                f"outputs/deforum/Deforum_{timestring}/{timestring}_settings.txt",
+                f"outputs/deforum/{timestring}/{timestring}_settings.txt",
+                # Legacy/alternative paths
                 os.path.join(outdir, f"{timestring}_settings.txt"),
                 f"{outdir}/{timestring}/{timestring}_settings.txt",
                 f"output/{timestring}/{timestring}_settings.txt",
