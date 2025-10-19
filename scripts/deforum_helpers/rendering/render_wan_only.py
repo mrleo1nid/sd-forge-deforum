@@ -437,10 +437,11 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
                            first_frame_idx, output_dir):
     """Generate frames for one FLF2V segment"""
 
-    # Adjust frame count to Wan's 4n+1 requirement
-    adjusted_frames = ((num_frames - 1) // 4) * 4 + 1
+    # Adjust frame count to Wan's 4n+1 requirement (ROUND UP to avoid gaps)
+    import math
+    adjusted_frames = math.ceil((num_frames - 1) / 4) * 4 + 1
     if adjusted_frames != num_frames:
-        log_utils.info(f"   Adjusted frame count: {num_frames} → {adjusted_frames} (4n+1 requirement)", log_utils.YELLOW)
+        log_utils.info(f"   Wan requires 4n+1 frames: {num_frames} → {adjusted_frames} (will generate extra, use first {num_frames})", log_utils.YELLOW)
 
     # Generate FLF2V interpolation
     result = wan_integration.pipeline.generate_flf2v(
@@ -510,9 +511,15 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
         log_utils.error("Unable to extract frames from FLF2V output")
         raise RuntimeError(f"Unexpected FLF2V output format: {type(result)}")
 
-    # Save frames
+    # Save frames (only first num_frames, discard extras from 4n+1 padding)
     frame_paths = []
-    for local_idx, frame in enumerate(frame_list):
+    frames_to_save = min(num_frames, len(frame_list))
+    
+    if len(frame_list) > num_frames:
+        log_utils.info(f"   Generated {len(frame_list)} frames, using first {num_frames} (discarding {len(frame_list) - num_frames} padding frames)", log_utils.YELLOW)
+    
+    for local_idx in range(frames_to_save):
+        frame = frame_list[local_idx]
         global_frame_idx = first_frame_idx + local_idx
         filename = f"{global_frame_idx:09d}.png"
         filepath = os.path.join(output_dir, filename)
