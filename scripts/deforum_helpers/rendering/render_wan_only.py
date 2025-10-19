@@ -96,9 +96,28 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("PHASE 1: Batch Keyframe Generation with Wan T2V", log_utils.GREEN)
     log_utils.info("="*60, log_utils.GREEN)
 
+    # Check for resume mode - scan for existing keyframes
     keyframe_images = {}  # {frame_index: image_path}
+    is_resuming = anim_args.resume_from_timestring
+    
+    if is_resuming:
+        log_utils.info(f"🔄 Resume mode: Scanning for existing keyframes in {data.output_directory}...", log_utils.BLUE)
+        for frame in keyframes:
+            expected_filename = filename_utils.frame_filename(data, frame.i)
+            expected_path = os.path.join(data.output_directory, expected_filename)
+            if os.path.exists(expected_path):
+                keyframe_images[frame.i] = expected_path
+                log_utils.info(f"   ✓ Found existing keyframe: {expected_filename}", log_utils.GREEN)
+        
+        if len(keyframe_images) > 0:
+            log_utils.info(f"✅ Found {len(keyframe_images)}/{len(keyframes)} existing keyframes", log_utils.GREEN)
 
     for idx, frame in enumerate(keyframes):
+        # Skip if keyframe already exists (resume mode)
+        if frame.i in keyframe_images:
+            log_utils.info(f"\n⏭️  Skipping keyframe {idx + 1}/{len(keyframes)} (frame {frame.i}) - already exists", log_utils.YELLOW)
+            continue
+            
         log_utils.info(f"\n📸 Generating keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
         # Get prompt for this keyframe (handle 0-based indexing and bounds)
@@ -124,7 +143,10 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         keyframe_images[frame.i] = keyframe_path
         log_utils.info(f"✅ Keyframe {idx + 1} saved: {os.path.basename(keyframe_path)}", log_utils.GREEN)
 
-    log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes generated with Wan T2V", log_utils.GREEN)
+    if is_resuming:
+        log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes ready ({len([k for k in keyframes if k.i not in keyframe_images or not os.path.exists(keyframe_images[k.i])])} generated, {len([k for k in keyframes if k.i in keyframe_images and os.path.exists(keyframe_images[k.i])])} from resume)", log_utils.GREEN)
+    else:
+        log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes generated with Wan T2V", log_utils.GREEN)
 
     # ====================
     # PHASE 2: Batch Wan FLF2V Interpolation
@@ -148,6 +170,25 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.MAGENTA)
         log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.MAGENTA)
         log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.MAGENTA)
+
+        # Check if all frames in this segment already exist (resume mode)
+        if is_resuming:
+            segment_complete = True
+            segment_existing_frames = []
+            for frame_offset in range(num_tween_frames):
+                check_frame_idx = first_frame_idx + frame_offset
+                check_filename = filename_utils.frame_filename(data, check_frame_idx)
+                check_path = os.path.join(data.output_directory, check_filename)
+                if os.path.exists(check_path):
+                    segment_existing_frames.append(check_path)
+                else:
+                    segment_complete = False
+                    break
+            
+            if segment_complete:
+                log_utils.info(f"⏭️  Skipping segment {idx + 1} - all {num_tween_frames} frames already exist", log_utils.YELLOW)
+                all_segment_frames.extend(segment_existing_frames)
+                continue
 
         # Get prompt for this segment (use first keyframe's prompt)
         prompt_idx = min(first_frame_idx, len(data.prompt_series) - 1)
