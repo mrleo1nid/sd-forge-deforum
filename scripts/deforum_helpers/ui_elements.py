@@ -1122,11 +1122,30 @@ The auto-discovery will find your models automatically!
 
 
 def get_tab_wan(dw: SimpleNamespace):
-    """Wan 2.1 Video Generation Tab - Integrated with Deforum Schedules"""
-    with gr.TabItem(f"{emoji_utils.wan_video()} Wan Video"):
-        
-        # ESSENTIAL PROMPTS SECTION - TOP PRIORITY
-        with gr.Accordion("📝 Wan Video Prompts (REQUIRED)", open=True):
+    """Wan Model & Settings Tab - FLF2V integration enabled in Keyframes → Distribution"""
+    with gr.TabItem(f"{emoji_utils.wan_video()} Wan Models"):
+
+        gr.Markdown("""
+        ## Wan FLF2V Integration
+
+        **Wan is now fully integrated with the main Deforum workflow!**
+
+        **To use Wan FLF2V for tween interpolation:**
+        1. Go to **Keyframes → Distribution** tab
+        2. Enable **"Wan FLF2V for Tweens"**
+        3. Configure your prompts in the **Prompts** tab as normal
+        4. Click the main **Generate** button
+
+        **This tab is only for:**
+        - Downloading and managing Wan models
+        - Configuring VRAM optimization settings
+        - Advanced Wan-specific settings
+
+        ---
+        """)
+
+        # DEPRECATED SECTION - Hide old standalone workflow
+        with gr.Accordion("⚠️ DEPRECATED: Standalone Wan Workflow", open=False, visible=False):
             gr.Markdown("""
             **🎯 Essential for Wan Generation:** These prompts define what video clips will be generated.
             

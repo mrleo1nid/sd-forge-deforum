@@ -310,12 +310,12 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
     log_utils.info(f"   Generating intermediate depth-tween keyframes for chaining...", log_utils.CYAN)
 
     # Calculate chunk positions
-    chunk_frames = []  # Frame indices where we need intermediate keyframes
+    chunk_positions = []  # Frame indices where we need intermediate keyframes
     remaining = num_tweens
     pos = 0
 
     while remaining > 0:
-        chunk_frames.append(pos)
+        chunk_positions.append(pos)
         if remaining > chunk_size - 1:
             pos += chunk_size - 1  # -1 because chunk includes both endpoints
             remaining -= (chunk_size - 1)
@@ -323,15 +323,15 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
             pos += remaining
             remaining = 0
 
-    chunk_frames.append(num_tweens)  # Final position (current keyframe)
+    chunk_positions.append(num_tweens)  # Final position (current keyframe)
 
-    log_utils.info(f"   Chunk positions: {chunk_frames} (total: {len(chunk_frames)-1} chunks)", log_utils.CYAN)
+    log_utils.info(f"   Chunk positions: {chunk_positions} (total: {len(chunk_positions)-1} chunks)", log_utils.CYAN)
 
     # Generate intermediate keyframes using depth warping
     intermediate_keyframes = [first_frame_pil]  # Start with first keyframe
 
-    for i in range(1, len(chunk_frames) - 1):
-        chunk_pos = chunk_frames[i]
+    for i in range(1, len(chunk_positions) - 1):
+        chunk_pos = chunk_positions[i]
         tween_at_pos = frame.tweens[chunk_pos - 1]  # -1 because tweens are 0-indexed
 
         # Generate this tween frame using traditional depth warping
@@ -358,8 +358,8 @@ def _emit_wan_flf2v_chaining(data, frame, wan, first_frame_pil, last_frame_pil, 
     all_generated_frames = []
 
     for i in range(len(intermediate_keyframes) - 1):
-        chunk_start = chunk_frames[i]
-        chunk_end = chunk_frames[i + 1]
+        chunk_start = chunk_positions[i]
+        chunk_end = chunk_positions[i + 1]
         chunk_num_frames = chunk_end - chunk_start + 1  # +1 to include both endpoints
 
         prompt = data.args.root.animation_prompts.get(str(frame.i), "")
