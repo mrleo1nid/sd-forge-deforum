@@ -50,6 +50,10 @@ def run_deforum(*args):
 
     # Check if resuming - load animation_mode from saved settings
     animation_mode = args_dict.get('animation_mode', '2D')
+    print(f"\n🔍 DEBUG: Initial animation_mode from UI: '{animation_mode}'")
+    print(f"🔍 DEBUG: resume_from_timestring: {args_dict.get('resume_from_timestring', False)}")
+    print(f"🔍 DEBUG: resume_timestring: '{args_dict.get('resume_timestring', '')}'")
+    
     if args_dict.get('resume_from_timestring', False) and args_dict.get('resume_timestring'):
         # Try to load settings from previous run to get correct animation_mode
         import json
@@ -100,6 +104,9 @@ def run_deforum(*args):
                 print(f"   Tried: {possible_paths[0]}")
                 print(f"   Using current UI setting: {animation_mode}")
     
+    print(f"🔍 DEBUG: Final animation_mode after resume check: '{animation_mode}'")
+    print(f"🔍 DEBUG: args_dict['animation_mode']: '{args_dict.get('animation_mode')}'")
+    
     # Check if this is Wan Only mode - no SD model needed
     is_wan_only_mode = (animation_mode == 'Wan Only')
 
@@ -138,9 +145,12 @@ def run_deforum(*args):
         args_dict['p'] = p
         try:
             args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args = process_args(args_dict, i)
+            print(f"🔍 DEBUG: anim_args.animation_mode after process_args: '{anim_args.animation_mode}'")
             # Ensure animation_mode from args_dict (possibly loaded from resume) is reflected in anim_args
             if 'animation_mode' in args_dict:
+                print(f"🔍 DEBUG: Overriding anim_args.animation_mode with args_dict value: '{args_dict['animation_mode']}'")
                 anim_args.animation_mode = args_dict['animation_mode']
+            print(f"🔍 DEBUG: Final anim_args.animation_mode: '{anim_args.animation_mode}'")
         except Exception as e:
             JobStatusTracker().fail_job(job_id, error_type="TERMINAL", message="Invalid arguments.")
             print("\n*START OF TRACEBACK*")
@@ -181,6 +191,7 @@ def run_deforum(*args):
         try:  # dispatch to appropriate renderer
             JobStatusTracker().update_phase(job_id, DeforumJobPhase.GENERATING)
             JobStatusTracker().update_output_info(job_id, outdir=args.outdir, timestring=root.timestring)
+            print(f"\n🎬 DEBUG: Dispatching to renderer for mode: '{anim_args.animation_mode}'")
             if anim_args.animation_mode == '2D' or anim_args.animation_mode == '3D':
                 if anim_args.use_mask_video: 
                     render_animation_with_video_mask(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)  # allow mask video without an input video
