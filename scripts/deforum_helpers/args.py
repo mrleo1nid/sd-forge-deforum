@@ -1255,15 +1255,15 @@ def WanArgs():
             "info": "Wan 2.2 recommended CFG: 3.5 (higher values like 6+ tend to 'cook' outputs). Range 2.5-5.0 works best. Only used when Guidance Scale Override is enabled."
         },
         
-        # FLF2V Interpolation Settings
+          # FLF2V Interpolation Settings
         "wan_flf2v_guidance_scale": {
             "label": "FLF2V Guidance Scale",
             "type": "slider",
             "minimum": 0.0,
             "maximum": 5.0,
             "step": 0.1,
-            "value": 1.0,
-            "info": "Guidance scale for FLF2V interpolation (default 1.0). Lower values (0.5-1.5) allow natural image-to-image transitions. Higher values force more prompt adherence but may reduce smoothness. Try 0.5 or even 0.0 for pure visual interpolation."
+            "value": 0.0,
+            "info": "Guidance scale for FLF2V interpolation (default 0.0 for pure visual interpolation). 0.0 = pure image-to-image morph, 1.0-2.0 = slight prompt influence, 3.0+ = strong prompt control (may reduce smoothness)."
         },
         "wan_flf2v_prompt_mode": {
             "label": "FLF2V Prompt Mode",

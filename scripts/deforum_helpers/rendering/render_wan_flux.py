@@ -181,12 +181,12 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
 
         first_frame_idx = first_kf.i
         last_frame_idx = last_kf.i
-        num_tween_frames = last_frame_idx - first_frame_idx + 1  # Total frames including both keyframes
+        num_tween_frames = last_frame_idx - first_frame_idx - 1  # ONLY in-between frames (exclude both keyframes)
 
         log_utils.info(f"\n🎞️ FLF2V Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.RED)
         log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.RED)
         log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.RED)
-        log_utils.info(f"   Total frames: {num_tween_frames}", log_utils.RED)
+        log_utils.info(f"   In-between frames to generate: {num_tween_frames} (frames {first_frame_idx+1} to {last_frame_idx-1})", log_utils.RED)
 
         # Check if all frames in this segment already exist (resume mode)
         if is_resuming:
@@ -402,7 +402,9 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
     
     for local_idx in range(frames_to_save):
         frame = frame_list[local_idx]
-        global_frame_idx = first_frame_idx + local_idx
+        # Start at first_frame_idx + 1 to avoid overwriting the first keyframe
+        # This generates frames BETWEEN the keyframes, not including them
+        global_frame_idx = first_frame_idx + 1 + local_idx
         filename = f"{global_frame_idx:09d}.png"
         filepath = os.path.join(output_dir, filename)
         
