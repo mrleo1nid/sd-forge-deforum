@@ -88,21 +88,22 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     if is_resuming:
         log_utils.info(f"🔄 Resume mode: Scanning for existing keyframes in {data.output_directory}...", log_utils.BLUE)
         for frame in keyframes:
-            expected_filename = filename_utils.frame_filename(data, frame.i)
-            expected_path = os.path.join(data.output_directory, expected_filename)
-            
-            # Also check for filename without timestring prefix (legacy format)
-            alt_filename = f"{frame.i:09}.png"
-            alt_path = os.path.join(data.output_directory, alt_filename)
-            
-            if os.path.exists(expected_path):
-                keyframe_images[frame.i] = expected_path
-                log_utils.info(f"   ✓ Found existing keyframe: {expected_filename}", log_utils.GREEN)
-            elif os.path.exists(alt_path):
-                keyframe_images[frame.i] = alt_path
-                log_utils.info(f"   ✓ Found existing keyframe (alt format): {alt_filename}", log_utils.GREEN)
+            # Check simple format first (matches our save format: 000000001.png)
+            simple_filename = f"{frame.i:09d}.png"
+            simple_path = os.path.join(data.output_directory, simple_filename)
+
+            # Also check for filename with timestring prefix (legacy from old runs)
+            timestring_filename = filename_utils.frame_filename(data, frame.i)
+            timestring_path = os.path.join(data.output_directory, timestring_filename)
+
+            if os.path.exists(simple_path):
+                keyframe_images[frame.i] = simple_path
+                log_utils.info(f"   ✓ Found existing keyframe: {simple_filename}", log_utils.GREEN)
+            elif os.path.exists(timestring_path):
+                keyframe_images[frame.i] = timestring_path
+                log_utils.info(f"   ✓ Found existing keyframe (timestring format): {timestring_filename}", log_utils.GREEN)
             else:
-                log_utils.info(f"   ✗ Missing keyframe at frame {frame.i} (tried: {expected_filename}, {alt_filename})", log_utils.YELLOW)
+                log_utils.info(f"   ✗ Missing keyframe at frame {frame.i} (tried: {simple_filename}, {timestring_filename})", log_utils.YELLOW)
         
         if len(keyframe_images) > 0:
             log_utils.info(f"✅ Found {len(keyframe_images)}/{len(keyframes)} existing keyframes", log_utils.GREEN)
@@ -226,18 +227,20 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
             segment_complete = True
             segment_existing_frames = []
             for frame_offset in range(num_tween_frames):
-                check_frame_idx = first_frame_idx + frame_offset
-                check_filename = filename_utils.frame_filename(data, check_frame_idx)
-                check_path = os.path.join(data.output_directory, check_filename)
-                
-                # Also check alternative format without timestring
-                alt_filename = f"{check_frame_idx:09}.png"
-                alt_path = os.path.join(data.output_directory, alt_filename)
-                
-                if os.path.exists(check_path):
-                    segment_existing_frames.append(check_path)
-                elif os.path.exists(alt_path):
-                    segment_existing_frames.append(alt_path)
+                check_frame_idx = first_frame_idx + frame_offset + 1  # +1 to skip first keyframe
+
+                # Check simple format first (matches our save format: 000000001.png)
+                simple_filename = f"{check_frame_idx:09d}.png"
+                simple_path = os.path.join(data.output_directory, simple_filename)
+
+                # Also check timestring format (legacy from old runs)
+                timestring_filename = filename_utils.frame_filename(data, check_frame_idx)
+                timestring_path = os.path.join(data.output_directory, timestring_filename)
+
+                if os.path.exists(simple_path):
+                    segment_existing_frames.append(simple_path)
+                elif os.path.exists(timestring_path):
+                    segment_existing_frames.append(timestring_path)
                 else:
                     segment_complete = False
                     break
@@ -351,8 +354,9 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
 
 
 def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
-    """Save keyframe image to disk"""
-    filename = filename_utils.frame_filename(data, frame.i)
+    """Save keyframe image to disk with simple frame number naming (no timestring prefix)"""
+    # Use simple format like Wan Only mode: 000000001.png instead of timestring_000000001.png
+    filename = f"{frame.i:09d}.png"
     filepath = os.path.join(data.output_directory, filename)
 
     # Convert CV2 image to PIL if needed, then save
