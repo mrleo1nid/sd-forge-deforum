@@ -252,12 +252,17 @@ def run_deforum(*args):
         shutil.rmtree(root.tmp_deforum_run_duplicated_folder, ignore_errors=True)
 
         # Decide whether we need to try and frame interpolate later
+        # Note: Wan modes don't support frame interpolation or upscaling (they use simple filename format)
+        is_wan_mode = anim_args.animation_mode in ['Wan Only', 'Flux/Wan']
         need_to_frame_interpolate = False
-        if video_args.frame_interpolation_engine != "None" and not video_args.skip_video_creation and not video_args.store_frames_in_ram:
+        if video_args.frame_interpolation_engine != "None" and not video_args.skip_video_creation and not video_args.store_frames_in_ram and not is_wan_mode:
             need_to_frame_interpolate = True
-            
+
         if video_args.skip_video_creation:
             print("\nSkipping video creation, uncheck 'Skip video creation' in 'Output' tab if you want to get a video too :)")
+        elif is_wan_mode:
+            # Wan modes handle their own video creation, skip generic video creation
+            print("\nWan mode already created video, skipping generic video creation")
         else:
             # Stitch video using ffmpeg!
             try:
@@ -275,11 +280,11 @@ def run_deforum(*args):
                     print(f"** FFMPEG DID NOT STITCH ANY VIDEO ** Error: {e}")
                 pass
               
-        if video_args.make_gif and not video_args.skip_video_creation and not video_args.store_frames_in_ram:
+        if video_args.make_gif and not video_args.skip_video_creation and not video_args.store_frames_in_ram and not is_wan_mode:
             make_gifski_gif(imgs_raw_path = args.outdir, imgs_batch_id = root.timestring, fps = video_args.fps, models_folder = root.models_path, current_user_os = root.current_user_os)
-        
+
         # Upscale video once generation is done:
-        if video_args.r_upscale_video and not video_args.skip_video_creation and not video_args.store_frames_in_ram:
+        if video_args.r_upscale_video and not video_args.skip_video_creation and not video_args.store_frames_in_ram and not is_wan_mode:
             # out mp4 path is defined in make_upscale func
             make_upscale_v2(upscale_factor = video_args.r_upscale_factor, upscale_model = video_args.r_upscale_model, keep_imgs = video_args.r_upscale_keep_imgs, imgs_raw_path = args.outdir, imgs_batch_id = root.timestring, fps = video_args.fps, deforum_models_path = root.models_path, current_user_os = root.current_user_os, ffmpeg_location=f_location, stitch_from_frame=0, stitch_to_frame=anim_args.max_frames, ffmpeg_crf=f_crf, ffmpeg_preset=f_preset, add_soundtrack = video_args.add_soundtrack ,audio_path=real_audio_track, srt_path=srt_path)
 
