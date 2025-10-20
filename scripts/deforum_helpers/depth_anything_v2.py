@@ -4,9 +4,21 @@ from transformers import pipeline  # provided by Forge
 
 
 class DepthAnything:
-    def __init__(self, device):
-        model_name = "depth-anything/Depth-Anything-V2-Small-hf"
-        print(f"Loading Depth Anything model from {model_name}...")
+    def __init__(self, device, model_size='small'):
+        """
+        Initialize Depth Anything V2 model
+
+        Args:
+            device: torch device (cpu/cuda)
+            model_size: 'small', 'base', or 'large' (default: 'small')
+        """
+        model_map = {
+            'small': 'depth-anything/Depth-Anything-V2-Small-hf',
+            'base': 'depth-anything/Depth-Anything-V2-Base-hf',
+            'large': 'depth-anything/Depth-Anything-V2-Large-hf'
+        }
+        model_name = model_map.get(model_size.lower(), model_map['small'])
+        print(f"Loading Depth Anything V2 model ({model_size}) from {model_name}...")
         self.pipe = pipeline(task='depth-estimation', model=model_name, device=device)
         self.pipe.model.to(device)
 
