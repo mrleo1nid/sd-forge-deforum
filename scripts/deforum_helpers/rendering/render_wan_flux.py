@@ -26,8 +26,7 @@ from ..wan.wan_simple_integration import WanSimpleIntegration
 from ..video_audio_utilities import ffmpeg_stitch_video
 
 
-def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args,
-                    freeu_args, kohya_hrfix_args, wan_args, root):
+def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root):
     """
     Flux/Wan rendering mode: Flux for keyframes + Wan for interpolation
 
@@ -38,8 +37,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("🎬 Flux/Wan Mode: Flux Keyframes + Wan FLF2V Interpolation", log_utils.BLUE)
 
     # Create render data
-    data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args,
-                            freeu_args, kohya_hrfix_args, root)
+    data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args, root)
 
     # Initialize progress tracking
     web_ui_utils.init_job(data)

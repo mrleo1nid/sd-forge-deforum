@@ -1075,109 +1075,6 @@ def ParseqArgs():
     }
 
 
-def FreeUArgs():
-    """
-    DEPRECATED: FreeU feature removed as of 2025-01-17
-
-    This feature has been removed to simplify the codebase and focus on core
-    animation functionality. The function remains for backwards compatibility
-    with existing settings files, but all values are ignored during processing.
-
-    FreeU was a UNet enhancement technique that is no longer supported.
-    """
-    return {
-        "freeu_enabled": {
-            "label": "Enabled",
-            "type": "checkbox",
-            "value": False,
-            "info": "Enable FreeU"
-        },
-        "freeu_b1": {
-            "label": "Backbone stage 1",
-            "type": "textbox",
-            "value": "0:(1.3)",
-            "info": "backbone factor of the first stage block of decoder",
-        },
-        "freeu_b2": {
-            "label": "Backbone stage 2",
-            "type": "textbox",
-            "value": "0:(1.4)",
-            "info": "backbone factor of the second stage block of decoder",
-        },
-        "freeu_s1": {
-            "label": "Skip stage 1",
-            "type": "textbox",
-            "value": "0:(0.9)",
-            "info": "skip factor of the first stage block of decoder",
-        },
-        "freeu_s2": {
-            "label": "Skip stage 2",
-            "type": "textbox",
-            "value": "0:(0.2)",
-            "info": "skip factor of the second stage block of decoder",
-        },
-    }
-
-
-def KohyaHRFixArgs():
-    """
-    DEPRECATED: Kohya HR Fix feature removed as of 2025-01-17
-
-    This feature has been removed to simplify the codebase and focus on core
-    animation functionality. The function remains for backwards compatibility
-    with existing settings files, but all values are ignored during processing.
-
-    Kohya HR Fix was a high-resolution enhancement technique that is no longer supported.
-    """
-    return {
-        "kohya_hrfix_enabled": {
-            "label": "Enabled",
-            "type": "checkbox",
-            "value": False,
-            "info": "Enable Kohya HRFix"
-        },
-        "kohya_hrfix_block_number": {
-            "label": "Block Number (1-32)",
-            "type": "textbox",
-            "value": "0:(1)",
-        },
-        "kohya_hrfix_downscale_factor": {
-            "label": "Downscale Factor (0.1-9.0)",
-            "type": "textbox",
-            "value": "0:(2.0)",
-        },
-        "kohya_hrfix_start_percent": {
-            "label": "Start Percent (0.0-1.0)",
-            "type": "textbox",
-            "value": "0:(0.0)",
-        },
-        "kohya_hrfix_end_percent": {
-            "label": "End Percent (0.0-1.0)",
-            "type": "textbox",
-            "value": "0:(0.35)",
-        },
-        "kohya_hrfix_downscale_after_skip": {
-            "label": "Downscale After Skip",
-            "type": "checkbox",
-            "value": True,
-            "info": ""
-        },
-        "kohya_hrfix_downscale_method": {
-            "label": "Downscale Method",
-            "type": "radio",
-            "choices": ["bicubic", "nearest-exact", "bilinear", "area", "bislerp"],
-            "value": "bicubic",
-            "info": ""
-        },
-        "kohya_hrfix_upscale_method": {
-            "label": "Upscale Method",
-            "type": "radio",
-            "choices": ["bicubic", "nearest-exact", "bilinear", "area", "bislerp"],
-            "value": "bicubic",
-            "info": ""
-        }
-    }
-
 
 def WanArgs():
     """Wan 2.1 video generation arguments - Updated to integrate with Deforum schedules"""
@@ -1561,7 +1458,7 @@ def get_component_names():
             'animation_prompts_positive', 'animation_prompts_negative',
             *DeforumArgs().keys(), *DeforumOutputArgs().keys(), *ParseqArgs().keys(), *LoopArgs().keys(),
             # *controlnet_component_names(),  # Disabled - ControlNet temporarily removed
-            *FreeUArgs().keys(), *KohyaHRFixArgs().keys(), *WanArgs().keys()]
+            *WanArgs().keys()]
 
 
 def get_settings_component_names():
@@ -1583,10 +1480,7 @@ def process_args(args_dict_main, run_id):
     anim_args = SimpleNamespace(**{name: args_dict_main[name] for name in DeforumAnimArgs()})
     video_args = SimpleNamespace(**{name: args_dict_main[name] for name in DeforumOutputArgs()})
     parseq_args = SimpleNamespace(**{name: args_dict_main[name] for name in ParseqArgs()})
-    loop_args = SimpleNamespace(**{name: args_dict_main[name] for name in LoopArgs()})
-    freeu_args = SimpleNamespace(**{name: args_dict_main[name] for name in FreeUArgs()})
-    kohya_hrfix_args = SimpleNamespace(**{name: args_dict_main[name] for name in KohyaHRFixArgs()})
-    wan_args = SimpleNamespace(**{name: args_dict_main[name] for name in WanArgs()})
+    loop_args = SimpleNamespace(**{name: args_dict_main[name] for name in LoopArgs()})    wan_args = SimpleNamespace(**{name: args_dict_main[name] for name in WanArgs()})
     # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
     # controlnet_args = SimpleNamespace(**{name: args_dict_main[name] for name in controlnet_component_names()})
     controlnet_args = SimpleNamespace()  # Empty namespace for backwards compatibility
@@ -1619,8 +1513,7 @@ def process_args(args_dict_main, run_id):
 
     args_loaded_ok = True
     if override_settings_with_file:
-        args_loaded_ok = load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args,
-                                   kohya_hrfix_args, wan_args, video_args, custom_settings_file, root, run_id)
+        args_loaded_ok = load_args(args_dict_main, args, anim_args, parseq_args, loop_args, controlnet_args, wan_args, video_args, custom_settings_file, root, run_id)
 
     positive_prompts = args_dict_main['animation_prompts_positive']
     negative_prompts = args_dict_main['animation_prompts_negative']
@@ -1665,4 +1558,4 @@ def process_args(args_dict_main, run_id):
     default_img = default_img.resize((args.W, args.H))
     root.default_img = default_img
 
-    return args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args
+    return args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args

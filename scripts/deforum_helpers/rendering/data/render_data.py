@@ -17,7 +17,7 @@ from ..util import depth_utils, log_utils, memory_utils, opt_utils
 from ..util.call.images import call_get_mask_from_file_with_frame
 from ..util.call.mask import call_compose_mask_with_check
 from ..util.call.video_and_audio import call_get_next_frame
-from ...args import DeforumArgs, DeforumAnimArgs, LoopArgs, ParseqArgs, RootArgs, FreeUArgs, KohyaHRFixArgs
+from ...args import DeforumArgs, DeforumAnimArgs, LoopArgs, ParseqArgs, RootArgs
 from ...deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
 from ...generate import (isJson)
 from ...parseq_adapter import ParseqAdapter
@@ -32,10 +32,7 @@ class RenderInitArgs:
     anim_args: DeforumAnimArgs = None
     video_args: Any = None
     loop_args: LoopArgs = None
-    controlnet_args: Any = None
-    freeu_args: FreeUArgs = None
-    kohya_hrfix_args: KohyaHRFixArgs = None
-    root: RootArgs = None
+    controlnet_args: Any = None    root: RootArgs = None
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)
@@ -57,13 +54,13 @@ class RenderData:
 
     @staticmethod
     def create(args, parseq_args, anim_args, video_args, loop_args,
-               controlnet_args, freeu_args, kohya_hrfix_args, root) -> 'RenderData':
+               controlnet_args, root) -> 'RenderData':
         ri_args = RenderInitArgs(args, parseq_args, anim_args, video_args, loop_args,
-                                 controlnet_args, freeu_args, kohya_hrfix_args, root)
+                                 controlnet_args, root)
 
         output_directory = args.outdir
         is_use_mask = args.use_mask
-        parseq_adapter = RenderData.create_parseq_adapter(ri_args, freeu_args, kohya_hrfix_args)
+        parseq_adapter = RenderData.create_parseq_adapter(ri_args)
         srt = Srt.create_if_active(output_directory, root.timestring, video_args.fps)
         animation_keys = AnimationKeys.create(ri_args, parseq_adapter, args.seed)
         animation_mode = AnimationMode.create(ri_args)
@@ -85,8 +82,7 @@ class RenderData:
         RenderData.init_looper_if_active(args, loop_args)
         RenderData.handle_controlnet_video_input_frames_generation(controlnet_args, args, anim_args)
         RenderData.create_output_directory_for_the_batch(args.outdir)
-        RenderData.save_settings_txt(args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args,
-                                     kohya_hrfix_args, video_args, root)
+        RenderData.save_settings_txt(args, anim_args, parseq_args, loop_args, controlnet_args, video_args, root)
         RenderData.maybe_resume_from_timestring(anim_args, root)
         return instance
 
@@ -285,9 +281,9 @@ class RenderData:
         print(f"Saving animation frames to:\n{directory}")
 
     @staticmethod
-    def create_parseq_adapter(args, freeu_args, kohya_hrfix_keys):
+    def create_parseq_adapter(args):
         adapter = ParseqAdapter(args.parseq_args, args.anim_args, args.video_args, args.controlnet_args,
-                                args.loop_args, freeu_args, kohya_hrfix_keys)
+                                args.loop_args)
         # Always enable pseudo-3d with parseq. No need for an extra toggle:
         # Whether it's used or not in practice is defined by the schedules
         if adapter.use_parseq:
@@ -336,10 +332,9 @@ class RenderData:
             unpack_controlnet_vids(args, anim_args, controlnet_args)
 
     @staticmethod
-    def save_settings_txt(args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args,
+    def save_settings_txt(args, anim_args, parseq_args, loop_args, controlnet_args,
                           video_args, root):
-        save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args,
-                                         kohya_hrfix_args, video_args, root)
+        save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, controlnet_args, video_args, root)
 
     @staticmethod
     def maybe_resume_from_timestring(anim_args, root):

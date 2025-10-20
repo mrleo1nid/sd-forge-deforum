@@ -662,40 +662,6 @@ def get_tab_init(d, da, dp):
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
-def get_tab_freeu(dfu: SimpleNamespace):
-    """
-    DEPRECATED: FreeU tab removed as of 2025-01-17
-    This feature has been removed to simplify the codebase.
-    Kept for backwards compatibility with settings files.
-    """
-    # Create hidden components with default values for backwards compatibility
-    with gr.TabItem('FreeU (Deprecated)', visible=False):
-        freeu_enabled = gr.Checkbox(value=False, visible=False)
-        freeu_b1 = gr.Textbox(value="0:(1.3)", visible=False)
-        freeu_b2 = gr.Textbox(value="0:(1.4)", visible=False)
-        freeu_s1 = gr.Textbox(value="0:(0.9)", visible=False)
-        freeu_s2 = gr.Textbox(value="0:(0.2)", visible=False)
-    return {k: v for k, v in {**locals(), **vars()}.items()}
-
-
-def get_tab_kohya_hrfix(dku: SimpleNamespace):
-    """
-    DEPRECATED: Kohya HR Fix tab removed as of 2025-01-17
-    This feature has been removed to simplify the codebase.
-    Kept for backwards compatibility with settings files.
-    """
-    # Create hidden components with default values for backwards compatibility
-    with gr.TabItem('Kohya HR Fix (Deprecated)', visible=False):
-        kohya_hrfix_enabled = gr.Checkbox(value=False, visible=False)
-        kohya_hrfix_block_number = gr.Textbox(value="0:(1)", visible=False)
-        kohya_hrfix_downscale_factor = gr.Textbox(value="0:(2.0)", visible=False)
-        kohya_hrfix_start_percent = gr.Textbox(value="0:(0.0)", visible=False)
-        kohya_hrfix_end_percent = gr.Textbox(value="0:(0.35)", visible=False)
-        kohya_hrfix_downscale_after_skip = gr.Checkbox(value=True, visible=False)
-        kohya_hrfix_downscale_method = gr.Radio(choices=["bicubic"], value="bicubic", visible=False)
-        kohya_hrfix_upscale_method = gr.Radio(choices=["bicubic"], value="bicubic", visible=False)
-    return {k: v for k, v in {**locals(), **vars()}.items()}
-
 
 def wan_generate_video(*component_args):
     """
@@ -964,7 +930,7 @@ Each prompt will be smoothly connected using I2V continuity!"""
         return error_msg
 
 
-def generate_wan_video(args, anim_args, video_args, frame_idx, turbo_mode, turbo_preroll, root, animation_prompts, loop_args, parseq_args, freeu_args, controlnet_args, depth_args, hybrid_args, parseq_adapter, wan_args, frame_duration):
+def generate_wan_video(args, anim_args, video_args, frame_idx, turbo_mode, turbo_preroll, root, animation_prompts, loop_args, parseq_args, parseq_adapter, wan_args, frame_duration):
     """Generate Wan video using the new simple integration approach - called by Deforum internally"""
     from .wan.wan_simple_integration import WanSimpleIntegration
     import time

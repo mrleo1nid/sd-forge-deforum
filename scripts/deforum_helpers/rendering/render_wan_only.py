@@ -28,8 +28,7 @@ from ..wan.wan_simple_integration import WanSimpleIntegration
 from ..video_audio_utilities import ffmpeg_stitch_video
 
 
-def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args,
-                    freeu_args, kohya_hrfix_args, wan_args, root):
+def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root):
     """
     Wan Only rendering mode: Pure Wan AI video generation
 
@@ -42,8 +41,7 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("🎬 Wan Only Mode: Pure Wan T2V + FLF2V Workflow", log_utils.BLUE)
 
     # Create render data
-    data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args,
-                            freeu_args, kohya_hrfix_args, root)
+    data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args, root)
 
     # Initialize progress tracking
     web_ui_utils.init_job(data)
