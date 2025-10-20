@@ -49,6 +49,9 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     keyframe_distribution = KeyFrameDistribution.from_UI_tab(data)
     all_frames = DiffusionFrame.create_all_frames(data, keyframe_distribution)
 
+    # Initialize progress bars with all frames (keyframes + tweens)
+    shared.total_tqdm.reset(data, all_frames)
+
     # Extract only keyframes (frames with is_keyframe=True)
     keyframes = [f for f in all_frames if f.is_keyframe]
 
@@ -132,6 +135,9 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
             data.args.args.checkpoint = keys.checkpoint_schedule_series[frame_idx]
         else:
             data.args.args.checkpoint = None
+
+        # Reset progress tracking for this frame
+        shared.total_tqdm.reset_step_count(frame.actual_steps(data))
 
         # Generate keyframe image using Flux/SD
         web_ui_utils.update_job(data, frame.i)
