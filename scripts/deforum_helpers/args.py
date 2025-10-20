@@ -1466,7 +1466,8 @@ def get_settings_component_names():
 
 
 def pack_args(args_dict, keys_function):
-    return {name: args_dict[name] for name in keys_function()}
+    # Use .get() to handle missing keys gracefully (e.g., when ControlNet is disabled)
+    return {name: args_dict[name] for name in keys_function() if name in args_dict}
 
 
 def process_args(args_dict_main, run_id):

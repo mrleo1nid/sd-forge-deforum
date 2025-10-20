@@ -313,6 +313,82 @@ def generate_inner(args, keys, anim_args, loop_args, controlnet_args,
                 cnet_args = get_controlnet_script_args(args, anim_args, controlnet_args, root, parseq_adapter, frame_idx=frame)
                 add_forge_script_to_deforum_run(p_txt, "ControlNet", cnet_args)
 
-                debug_print(f"FreeU: {json.dumps(freeu_script_args)}")
-                add_forge_script_to_deforum_run(p_txt, "FreeU Integrated", freeu_script_args)
+            with A1111OptionsOverrider({"control_net_detectedmap_dir" : os.path.join(args.outdir, "controlnet_detected_map")}):
+                p_txt.scheduler = "Simple"  # FIXME provide
+                processed = processing.process_images(p_txt)
 
+            try:
+                p_txt.close()
+            except Exception as e:
+                ...
+
+    if processed is None:
+        # Mask functions
+        if args.use_mask:
+            mask_image = args.mask_image
+            mask = prepare_mask(args.mask_file if mask_image is None else mask_image,
+                                (args.W, args.H),
+                                args.mask_contrast_adjust,
+                                args.mask_brightness_adjust)
+            p.inpainting_mask_invert = args.invert_mask
+            p.inpainting_fill = args.fill
+            p.inpaint_full_res = args.full_res_mask
+            p.inpaint_full_res_padding = args.full_res_mask_padding
+            # prevent loaded mask from throwing errors in Image operations if completely black and crop and resize in webui pipeline
+            # doing this after contrast and brightness adjustments to ensure that mask is not passed as black or blank
+            mask = check_mask_for_errors(mask, args.invert_mask)
+            root.noise_mask = mask
+        else:
+            mask = None
+
+        assert not ((mask is not None and args.use_mask and args.overlay_mask) and (
+                root.init_sample is None and init_image is None)), "Need an init image when use_mask == True and overlay_mask == True"
+
+        p.init_images = [init_image]
+        p.image_mask = mask
+        p.image_cfg_scale = args.cfg_scale
+        p.image_distilled_cfg_scale = args.distilled_cfg_scale
+
+        print_combined_table(args, anim_args, p, keys, frame)  # print dynamic table to cli
+
+        if args.motion_preview_mode:
+            processed = mock_process_images(args, p, init_image)
+        else:
+            initialise_forge_scripts(p)
+
+            if is_controlnet_enabled(controlnet_args):
+                cnet_args = get_controlnet_script_args(args, anim_args, controlnet_args, root, parseq_adapter, frame_idx=frame)
+                add_forge_script_to_deforum_run(p, "ControlNet", cnet_args)
+
+            with A1111OptionsOverrider({"control_net_detectedmap_dir" : os.path.join(args.outdir, "controlnet_detected_map")}):
+                processed = processing.process_images(p)
+
+
+    if root.initial_info is None:
+        root.initial_info = processed.info
+
+    if root.first_frame is None:
+        root.first_frame = processed.images[0]
+
+    results = processed.images[0]
+
+    return results
+
+# Run this instead of actual diffusion when doing motion preview.
+def mock_process_images(args, p, init_image):
+
+    input_image = cv2.cvtColor(np.array(init_image), cv2.COLOR_RGB2BGR)
+
+    start_point = (int(args.H/3), int(args.W/3))
+    end_point = (int(args.H-args.H/3), int(args.W-args.W/3))
+    color = (255, 255, 255, float(p.denoising_strength))
+    thickness = 2
+    mock_generated_image = np.zeros_like(input_image, np.uint8)
+    cv2.rectangle(mock_generated_image, start_point, end_point, color, thickness)
+
+
+    blend = cv2.addWeighted(input_image, float(1.0-p.denoising_strength), mock_generated_image, float(p.denoising_strength), 0)
+
+    image = Image.fromarray(cv2.cvtColor(blend, cv2.COLOR_BGR2RGB))
+    state.assign_current_image(image)
+    return SimpleNamespace(images = [image], info = "Generating motion preview...")
