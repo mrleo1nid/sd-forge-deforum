@@ -125,7 +125,8 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
 
         # Set scheduled parameters for this frame (prompt, cfg_scale, distilled_cfg_scale, checkpoint, etc.)
         keys = data.animation_keys.deform_keys
-        frame_idx = frame.i
+        # Clamp frame index to valid range (prompt_series has max_frames entries indexed 0 to max_frames-1)
+        frame_idx = min(frame.i, data.args.anim_args.max_frames - 1)
         data.args.args.prompt = data.prompt_series[frame_idx]  # Set prompt for current frame
         data.args.args.cfg_scale = keys.cfg_scale_schedule_series[frame_idx]
         data.args.args.distilled_cfg_scale = keys.distilled_cfg_scale_schedule_series[frame_idx]
