@@ -1652,6 +1652,11 @@ def get_tab_wan(dw: SimpleNamespace):
             gr.Markdown("""
             **FLF2V interpolates smooth transitions between keyframes.**
 
+            **⚠️ MODEL REQUIREMENT:** You MUST use a FLF2V-specific model!
+            - **TI2V models (e.g., Wan2.2-TI2V-5B) CANNOT do FLF2V** - they will extend the first frame
+            - **Use:** Wan2.1-FLF2V-14B (only FLF2V model available)
+            - TI2V models were not trained on first-last-frame data, so they ignore `last_image` parameter
+
             **IMPORTANT:** FLF2V needs semantic guidance to interpolate correctly!
             - **Guidance Scale:** 5.5 (official example) = balanced, 3.5 = smoother. Range: 3.0-7.0
             - **Prompt Mode:** **'blend' (RECOMMENDED)** - combines keyframe prompts for semantic guidance
@@ -2231,10 +2236,12 @@ def get_tab_distribution(da):
             2. Wan FLF2V interpolates smooth video between keyframes
             3. No depth estimation needed
 
-            **Requirements:**
-            - Wan FLF2V model must be downloaded
+            **⚠️ Requirements:**
+            - **MUST use FLF2V-specific model:** Wan2.1-FLF2V-14B
+            - **TI2V models (e.g., Wan2.2-TI2V-5B) will NOT work** - they extend first frame instead
             - Works best with keyframe distribution mode
             - VRAM: ~15-18GB (less than standalone Wan T2V)
+            - Download: `huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B`
 
             **For longer sections (> 81 frames):**
             - Automatically uses FLF2V chaining mode
