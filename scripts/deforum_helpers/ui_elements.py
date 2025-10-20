@@ -363,6 +363,64 @@ def get_tab_prompts(da, dw):
                 outputs=[qwen_model_status]
             )
 
+        # FPS CONVERTER
+        with gr.Accordion("⏱️ FPS Converter", open=False):
+            gr.Markdown("""
+            **Convert prompt frame numbers between different FPS settings**
+
+            Use this when you need to:
+            - Convert prompts synced to 60 FPS for use at 24 FPS (or any other FPS)
+            - Adjust timing when changing video output FPS
+            - Rescale animation timing to different frame rates
+
+            **Example:** Prompts synced to amen break at 60 FPS → Convert to 24 FPS for Wan video generation
+
+            **Formula:** `new_frame = old_frame × (target_fps / source_fps)`
+            """)
+
+            with FormRow():
+                fps_converter_source = gr.Number(
+                    label="Source FPS",
+                    value=60,
+                    minimum=1,
+                    maximum=240,
+                    step=1,
+                    info="Current FPS that prompts are synced to"
+                )
+                fps_converter_target = gr.Number(
+                    label="Target FPS",
+                    value=24,
+                    minimum=1,
+                    maximum=240,
+                    step=1,
+                    info="Desired FPS for prompt conversion"
+                )
+
+            with FormRow():
+                fps_converter_btn = gr.Button(
+                    "🔄 Convert Prompt Frame Numbers",
+                    variant="primary",
+                    elem_id="fps_converter_btn"
+                )
+                fps_converter_preview = gr.Checkbox(
+                    label="Preview Only",
+                    value=False,
+                    info="Show conversion preview without updating prompts"
+                )
+
+            fps_converter_output = gr.HTML(
+                label="Conversion Result",
+                value="",
+                elem_id="fps_converter_output"
+            )
+
+            # Connect event handler
+            fps_converter_btn.click(
+                fn=convert_fps_handler,
+                inputs=[animation_prompts, fps_converter_source, fps_converter_target, fps_converter_preview],
+                outputs=[animation_prompts, fps_converter_output]
+            )
+
         # COMPOSABLE MASK SCHEDULING ACCORD
         with gr.Accordion('Composable Mask scheduling', open=False):
             gr.HTML(value=get_gradio_html('composable_masks'))
@@ -2274,6 +2332,7 @@ def get_tab_output(da, dv):
         with gr.Accordion('Video Output Settings', open=True):
             with FormRow() as fps_out_format_row:
                 fps = create_gr_elem(dv.fps)
+                prompt_authored_fps = create_gr_elem(dv.prompt_authored_fps)
             with FormColumn():
                 with FormRow() as soundtrack_row:
                     add_soundtrack = create_gr_elem(dv.add_soundtrack)
@@ -3201,6 +3260,104 @@ def cleanup_qwen_cache_handler():
     except Exception as e:
         print(f"❌ Error during Qwen cache cleanup: {e}")
         return f"❌ <span style='color: #f44336;'>Cleanup error: {str(e)}</span>"
+
+
+def convert_fps_handler(prompts_json, source_fps, target_fps, preview_only):
+    """
+    Convert prompt frame numbers from source FPS to target FPS
+
+    Uses the same formula as shakify FPS conversion:
+    new_frame = old_frame * (target_fps / source_fps)
+
+    Args:
+        prompts_json: JSON string with prompts (e.g., '{"0": "prompt1", "60": "prompt2"}')
+        source_fps: Current FPS that prompts are synced to
+        target_fps: Desired FPS for conversion
+        preview_only: If True, show preview without updating prompts
+
+    Returns:
+        Tuple of (updated_prompts_json, html_status_message)
+    """
+    import json
+
+    try:
+        # Validate FPS values
+        if source_fps <= 0 or target_fps <= 0:
+            return prompts_json, "❌ <span style='color: #f44336;'>Error: FPS values must be positive</span>"
+
+        if source_fps == target_fps:
+            return prompts_json, "ℹ️ <span style='color: #2196F3;'>Source and target FPS are the same - no conversion needed</span>"
+
+        # Parse prompts JSON
+        try:
+            prompts = json.loads(prompts_json)
+        except json.JSONDecodeError as e:
+            return prompts_json, f"❌ <span style='color: #f44336;'>Error parsing prompts JSON: {str(e)}</span>"
+
+        if not isinstance(prompts, dict):
+            return prompts_json, "❌ <span style='color: #f44336;'>Error: Prompts must be a JSON object/dictionary</span>"
+
+        # Convert frame numbers
+        fps_ratio = target_fps / source_fps
+        converted_prompts = {}
+        conversion_table = []
+
+        for frame_str, prompt_text in prompts.items():
+            try:
+                old_frame = int(frame_str)
+                # Use the shakify formula: new_frame = old_frame * (target_fps / source_fps)
+                new_frame = int(old_frame * fps_ratio)
+
+                converted_prompts[str(new_frame)] = prompt_text
+                conversion_table.append(f"Frame {old_frame} → {new_frame}")
+
+            except ValueError:
+                # Non-numeric key, keep as-is
+                converted_prompts[frame_str] = prompt_text
+
+        # Format output JSON
+        converted_json = json.dumps(converted_prompts, indent=4, ensure_ascii=False)
+
+        # Build status message
+        result = []
+        result.append("✅ <span style='color: #4CAF50;'><strong>FPS Conversion Complete</strong></span><br>")
+        result.append(f"<strong>Source FPS:</strong> {source_fps} → <strong>Target FPS:</strong> {target_fps}<br>")
+        result.append(f"<strong>Conversion Ratio:</strong> {fps_ratio:.4f}<br>")
+        result.append(f"<strong>Prompts Converted:</strong> {len(conversion_table)}<br><br>")
+
+        if preview_only:
+            result.append("🔍 <strong style='color: #FF9800;'>PREVIEW MODE</strong> - Prompts not updated<br><br>")
+        else:
+            result.append("✏️ <strong style='color: #4CAF50;'>Prompts Updated</strong><br><br>")
+
+        # Show conversion table (first 10 entries)
+        result.append("<strong>Frame Conversion:</strong><br>")
+        result.append("<code style='display: block; background: #f5f5f5; padding: 8px; margin: 8px 0; border-radius: 4px;'>")
+        for entry in conversion_table[:10]:
+            result.append(f"{entry}<br>")
+
+        if len(conversion_table) > 10:
+            result.append(f"... and {len(conversion_table) - 10} more")
+
+        result.append("</code>")
+
+        # Add formula explanation
+        result.append("<br><strong>Formula Used:</strong><br>")
+        result.append(f"<code>new_frame = old_frame × ({target_fps} / {source_fps}) = old_frame × {fps_ratio:.4f}</code>")
+
+        status_html = "".join(result)
+
+        # Return updated prompts or original based on preview mode
+        if preview_only:
+            return prompts_json, status_html
+        else:
+            return converted_json, status_html
+
+    except Exception as e:
+        import traceback
+        print(f"❌ Error in FPS converter: {e}")
+        traceback.print_exc()
+        return prompts_json, f"❌ <span style='color: #f44336;'>Error: {str(e)}</span>"
 
 
 def load_wan_prompts_handler():

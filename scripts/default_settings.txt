@@ -319,6 +319,7 @@
     "wan_gradient_checkpointing": false,
     "skip_video_creation": false,
     "fps": 60,
+    "prompt_authored_fps": 0,
     "make_gif": false,
     "delete_imgs": false,
     "delete_input_frames": false,

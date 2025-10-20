@@ -1431,6 +1431,15 @@ def DeforumOutputArgs():
             "step": 1,
             "value": 60,
         },
+        "prompt_authored_fps": {
+            "label": "Prompt Authored FPS",
+            "type": "slider",
+            "minimum": 1,
+            "maximum": 240,
+            "step": 1,
+            "value": 0,  # 0 = auto-detect (use current fps)
+            "info": "FPS that prompts were originally authored at. Set to 0 for auto (uses current FPS). If prompts were synced to audio at 60 FPS but you want 24 FPS video, set this to 60 and frame numbers will auto-convert."
+        },
         "make_gif": {
             "label": "Make GIF",
             "type": "checkbox",
@@ -1583,6 +1592,30 @@ def process_args(args_dict_main, run_id):
     controlnet_args = SimpleNamespace()  # Empty namespace for backwards compatibility
 
     root.animation_prompts = json.loads(args_dict_main['animation_prompts'])
+
+    # Convert prompt frame numbers if authored at different FPS (like shakify does)
+    prompt_authored_fps = video_args.prompt_authored_fps if hasattr(video_args, 'prompt_authored_fps') else 0
+    current_fps = video_args.fps
+
+    if prompt_authored_fps > 0 and prompt_authored_fps != current_fps:
+        # FPS conversion needed - use shakify formula: new_frame = old_frame * (target_fps / source_fps)
+        fps_ratio = current_fps / prompt_authored_fps
+        converted_prompts = {}
+
+        print(f"\n🔄 Converting prompt frame numbers from {prompt_authored_fps} FPS → {current_fps} FPS (ratio: {fps_ratio:.4f})")
+
+        for frame_key, prompt_text in root.animation_prompts.items():
+            try:
+                old_frame = int(frame_key)
+                new_frame = int(old_frame * fps_ratio)
+                converted_prompts[str(new_frame)] = prompt_text
+                print(f"   Frame {old_frame} → {new_frame}")
+            except ValueError:
+                # Non-numeric key (e.g., "max_f"), keep as-is
+                converted_prompts[frame_key] = prompt_text
+
+        root.animation_prompts = converted_prompts
+        print(f"✅ Converted {len(converted_prompts)} prompt frame numbers\n")
 
     args_loaded_ok = True
     if override_settings_with_file:
