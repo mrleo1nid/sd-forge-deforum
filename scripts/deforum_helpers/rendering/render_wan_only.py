@@ -686,6 +686,8 @@ def stitch_wan_only_video(data, frame_paths, video_args):
         ffmpeg_location=ffmpeg_location,
         fps=video_args.fps,
         outmp4_path=output_path,
+        stitch_from_frame=0,
+        stitch_to_frame=len(frame_paths),  # Total number of frames to stitch
         imgs_path=imgs_pattern,
         add_soundtrack=video_args.add_soundtrack,
         audio_path=video_args.soundtrack_path if video_args.add_soundtrack == 'File' else None,
