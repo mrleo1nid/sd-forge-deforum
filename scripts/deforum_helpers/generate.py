@@ -72,6 +72,67 @@ def pairwise_repl(iterable):
     next(b, None)
     return zip(a, b)
 
+def print_combined_table(args, anim_args, p, keys, frame_idx):
+    from rich.table import Table
+    from rich import box
+
+    table = Table(padding=0, box=box.ROUNDED)
+
+    field_names1 = ["Steps", "CFG", "Dist. CFG"]
+    if anim_args.animation_mode != 'Interpolation':
+        field_names1.append("Denoise")
+    field_names1 += ["Subseed", "Subs. str"] * (anim_args.enable_subseed_scheduling)
+    field_names1 += ["Sampler"] * anim_args.enable_sampler_scheduling
+    field_names1 += ["Scheduler"] * anim_args.enable_scheduler_scheduling
+    field_names1 += ["Checkpoint"] * anim_args.enable_checkpoint_scheduling
+
+    for field_name in field_names1:
+        table.add_column(field_name, justify="center")
+
+    rows1 = [str(p.steps), str(p.cfg_scale), str(p.distilled_cfg_scale)]
+    if anim_args.animation_mode != 'Interpolation':
+        rows1.append(f"{p.denoising_strength:.5g}" if p.denoising_strength is not None else "None")
+
+    rows1 += [str(p.subseed), f"{p.subseed_strength:.5g}"] * anim_args.enable_subseed_scheduling
+    rows1 += [p.sampler_name] * anim_args.enable_sampler_scheduling
+    rows1 += [p.scheduler] * anim_args.enable_scheduler_scheduling
+    rows1 += [str(args.checkpoint)] * anim_args.enable_checkpoint_scheduling
+
+    rows2 = []
+    if anim_args.animation_mode not in ['Video Input', 'Interpolation']:
+        if anim_args.animation_mode == '2D':
+            field_names2 = ["Angle", "Zoom", "Tr C X", "Tr C Y"]
+        else:
+            field_names2 = []
+        field_names2 += ["Tr X", "Tr Y"]
+        if anim_args.animation_mode == '3D':
+            field_names2 += ["Tr Z", "Ro X", "Ro Y", "Ro Z"]
+            if anim_args.aspect_ratio_schedule.replace(" ", "") != '0:(1)':
+                field_names2 += ["Asp. Ratio"]
+        if anim_args.enable_perspective_flip:
+            field_names2 += ["Pf T", "Pf P", "Pf G", "Pf F"]
+
+        for field_name in field_names2:
+            table.add_column(field_name, justify="center")
+
+        if anim_args.animation_mode == '2D':
+            rows2 += [f"{keys.angle_series[frame_idx]:.5g}", f"{keys.zoom_series[frame_idx]:.5g}",
+                      f"{keys.transform_center_x_series[frame_idx]:.5g}", f"{keys.transform_center_y_series[frame_idx]:.5g}"]
+
+        rows2 += [f"{keys.translation_x_series[frame_idx]:.5g}", f"{keys.translation_y_series[frame_idx]:.5g}"]
+
+        if anim_args.animation_mode == '3D':
+            rows2 += [f"{keys.translation_z_series[frame_idx]:.5g}", f"{keys.rotation_3d_x_series[frame_idx]:.5g}",
+                      f"{keys.rotation_3d_y_series[frame_idx]:.5g}", f"{keys.rotation_3d_z_series[frame_idx]:.5g}"]
+            if anim_args.aspect_ratio_schedule.replace(" ", "") != '0:(1)':
+                rows2 += [f"{keys.aspect_ratio_series[frame_idx]:.5g}"]
+        if anim_args.enable_perspective_flip:
+            rows2 += [f"{keys.perspective_flip_theta_series[frame_idx]:.5g}", f"{keys.perspective_flip_phi_series[frame_idx]:.5g}",
+                      f"{keys.perspective_flip_gamma_series[frame_idx]:.5g}", f"{keys.perspective_flip_fv_series[frame_idx]:.5g}"]
+
+    table.add_row(*rows1, *rows2)
+    console.print(table)
+
 def generate(args, keys, anim_args, loop_args, controlnet_args, root, parseq_adapter,  frame=0, sampler_name=None, scheduler_name=None):
     if state.interrupted:
         return None
