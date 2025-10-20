@@ -96,7 +96,8 @@ def save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, co
             dicts_to_merge.append(wan_args.__dict__)
         
         for d in dicts_to_merge:
-            s.update({k: v for k, v in d.items() if k not in exclude_keys})
+            # Filter out methods and callables to avoid JSON serialization errors
+            s.update({k: v for k, v in d.items() if k not in exclude_keys and not callable(v)})
         
         # Handle SD model info (may not exist in Wan Only mode)
         if hasattr(sh.sd_model, 'sd_checkpoint_info'):
@@ -157,7 +158,8 @@ def save_settings(*args, **kwargs):
     video_args_dict = pack_args(data, DeforumOutputArgs)
     combined = {**args_dict, **anim_args_dict, **parseq_dict, **loop_dict, **controlnet_dict, **wan_args_dict, **video_args_dict}
     exclude_keys = get_keys_to_exclude()
-    filtered_combined = {k: v for k, v in combined.items() if k not in exclude_keys}
+    # Filter out methods and callables to avoid JSON serialization errors
+    filtered_combined = {k: v for k, v in combined.items() if k not in exclude_keys and not callable(v)}
     
     # Add metadata to settings file
     if not isinstance(sh.sd_model, FakeInitialModel) and hasattr(sh.sd_model, 'sd_checkpoint_info'):
