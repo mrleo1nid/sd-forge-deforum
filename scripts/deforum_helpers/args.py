@@ -1262,8 +1262,8 @@ def WanArgs():
             "minimum": 0.0,
             "maximum": 7.0,
             "step": 0.1,
-            "value": 5.5,
-            "info": "Guidance scale for FLF2V interpolation. Recommended: 5.5 (official example) for balanced prompt adherence, 3.5 for smoother visual morphing. NEVER use 0.0 (breaks last_image conditioning). Range: 3.0-7.0."
+            "value": 3.5,
+            "info": "Guidance scale for FLF2V interpolation. Recommended: 3.5 (default) for smooth visual morphing throughout the clip. Higher values (5.5+) may cause 'mode collapse' where frames stick to the first image with sudden transition at the end. NEVER use 0.0 (breaks last_image conditioning). Range: 2.5-7.0."
         },
         "wan_flf2v_prompt_mode": {
             "label": "FLF2V Prompt Mode",

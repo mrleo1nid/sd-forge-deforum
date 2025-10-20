@@ -1658,7 +1658,7 @@ def get_tab_wan(dw: SimpleNamespace):
             - TI2V models were not trained on first-last-frame data, so they ignore `last_image` parameter
 
             **IMPORTANT:** FLF2V needs semantic guidance to interpolate correctly!
-            - **Guidance Scale:** 5.5 (official example) = balanced, 3.5 = smoother. Range: 3.0-7.0
+            - **Guidance Scale:** 3.5 (default) = smooth morphing, 2.5-3.0 = even smoother. **Avoid 5.5+** (causes "mode collapse" - frames stick to first image with sudden transition at end)
             - **Prompt Mode:** **'blend' (RECOMMENDED)** - combines keyframe prompts for semantic guidance
             - **⚠️ NEVER use guidance_scale=0.0** (breaks last_image conditioning)
             - **⚠️ 'none' mode may not work** (empty prompts often cause first-frame extension)
