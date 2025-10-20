@@ -156,7 +156,7 @@ class WanSimpleIntegration:
     def get_best_model(self) -> Optional[Dict]:
         """Get the best available model for T2V/I2V generation (excludes FLF2V models)"""
         if not self.models:
-            self.discover_models()
+            self.models = self.discover_models()
 
         if not self.models:
             return None
