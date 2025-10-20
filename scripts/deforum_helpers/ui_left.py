@@ -22,7 +22,7 @@ from .args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, R
 # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
 # from .deforum_controlnet import setup_controlnet_ui
 from .ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
-                          get_tab_hybrid, get_tab_output)
+                          get_tab_output)
 
 def set_arg_lists():
     # convert dicts to NameSpaces for easy working (args.param instead of args['param']
@@ -133,10 +133,9 @@ def setup_deforum_left_side_ui():
             # Re-enable Wan tab (UI only, imports still isolated)
             from .ui_elements import get_tab_wan
             tab_wan_params = get_tab_wan(dw)  # Re-enable Wan tab
-            tab_hybrid_params = get_tab_hybrid(da)  # Hybrid tab (hidden)
             tab_output_params = get_tab_output(da, dv)  # Output tab
             # add returned gradio elements from main tabs to locals()
-            for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_shakify_params, **tab_depth_params, **tab_init_params, **controlnet_dict, **tab_wan_params, **tab_hybrid_params, **tab_output_params}.items():
+            for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_shakify_params, **tab_depth_params, **tab_init_params, **controlnet_dict, **tab_wan_params, **tab_output_params}.items():
                 locals()[key] = value
 
     # Gradio's Change functions - hiding and renaming elements based on other elements
