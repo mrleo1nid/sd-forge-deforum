@@ -121,7 +121,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         # Skip if keyframe already exists (resume mode)
         if frame.i in keyframe_images:
             continue
-            
+
         log_utils.info(f"\n📸 Generating NEW keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
         # Set scheduled parameters for this frame (prompt, cfg_scale, distilled_cfg_scale, checkpoint, etc.)
@@ -154,8 +154,20 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
 
         log_utils.info(f"✅ Keyframe {idx + 1} saved: {os.path.basename(keyframe_path)}", log_utils.GREEN)
 
+        # Set first_frame for UI display (use first generated keyframe)
+        if idx == 0:
+            data.args.root.first_frame = image
+
     newly_generated = len(keyframes_to_generate)
     from_resume = len(keyframes_existing)
+
+    # Ensure first_frame is set for UI display (load from disk if not yet set)
+    if data.args.root.first_frame is None and keyframes:
+        first_keyframe_path = keyframe_images.get(keyframes[0].i)
+        if first_keyframe_path and os.path.exists(first_keyframe_path):
+            from PIL import Image
+            data.args.root.first_frame = Image.open(first_keyframe_path)
+            log_utils.info(f"✅ Loaded first frame from disk for UI display", log_utils.GREEN)
     
     log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes ready", log_utils.GREEN)
     if from_resume > 0:

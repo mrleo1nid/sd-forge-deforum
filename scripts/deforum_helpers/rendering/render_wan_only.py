@@ -217,7 +217,15 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
 
     newly_generated = len(keyframes_to_generate)
     from_resume = len(keyframes_existing)
-    
+
+    # Ensure first_frame is set for UI display (load first keyframe from disk)
+    if data.args.root.first_frame is None and keyframes:
+        first_keyframe_path = keyframe_images.get(keyframes[0].i)
+        if first_keyframe_path and os.path.exists(first_keyframe_path):
+            from PIL import Image
+            data.args.root.first_frame = Image.open(first_keyframe_path)
+            log_utils.info(f"✅ Loaded first frame from disk for UI display", log_utils.GREEN)
+
     log_utils.info(f"\n✅ Phase 1 Complete: {len(keyframes)} keyframes ready", log_utils.GREEN)
     if from_resume > 0:
         log_utils.info(f"   ({newly_generated} newly generated, {from_resume} from previous run)", log_utils.GREEN)
