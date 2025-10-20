@@ -32,8 +32,7 @@ def _strip_negative_prompt(prompt_text):
     return prompt_text.strip()
 
 
-def render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args,
-                     freeu_args, kohya_hrfix_args, root):
+def render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
     log_utils.info("Using experimental render core.", log_utils.RED)
     
     # Pre-download soundtrack if specified
@@ -47,8 +46,7 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
             except Exception as e:
                 print(f"Error pre-downloading audio: {e}")
     
-    data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args, freeu_args,
-                             kohya_hrfix_args, root)
+    data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args, root)
     check_render_conditions(data)
     web_ui_utils.init_job(data)
     diffusion_frames = DiffusionFrame.create_all_frames(data, KeyFrameDistribution.from_UI_tab(data))

@@ -157,7 +157,7 @@ def run_deforum(*args):
         args_dict['self'] = None
         args_dict['p'] = p
         try:
-            args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args = process_args(args_dict, i)
+            args_loaded_ok, root, args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args = process_args(args_dict, i)
             print(f"🔍 DEBUG: anim_args.animation_mode after process_args: '{anim_args.animation_mode}'")
             # Ensure animation_mode from args_dict (possibly loaded from resume) is reflected in anim_args
             if 'animation_mode' in args_dict:
@@ -207,21 +207,21 @@ def run_deforum(*args):
             print(f"\n🎬 DEBUG: Dispatching to renderer for mode: '{anim_args.animation_mode}'")
             if anim_args.animation_mode == '2D' or anim_args.animation_mode == '3D':
                 if anim_args.use_mask_video: 
-                    render_animation_with_video_mask(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)  # allow mask video without an input video
+                    render_animation_with_video_mask(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)  # allow mask video without an input video
                 else:    
-                    render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)
+                    render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
             elif anim_args.animation_mode == 'Video Input':
-                render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)#TODO: prettify code
+                render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)#TODO: prettify code
             elif anim_args.animation_mode == 'Interpolation':
-                render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, root)
+                render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
             elif anim_args.animation_mode == 'Wan Only':
                 # Wan Only mode: Pure Wan T2V + FLF2V (no SD model needed)
                 from .rendering.render_wan_only import render_wan_only
-                render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, root)
+                render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root)
             elif anim_args.animation_mode == 'Flux/Wan':
                 # Flux/Wan mode: Flux generates keyframes + Wan FLF2V for interpolation
                 from .rendering.render_wan_flux import render_wan_flux
-                render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, root)
+                render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root)
             else:
                 print('Other modes are not available yet!')
         except Exception as e:
@@ -330,7 +330,7 @@ def run_deforum(*args):
 
         if shared.opts.data.get("deforum_enable_persistent_settings", False):
             persistent_sett_path = shared.opts.data.get("deforum_persistent_settings_path")
-            save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, video_args, root, persistent_sett_path, wan_args)
+            save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, controlnet_args, video_args, root, persistent_sett_path, wan_args)
 
         # Close the pipeline, not to interfere with ControlNet
         try:

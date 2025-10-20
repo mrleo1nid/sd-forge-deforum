@@ -22,7 +22,7 @@ from operator import itemgetter
 import numpy as np
 import pandas as pd
 import requests
-from .animation_key_frames import DeformAnimKeys, ControlNetKeys, LooperAnimKeys, FreeUAnimKeys, KohyaHRFixAnimKeys
+from .animation_key_frames import DeformAnimKeys, ControlNetKeys, LooperAnimKeys
 from .rendering.util import log_utils
 from .rich import console
 from .general_utils import tickOrCross
@@ -33,7 +33,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 IGNORED_FIELDS = ['fi', 'use_looper', 'imagesToKeyframe', 'schedules']
 
 class ParseqAdapter():
-    def __init__(self, parseq_args, anim_args, video_args, controlnet_args, loop_args, freeu_args, kohya_hrfix_keys, mute=False):
+    def __init__(self, parseq_args, anim_args, video_args, controlnet_args, loop_args, mute=False):
 
         # Basic data extraction
         self.use_parseq = parseq_args.parseq_manifest and parseq_args.parseq_manifest.strip()
@@ -68,10 +68,7 @@ class ParseqAdapter():
         self.anim_keys = ParseqAnimKeysDecorator(self, DeformAnimKeys(anim_args))
         self.cn_keys = ParseqControlNetKeysDecorator(self, ControlNetKeys(anim_args, controlnet_args)) if (controlnet_args and len(controlnet_args.__dict__)>0) else None
         # -1 because seed seems to be unused in LooperAnimKeys
-        self.looper_keys = ParseqLooperKeysDecorator(self, LooperAnimKeys(loop_args, anim_args, -1)) if loop_args else None
-        self.freeu_keys = ParseqFreeUKeysDecorator(self, FreeUAnimKeys(anim_args, freeu_args)) if freeu_args else None
-        self.kohya_hrfix_keys = ParseqKohyaHRFixKeysDecorator(self, KohyaHRFixAnimKeys(anim_args, kohya_hrfix_keys)) if kohya_hrfix_keys else None
-    
+        self.looper_keys = ParseqLooperKeysDecorator(self, LooperAnimKeys(loop_args, anim_args, -1)) if loop_args else None    
         # Validation
         if (self.use_parseq):
             max_frame = self.get_max('frame')
@@ -250,13 +247,7 @@ class ParseqControlNetKeysDecorator(ParseqAbstractDecorator):
     def __init__(self, adapter: ParseqAdapter, cn_keys):
         super().__init__(adapter, cn_keys)
 
-class ParseqFreeUKeysDecorator(ParseqAbstractDecorator):
-    def __init__(self, adapter: ParseqAdapter, freeu_keys):
-        super().__init__(adapter, freeu_keys)
 
-class ParseqKohyaHRFixKeysDecorator(ParseqAbstractDecorator):
-    def __init__(self, adapter: ParseqAdapter, kohya_hrfix_keys):
-        super().__init__(adapter, kohya_hrfix_keys)        
 
 class ParseqAnimKeysDecorator(ParseqAbstractDecorator):
     def __init__(self, adapter: ParseqAdapter, anim_keys):
