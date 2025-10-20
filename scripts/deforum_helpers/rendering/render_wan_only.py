@@ -76,31 +76,71 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
             log_utils.info(f"   First few files: {files_in_dir[:5]}", log_utils.YELLOW)
 
     # ====================
-    # PHASE 0: Initialize Wan
+    # PHASE 0: Initialize Wan (Smart Model Selection Based on Resume State)
     # ====================
     log_utils.info("\n" + "="*60, log_utils.PURPLE)
     log_utils.info("PHASE 0: Initializing Wan Pipeline", log_utils.PURPLE)
     log_utils.info("="*60, log_utils.PURPLE)
-    
+
     wan_integration = WanSimpleIntegration(device='cuda')
-    
-    # Discover and load Wan model
+
+    # Discover models first
     log_utils.info("🔍 Discovering Wan models...", log_utils.BLUE)
     discovered_models = wan_integration.discover_models()
-    
+
     if not discovered_models:
         raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
-    
-    # Use best available model (T2V capable)
-    model_info = wan_integration.get_best_model()
-    if not model_info:
-        model_info = discovered_models[0]
-    
-    log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
+
+    # Smart model selection: Check if we need T2V (keyframe gen) or only FLF2V (interpolation)
+    is_resuming = anim_args.resume_from_timestring
+    need_keyframe_generation = True
+
+    if is_resuming and os.path.exists(data.output_directory):
+        # Quick check: Do ALL keyframes already exist?
+        existing_keyframes = 0
+        for frame in keyframes:
+            expected_filename = filename_utils.frame_filename(data, frame.i)
+            expected_path = os.path.join(data.output_directory, expected_filename)
+            alt_filename = f"{frame.i:09}.png"
+            alt_path = os.path.join(data.output_directory, alt_filename)
+
+            if os.path.exists(expected_path) or os.path.exists(alt_path):
+                existing_keyframes += 1
+
+        if existing_keyframes == len(keyframes):
+            need_keyframe_generation = False
+            log_utils.info(f"✅ Resume detected: All {len(keyframes)} keyframes exist - skipping T2V generation", log_utils.GREEN)
+            log_utils.info(f"   Will only need FLF2V model for interpolation", log_utils.GREEN)
+        else:
+            log_utils.info(f"🔄 Resume detected: {existing_keyframes}/{len(keyframes)} keyframes exist - need T2V for remaining", log_utils.YELLOW)
+
+    # Select appropriate model type
+    if need_keyframe_generation:
+        # Need T2V/TI2V model for keyframe generation
+        log_utils.info("🎯 Model requirement: T2V/TI2V for keyframe generation", log_utils.BLUE)
+        model_info = wan_integration.get_best_model()  # Excludes FLF2V
+        if not model_info:
+            raise RuntimeError("No T2V/TI2V model found. Please download a text-to-video capable model.")
+    else:
+        # Only need FLF2V model for interpolation
+        log_utils.info("🎯 Model requirement: FLF2V for interpolation only", log_utils.BLUE)
+        flf2v_models = [m for m in discovered_models if m['type'] == 'FLF2V']
+        if not flf2v_models:
+            ti2v_models = [m['name'] for m in discovered_models if m['type'] in ('TI2V', 'T2V', 'I2V')]
+            log_utils.error("❌ No FLF2V model found!", log_utils.RED)
+            if ti2v_models:
+                log_utils.warning(f"   Found T2V/TI2V models: {', '.join(ti2v_models)}", log_utils.YELLOW)
+                log_utils.warning("   ⚠️  TI2V/T2V models CANNOT do FLF2V interpolation!", log_utils.YELLOW)
+            log_utils.info("   Download: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B", log_utils.YELLOW)
+            raise RuntimeError("FLF2V model required but not found. Keyframes exist, but cannot interpolate without FLF2V model.")
+        model_info = flf2v_models[0]  # Use first FLF2V model found
+        log_utils.info(f"✅ Selected FLF2V model: {model_info['name']}", log_utils.GREEN)
+
+    log_utils.info(f"📦 Loading Wan model: {model_info['name']} ({model_info['type']})", log_utils.BLUE)
     success = wan_integration.load_simple_wan_pipeline(model_info, wan_args)
     if not success:
         raise RuntimeError(f"Failed to load Wan model: {model_info['name']}")
-    
+
     log_utils.info("✅ Wan pipeline loaded successfully", log_utils.GREEN)
 
     # ====================
@@ -191,7 +231,38 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("PHASE 2: Batch Wan FLF2V Interpolation", log_utils.BLUE)
     log_utils.info("="*60, log_utils.BLUE)
 
-    # Generate FLF2V segments (using already-loaded Wan model from Phase 0)
+    # Check if we need to reload the model for FLF2V
+    # If we loaded TI2V for keyframe generation, we MUST reload FLF2V for interpolation
+    current_model_type = model_info['type']
+    if current_model_type != 'FLF2V':
+        log_utils.info(f"⚠️  Current model ({model_info['name']}) is {current_model_type} - cannot do FLF2V", log_utils.YELLOW)
+        log_utils.info("🔄 Need to reload FLF2V model for interpolation...", log_utils.BLUE)
+
+        # Unload current model
+        wan_integration.unload_model()
+
+        # Find FLF2V model
+        flf2v_models = [m for m in discovered_models if m['type'] == 'FLF2V']
+        if not flf2v_models:
+            ti2v_models = [m['name'] for m in discovered_models if m['type'] in ('TI2V', 'T2V', 'I2V')]
+            log_utils.error("❌ No FLF2V model found!", log_utils.RED)
+            if ti2v_models:
+                log_utils.warning(f"   Found T2V/TI2V models: {', '.join(ti2v_models)}", log_utils.YELLOW)
+                log_utils.warning("   ⚠️  TI2V/T2V models CANNOT do FLF2V interpolation!", log_utils.YELLOW)
+            log_utils.info("   Download: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B", log_utils.YELLOW)
+            raise RuntimeError("FLF2V model required but not found. Keyframes generated, but cannot interpolate without FLF2V model.")
+
+        # Load FLF2V model
+        flf2v_model_info = flf2v_models[0]
+        log_utils.info(f"📦 Loading FLF2V model: {flf2v_model_info['name']}", log_utils.BLUE)
+        success = wan_integration.load_simple_wan_pipeline(flf2v_model_info, wan_args)
+        if not success:
+            raise RuntimeError(f"Failed to load FLF2V model: {flf2v_model_info['name']}")
+        log_utils.info("✅ FLF2V model loaded successfully", log_utils.GREEN)
+        model_info = flf2v_model_info  # Update model_info reference
+    else:
+        log_utils.info(f"✅ Current model is already FLF2V: {model_info['name']}", log_utils.GREEN)
+
     all_segment_frames = []
 
     for idx in range(len(keyframes) - 1):
