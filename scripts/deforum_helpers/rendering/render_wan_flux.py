@@ -120,6 +120,13 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
             
         log_utils.info(f"\n📸 Generating NEW keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
+        # Set scheduled parameters for this frame (prompt, cfg_scale, distilled_cfg_scale, etc.)
+        keys = data.animation_keys.deform_keys
+        frame_idx = frame.i
+        data.args.args.prompt = data.prompt_series[frame_idx]  # Set prompt for current frame
+        data.args.args.cfg_scale = keys.cfg_scale_schedule_series[frame_idx]
+        data.args.args.distilled_cfg_scale = keys.distilled_cfg_scale_schedule_series[frame_idx]
+
         # Generate keyframe image using Flux/SD
         web_ui_utils.update_job(data, frame.i)
         image = frame.generate(data, shared.total_tqdm)
