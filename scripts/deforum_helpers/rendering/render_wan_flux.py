@@ -169,6 +169,13 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("PHASE 2: Batch Wan FLF2V Interpolation", log_utils.BLUE)
     log_utils.info("="*60, log_utils.BLUE)
 
+    # Unload Flux model to free GPU memory for Wan
+    log_utils.info("🗑️  Unloading Flux model to free GPU memory...", log_utils.BLUE)
+    from backend import memory_management
+    memory_management.unload_all_models()
+    memory_management.soft_empty_cache()
+    log_utils.info("✅ GPU memory freed", log_utils.GREEN)
+
     # Initialize Wan
     wan_integration = WanSimpleIntegration(device='cuda')
 
@@ -257,10 +264,19 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         # Convert to PIL for Wan FLF2V
         first_image = image_utils.numpy_to_pil(first_image_cv2)
         last_image = image_utils.numpy_to_pil(last_image_cv2)
-        
+
+        # Resize keyframes if resolution changed (e.g., for VRAM savings)
+        target_width = data.width()
+        target_height = data.height()
+        if first_image.size != (target_width, target_height):
+            log_utils.info(f"   Resizing keyframes from {first_image.size} to {target_width}x{target_height}", log_utils.YELLOW)
+            from PIL import Image
+            first_image = first_image.resize((target_width, target_height), Image.LANCZOS)
+            last_image = last_image.resize((target_width, target_height), Image.LANCZOS)
+
         # For FLF2V interpolation, use balanced guidance for semantic interpolation
         # High guidance forces prompt adherence, low guidance allows natural interpolation
-        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 5.5)  # Default 5.5 = balanced (official example)
+        flf2v_guidance = getattr(wan_args, 'wan_flf2v_guidance_scale', 3.5)  # Default 3.5 for smooth morphing
 
         # Decide how to handle prompts for FLF2V
         # Options: 'none', 'first', 'last', 'blend'
