@@ -58,12 +58,6 @@ param_dict = {
     "cadence_flow_factor_schedule": {"backend": "cadence_flow_factor_schedule_series", "user": "Cadence Flow Factor Sch", "print": "CadenceFlowFactorSchedule"},
     "redo_flow_factor_schedule": {"backend": "redo_flow_factor_schedule_series", "user": "Redo Flow Factor Sch", "print": "RedoFlowFactorSchedule"},
     "far_schedule": {"backend": "far_series", "user": "Far Sch", "print": "FarSchedule"},
-    "hybrid_comp_alpha_schedule": {"backend": "hybrid_comp_alpha_schedule_series", "user": "Hyb Comp Alpha Sch", "print": "HybridCompAlphaSchedule"},
-    "hybrid_comp_mask_blend_alpha_schedule": {"backend": "hybrid_comp_mask_blend_alpha_schedule_series", "user": "Hyb Comp Mask Blend Alpha Sch", "print": "HybridCompMaskBlendAlphaSchedule"},
-    "hybrid_comp_mask_contrast_schedule": {"backend": "hybrid_comp_mask_contrast_schedule_series", "user": "Hyb Comp Mask Ctrst Sch", "print": "HybridCompMaskContrastSchedule"},
-    "hybrid_comp_mask_auto_contrast_cutoff_high_schedule": {"backend": "hybrid_comp_mask_auto_contrast_cutoff_high_schedule_series", "user": "Hyb Comp Mask Auto Contrast Cutoff High Sch", "print": "HybridCompMaskAutoContrastCutoffHighSchedule"},
-    "hybrid_comp_mask_auto_contrast_cutoff_low_schedule": {"backend": "hybrid_comp_mask_auto_contrast_cutoff_low_schedule_series", "user": "Hyb Comp Mask Auto Ctrst Cut Low Sch", "print": "HybridCompMaskAutoContrastCutoffLowSchedule"},
-    "hybrid_flow_factor_schedule": {"backend": "hybrid_flow_factor_schedule_series", "user": "Hybrid Flow Factor Sch", "print": "HybridFlowFactorSchedule"},
 }
 
 
