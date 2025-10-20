@@ -323,10 +323,19 @@ def render_wan_only(args, anim_args, video_args, parseq_args, loop_args, control
         # Load keyframe images
         first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
         last_image_cv2 = image_utils.load_image(keyframe_images[last_frame_idx])
-        
+
         # Convert to PIL for Wan FLF2V
         first_image = image_utils.numpy_to_pil(first_image_cv2)
         last_image = image_utils.numpy_to_pil(last_image_cv2)
+
+        # Resize keyframes if resolution changed (e.g., for VRAM savings)
+        target_width = data.width()
+        target_height = data.height()
+        if first_image.size != (target_width, target_height):
+            log_utils.info(f"   Resizing keyframes from {first_image.size} to {target_width}x{target_height}", log_utils.YELLOW)
+            from PIL import Image
+            first_image = first_image.resize((target_width, target_height), Image.LANCZOS)
+            last_image = last_image.resize((target_width, target_height), Image.LANCZOS)
         
         # For FLF2V interpolation, use minimal guidance to let model smoothly transition
         # High guidance forces prompt adherence, low guidance allows natural interpolation
