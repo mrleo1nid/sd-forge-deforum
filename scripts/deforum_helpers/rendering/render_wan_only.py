@@ -667,28 +667,30 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
 
 def stitch_wan_only_video(data, frame_paths, video_args):
     """Stitch all frames into final video"""
+    from ..video_audio_utilities import get_ffmpeg_params
 
-    # Create frame list file for ffmpeg
-    frame_list_file = os.path.join(data.output_directory, "frame_list.txt")
-    with open(frame_list_file, 'w') as f:
-        for path in frame_paths:
-            f.write(f"file '{path}'\n")
+    # Get ffmpeg parameters from settings
+    ffmpeg_location, ffmpeg_crf, ffmpeg_preset = get_ffmpeg_params()
 
     # Output video path
     output_filename = f"{data.args.root.timestring}_wan_only.mp4"
     output_path = os.path.join(data.output_directory, output_filename)
 
+    # Build frame pattern (frames are named 000000001.png, 000000002.png, etc.)
+    imgs_pattern = os.path.join(data.output_directory, "%09d.png")
+
     # Stitch with ffmpeg
     log_utils.info(f"🎬 Stitching {len(frame_paths)} frames...", log_utils.BLUE)
 
     ffmpeg_stitch_video(
-        frame_pattern=None,  # Use frame list instead
+        ffmpeg_location=ffmpeg_location,
         fps=video_args.fps,
-        output_path=output_path,
-        crf=video_args.crf,
-        preset=video_args.preset,
+        outmp4_path=output_path,
+        imgs_path=imgs_pattern,
+        add_soundtrack=video_args.add_soundtrack,
         audio_path=video_args.soundtrack_path if video_args.add_soundtrack == 'File' else None,
-        frame_list_file=frame_list_file
+        crf=ffmpeg_crf,
+        preset=ffmpeg_preset
     )
 
     return output_path
