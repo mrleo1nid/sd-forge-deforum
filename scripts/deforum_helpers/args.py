@@ -581,9 +581,9 @@ def DeforumAnimArgs():
         "depth_algorithm": {
             "label": "Depth Algorithm",
             "type": "dropdown",
-            "choices": ['Depth-Anything-V2-Small', 'Midas-3-Hybrid', 'Midas+AdaBins (old)', 'Zoe+AdaBins (old)', 'AdaBins', 'Zoe', 'Leres'],
+            "choices": ['Depth-Anything-V2-Small', 'Depth-Anything-V2-Base', 'Depth-Anything-V2-Large'],
             "value": "Depth-Anything-V2-Small",
-            "info": "choose an algorithm/ method for keeping color coherence across the animation"
+            "info": "Depth Anything V2 model size - Small (fastest), Base (balanced), Large (best quality)"
         },
         "midas_weight": {
             "label": "MiDaS/Zoe weight",
