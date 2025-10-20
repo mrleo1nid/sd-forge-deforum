@@ -19,15 +19,11 @@ from ... import img_2_img_tubes
 from ...util import depth_utils, filename_utils, log_utils, utils
 from ...util.call.anim import call_anim_frame_warp
 from ...util.call.gen import call_generate
-from ...util.call.hybrid import (
-    call_get_flow_for_hybrid_motion, call_get_flow_for_hybrid_motion_prev, call_get_matrix_for_hybrid_motion,
-    call_get_matrix_for_hybrid_motion_prev, call_hybrid_composite)
 from ...util.call.images import call_add_noise
 from ...util.call.mask import call_compose_mask_with_check, call_unsharp_mask
 from ...util.call.subtitle import call_write_subtitle_from_to
 from ...util.call.video_and_audio import call_render_preview
 from ....colors import maintain_colors
-from ....hybrid_video import image_transform_ransac, image_transform_optical_flow
 from ....save_images import save_image
 from ....seed import generate_next_seed
 
@@ -72,20 +68,6 @@ class DiffusionFrame:
             previous, self.depth = call_anim_frame_warp(data, self.i, image, None)
             return previous
 
-    def _do_hybrid_compositing_on_cond(self, data: RenderData, image, condition):
-        schedules = self.frame_data.hybrid_comp_schedules
-        if condition:
-            _, composed = call_hybrid_composite(data, self.i, image, schedules)
-            return composed
-        return image
-
-    def do_hybrid_compositing_before_motion(self, data: RenderData, image):
-        condition = data.is_hybrid_composite_before_motion()
-        return self._do_hybrid_compositing_on_cond(data, image, condition)
-
-    def do_normal_hybrid_compositing_after_motion(self, data: RenderData, image):
-        condition = data.is_normal_hybrid_composite()
-        return self._do_hybrid_compositing_on_cond(data, image, condition)
 
     def apply_scaling(self, image):
         return (image * self.frame_data.contrast).round().astype(np.uint8)
@@ -105,12 +87,7 @@ class DiffusionFrame:
         return call_add_noise(data, self, image)
 
     def create_color_match_for_video(self, data: RenderData):
-        if data.args.anim_args.color_coherence == 'Video Input' and data.is_hybrid_available():
-            if self.i % int(data.args.anim_args.color_coherence_video_every_N_frames) == 0:
-                prev_vid_img = Image.open(filename_utils.preview_video_image_path(data, self.i))
-                prev_vid_img = prev_vid_img.resize(data.dimensions(), PIL.Image.Resampling.LANCZOS)
-                data.images.color_match = np.asarray(prev_vid_img)
-                return cv2.cvtColor(data.images.color_match, cv2.COLOR_RGB2BGR)
+        # Hybrid video removed - Video Input color coherence no longer supported
         return None
 
     def _generate_and_update_noise(self, data: RenderData, image, contrasted_noise_tube):
@@ -235,33 +212,6 @@ class DiffusionFrame:
             return cv2.cvtColor(grayscale, cv2.COLOR_GRAY2BGR)
         return image
 
-    @staticmethod
-    def apply_hybrid_motion_ransac_transform(data: RenderData, image, i):
-        """hybrid video motion - warps `images.previous` to match motion, usually to prepare for compositing"""
-        motion = data.args.anim_args.hybrid_motion
-        if motion in ['Affine', 'Perspective']:
-            last_i = i - 1
-            reference_images = data.images
-            matrix = call_get_matrix_for_hybrid_motion_prev(data, last_i, reference_images.previous) \
-                if data.args.anim_args.hybrid_motion_use_prev_img \
-                else call_get_matrix_for_hybrid_motion(data, last_i)
-            return image_transform_ransac(image, matrix, data.args.anim_args.hybrid_motion)
-        return image
-
-    @staticmethod
-    def apply_hybrid_motion_optical_flow(data: RenderData, image, frame):
-        motion = data.args.anim_args.hybrid_motion
-        if motion in ['Optical Flow']:
-            last_i = frame.i - 1
-            reference_images = data.images
-            flow = call_get_flow_for_hybrid_motion_prev(data, last_i, reference_images.previous) \
-                if data.args.anim_args.hybrid_motion_use_prev_img \
-                else call_get_flow_for_hybrid_motion(data, last_i)
-            transformed = image_transform_optical_flow(
-                reference_images.previous, flow, frame.frame_data.flow_factor())
-            data.animation_mode.prev_flow = flow
-            return transformed
-        return image
 
     @staticmethod
     def precalculate_diffusion_frame_count(data: RenderData, keyframe_distribution, start_index, max_frames):
