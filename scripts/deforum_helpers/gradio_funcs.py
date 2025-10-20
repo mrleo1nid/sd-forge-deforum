@@ -50,10 +50,7 @@ def handle_change_functions(l_vars):
     l_vars['animation_mode'].change(fn=disable_pers_flip_accord, inputs=l_vars['animation_mode'], outputs=l_vars['enable_per_f_row'])
     l_vars['animation_mode'].change(fn=disable_pers_flip_accord, inputs=l_vars['animation_mode'], outputs=l_vars['both_anim_mode_motion_params_column'])
     l_vars['aspect_ratio_use_old_formula'].change(fn=hide_if_true, inputs=l_vars['aspect_ratio_use_old_formula'], outputs=l_vars['aspect_ratio_schedule'])
-    l_vars['animation_mode'].change(fn=show_hybrid_html_msg, inputs=l_vars['animation_mode'], outputs=l_vars['hybrid_msg_html'])
-    l_vars['animation_mode'].change(fn=change_hybrid_tab_status, inputs=l_vars['animation_mode'], outputs=l_vars['hybrid_sch_accord'])
-    l_vars['animation_mode'].change(fn=change_hybrid_tab_status, inputs=l_vars['animation_mode'], outputs=l_vars['hybrid_settings_accord'])
-    l_vars['animation_mode'].change(fn=change_hybrid_tab_status, inputs=l_vars['animation_mode'], outputs=l_vars['humans_masking_accord'])
+    # Hybrid video removed - was: 4 animation_mode change handlers for hybrid UI (lines 53-56)
     l_vars['optical_flow_redo_generation'].change(fn=hide_if_none, inputs=l_vars['optical_flow_redo_generation'], outputs=l_vars['redo_flow_factor_schedule_column'])
     l_vars['optical_flow_cadence'].change(fn=hide_if_none, inputs=l_vars['optical_flow_cadence'], outputs=l_vars['cadence_flow_factor_schedule_column'])
     l_vars['seed_behavior'].change(fn=change_seed_iter_visibility, inputs=l_vars['seed_behavior'], outputs=l_vars['seed_iter_N_row'])
@@ -73,23 +70,7 @@ def handle_change_functions(l_vars):
     l_vars['vid_to_upscale_chosen_file'].change(vid_upscale_gradio_update_stats, inputs=[l_vars['vid_to_upscale_chosen_file'], l_vars['ncnn_upscale_factor']],
                                                   outputs=[l_vars['ncnn_upscale_in_vid_fps_ui_window'], l_vars['ncnn_upscale_in_vid_frame_count_window'], l_vars['ncnn_upscale_in_vid_res'],
                                                            l_vars['ncnn_upscale_out_vid_res']])
-    l_vars['hybrid_comp_mask_type'].change(fn=hide_if_none, inputs=l_vars['hybrid_comp_mask_type'], outputs=l_vars['hybrid_comp_mask_row'])
-    hybrid_motion_outputs = [l_vars['hybrid_flow_method'], l_vars['hybrid_flow_factor_schedule'], l_vars['hybrid_flow_consistency'], l_vars['hybrid_consistency_blur'],
-                             l_vars['hybrid_motion_use_prev_img']]
-    for output in hybrid_motion_outputs:
-        l_vars['hybrid_motion'].change(fn=disable_by_non_optical_flow, inputs=l_vars['hybrid_motion'], outputs=output)
-    l_vars['hybrid_flow_consistency'].change(fn=hide_if_false, inputs=l_vars['hybrid_flow_consistency'], outputs=l_vars['hybrid_consistency_blur'])
-    l_vars['hybrid_composite'].change(fn=disable_by_hybrid_composite_dynamic, inputs=[l_vars['hybrid_composite'], l_vars['hybrid_comp_mask_type']], outputs=l_vars['hybrid_comp_mask_row'])
-    hybrid_composite_outputs = [l_vars['humans_masking_accord'], l_vars['hybrid_sch_accord'], l_vars['hybrid_comp_mask_type'], l_vars['hybrid_use_first_frame_as_init_image'],
-                                l_vars['hybrid_use_init_image']]
-    for output in hybrid_composite_outputs:
-        l_vars['hybrid_composite'].change(fn=hide_if_false, inputs=l_vars['hybrid_composite'], outputs=output)
-    hybrid_comp_mask_type_outputs = [l_vars['hybrid_comp_mask_blend_alpha_schedule_row'], l_vars['hybrid_comp_mask_contrast_schedule_row'],
-                                     l_vars['hybrid_comp_mask_auto_contrast_cutoff_high_schedule_row'],
-                                     l_vars['hybrid_comp_mask_auto_contrast_cutoff_low_schedule_row']]
-    for output in hybrid_comp_mask_type_outputs:
-        l_vars['hybrid_comp_mask_type'].change(fn=hide_if_none, inputs=l_vars['hybrid_comp_mask_type'], outputs=output)
-    # End of hybrid related
+    # Hybrid video removed - was: 17 lines of hybrid change handlers (lines 73-89)
     skip_video_creation_outputs = [l_vars['fps_out_format_row'], l_vars['soundtrack_row'], l_vars['store_frames_in_ram'], l_vars['make_gif'], l_vars['r_upscale_row'],
                                    l_vars['delete_imgs'], l_vars['delete_input_frames']]
     for output in skip_video_creation_outputs:
@@ -217,14 +198,6 @@ def hide_if_false(choice):
 def hide_if_true(choice):
     return gr.update(visible=False) if choice else gr.update(visible=True)
 
-def disable_by_hybrid_composite_dynamic(choice, comp_mask_type):
-    if choice in ['Normal', 'Before Motion', 'After Generation']:
-        if comp_mask_type != 'None':
-            return gr.update(visible=True)
-    return gr.update(visible=False)
-
-def disable_by_non_optical_flow(choice):
-    return gr.update(visible=False) if choice != 'Optical Flow' else gr.update(visible=True)
 
 # Upscaling Gradio UI related funcs
 def vid_upscale_gradio_update_stats(vid_path, upscale_factor):
@@ -265,11 +238,6 @@ def change_interp_x_max_limit(engine_name, current_value):
 def hide_interp_stats(choice):
     return gr.update(visible=True) if choice is not None else gr.update(visible=False)
 
-def show_hybrid_html_msg(choice):
-    return gr.update(visible=True) if choice not in ['2D', '3D'] else gr.update(visible=False)
-
-def change_hybrid_tab_status(choice):
-    return gr.update(visible=True) if choice in ['2D', '3D'] else gr.update(visible=False)
 
 def show_leres_html_msg(choice):
     return gr.update(visible=True) if choice.lower() == 'leres' else gr.update(visible=False)
