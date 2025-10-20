@@ -89,9 +89,11 @@ class WanSimpleIntegration:
         model_type = "Unknown"
         model_size = "Unknown"
 
-        # Detect type (prioritize Wan 2.2 models)
-        if 'ti2v' in model_name:
-            model_type = "TI2V"
+        # Detect type (prioritize Wan 2.2 models and FLF2V)
+        if 'flf2v' in model_name:
+            model_type = "FLF2V"  # First-Last-Frame-to-Video (interpolation)
+        elif 'ti2v' in model_name:
+            model_type = "TI2V"  # Text+Image-to-Video (cannot do FLF2V!)
         elif 's2v' in model_name:
             model_type = "S2V"
         elif 'animate' in model_name:
@@ -152,13 +154,21 @@ class WanSimpleIntegration:
     
     
     def get_best_model(self) -> Optional[Dict]:
-        """Get the best available model"""
+        """Get the best available model for T2V/I2V generation (excludes FLF2V models)"""
         if not self.models:
             self.discover_models()
-        
+
         if not self.models:
             return None
-        
+
+        # Filter out FLF2V models - they can ONLY interpolate, NOT generate from text/image
+        usable_models = [m for m in self.models if m['type'] != 'FLF2V']
+
+        if not usable_models:
+            print_wan_warning("Only FLF2V models found - these cannot do T2V/I2V generation!")
+            print_wan_info("FLF2V models are for interpolation only. Please download a T2V/I2V/TI2V model.")
+            return None
+
         # Priority: TI2V > T2V > I2V (Wan 2.2 preferred), 5B > 1.3B > 14B > A14B, FP8 > GGUF > FP16 (VRAM efficient)
         def model_priority(model):
             type_priority = {'TI2V': 0, 'T2V': 1, 'I2V': 2, 'S2V': 3, 'Animate': 4, 'Unknown': 5}
@@ -170,7 +180,7 @@ class WanSimpleIntegration:
                 quant_priority.get(model.get('quantization', 'FP16'), 2)
             )
 
-        best_model = min(self.models, key=model_priority)
+        best_model = min(usable_models, key=model_priority)
         quantization_info = best_model.get('quantization', 'Unknown')
         print(f"🎯 Best model selected: {best_model['name']} ({best_model['type']}, {best_model['size']}, {quantization_info})")
         return best_model

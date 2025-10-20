@@ -211,14 +211,21 @@ def emit_wan_flf2v_tweens(data: RenderData, frame: DiffusionFrame, current_keyfr
         # Auto-discover and load Wan FLF2V model
         models = wan.discover_models()
         flf2v_model = None
+        ti2v_models = []
         for model in models:
             if model['type'] == 'FLF2V':
                 flf2v_model = model
                 break
+            elif model['type'] in ('TI2V', 'T2V', 'I2V'):
+                ti2v_models.append(model['name'])
 
         if not flf2v_model:
             log_utils.error("❌ No Wan FLF2V model found!", log_utils.RED)
-            log_utils.info("   Download with: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/FLF2V", log_utils.YELLOW)
+            if ti2v_models:
+                log_utils.warning(f"   Found T2V/I2V/TI2V models: {', '.join(ti2v_models)}", log_utils.YELLOW)
+                log_utils.warning("   ⚠️  TI2V/T2V/I2V models CANNOT do FLF2V interpolation!", log_utils.YELLOW)
+                log_utils.info("   They will extend the first frame instead of interpolating to the last frame.", log_utils.YELLOW)
+            log_utils.info("   Download FLF2V model: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B", log_utils.YELLOW)
             log_utils.info("   Falling back to traditional depth-based tweens", log_utils.YELLOW)
             # Fallback to traditional tweens
             update_pseudo_cadence(data, len(frame.tweens) - 1)
