@@ -218,8 +218,8 @@ def run_deforum(*args):
                 # Wan Only mode: Pure Wan T2V + FLF2V (no SD model needed)
                 from .rendering.render_wan_only import render_wan_only
                 render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, root)
-            elif anim_args.animation_mode == 'Wan Flux':
-                # Wan Flux mode: Flux generates keyframes + Wan FLF2V for interpolation
+            elif anim_args.animation_mode == 'Flux/Wan':
+                # Flux/Wan mode: Flux generates keyframes + Wan FLF2V for interpolation
                 from .rendering.render_wan_flux import render_wan_flux
                 render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, freeu_args, kohya_hrfix_args, wan_args, root)
             else:

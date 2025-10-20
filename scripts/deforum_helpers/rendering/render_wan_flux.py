@@ -1,5 +1,5 @@
 """
-Wan Flux Mode: Flux Keyframes + Wan FLF2V Interpolation
+Flux/Wan Mode: Flux Keyframes + Wan FLF2V Interpolation
 
 Architecture:
   Phase 1: Generate ALL keyframes with Flux/SD
@@ -29,13 +29,13 @@ from ..video_audio_utilities import ffmpeg_stitch_video
 def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args,
                     freeu_args, kohya_hrfix_args, wan_args, root):
     """
-    Wan Flux rendering mode: Flux for keyframes + Wan for interpolation
+    Flux/Wan rendering mode: Flux for keyframes + Wan for interpolation
 
     1. Generate all keyframes with Flux/SD
     2. Interpolate between keyframes with Wan FLF2V
     3. Stitch final video
     """
-    log_utils.info("🎬 Wan Flux Mode: Flux Keyframes + Wan FLF2V Interpolation", log_utils.BLUE)
+    log_utils.info("🎬 Flux/Wan Mode: Flux Keyframes + Wan FLF2V Interpolation", log_utils.BLUE)
 
     # Create render data
     data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args,
@@ -52,7 +52,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     # Extract only keyframes (frames with is_keyframe=True)
     keyframes = [f for f in all_frames if f.is_keyframe]
 
-    log_utils.info(f"📊 Wan Flux Workflow:", log_utils.BLUE)
+    log_utils.info(f"📊 Flux/Wan Workflow:", log_utils.BLUE)
     log_utils.info(f"   Total frames: {anim_args.max_frames}", log_utils.BLUE)
     log_utils.info(f"   Keyframes to generate: {len(keyframes)}", log_utils.BLUE)
     log_utils.info(f"   FLF2V segments: {len(keyframes) - 1}", log_utils.BLUE)
@@ -120,12 +120,18 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
             
         log_utils.info(f"\n📸 Generating NEW keyframe {idx + 1}/{len(keyframes)} (frame {frame.i})...", log_utils.YELLOW)
 
-        # Set scheduled parameters for this frame (prompt, cfg_scale, distilled_cfg_scale, etc.)
+        # Set scheduled parameters for this frame (prompt, cfg_scale, distilled_cfg_scale, checkpoint, etc.)
         keys = data.animation_keys.deform_keys
         frame_idx = frame.i
         data.args.args.prompt = data.prompt_series[frame_idx]  # Set prompt for current frame
         data.args.args.cfg_scale = keys.cfg_scale_schedule_series[frame_idx]
         data.args.args.distilled_cfg_scale = keys.distilled_cfg_scale_schedule_series[frame_idx]
+
+        # Checkpoint scheduling (disabled for Flux/Wan mode - always use loaded Flux model)
+        if data.args.anim_args.enable_checkpoint_scheduling:
+            data.args.args.checkpoint = keys.checkpoint_schedule_series[frame_idx]
+        else:
+            data.args.args.checkpoint = None
 
         # Generate keyframe image using Flux/SD
         web_ui_utils.update_job(data, frame.i)
@@ -308,7 +314,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         video_args=video_args
     )
 
-    log_utils.info(f"\n🎉 Wan Flux Generation Complete!", log_utils.GREEN)
+    log_utils.info(f"\n🎉 Flux/Wan Generation Complete!", log_utils.GREEN)
     log_utils.info(f"📁 Output: {output_video_path}", log_utils.GREEN)
 
     # Cleanup
