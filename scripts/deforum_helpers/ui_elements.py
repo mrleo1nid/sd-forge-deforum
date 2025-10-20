@@ -2332,6 +2332,7 @@ def get_tab_output(da, dv):
         with gr.Accordion('Video Output Settings', open=True):
             with FormRow() as fps_out_format_row:
                 fps = create_gr_elem(dv.fps)
+                prompt_authored_fps = create_gr_elem(dv.prompt_authored_fps)
             with FormColumn():
                 with FormRow() as soundtrack_row:
                     add_soundtrack = create_gr_elem(dv.add_soundtrack)
