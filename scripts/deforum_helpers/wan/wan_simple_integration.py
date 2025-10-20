@@ -323,6 +323,14 @@ class WanSimpleIntegration:
                 # Initialize flags for memory optimization
                 use_aggressive_offload = False
 
+                # Initialize variables before conditionals (prevents UnboundLocalError for Wan 2.1)
+                has_i2v_pipeline = False
+                WanImageToVideoPipeline = None
+                is_5b_model = False
+                model_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                vae_dtype = model_dtype
+                vae = None
+
                 if is_wan22_diffusers:
                     print("🔄 Loading Wan 2.2 Diffusers pipeline...")
 
@@ -501,12 +509,18 @@ class WanSimpleIntegration:
                 if has_i2v_pipeline and WanImageToVideoPipeline is not None and model_supports_i2v:
                     try:
                         print_wan_info("🔧 Loading WanImageToVideoPipeline for I2V chaining...")
+                        # Build kwargs conditionally - only pass vae if it was loaded
+                        i2v_kwargs = {
+                            'torch_dtype': model_dtype,
+                            'low_cpu_mem_usage': True,
+                            'use_safetensors': True
+                        }
+                        if vae is not None:
+                            i2v_kwargs['vae'] = vae
+
                         i2v_pipeline = WanImageToVideoPipeline.from_pretrained(
                             model_info['path'],
-                            vae=vae,
-                            torch_dtype=model_dtype,
-                            low_cpu_mem_usage=True,
-                            use_safetensors=True
+                            **i2v_kwargs
                         )
                         
                         # Apply same memory optimizations to I2V pipeline
