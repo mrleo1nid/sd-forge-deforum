@@ -327,6 +327,7 @@ class WanSimpleIntegration:
                 has_i2v_pipeline = False
                 WanImageToVideoPipeline = None
                 is_5b_model = False
+                is_flf2v_model = False
                 model_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
                 vae_dtype = model_dtype
                 vae = None
@@ -396,15 +397,37 @@ class WanSimpleIntegration:
                     else:
                         print_wan_success("✅ Loaded Wan 2.2 pipeline")
                 else:
-                    # Fallback to generic DiffusionPipeline
-                    print("🔄 Loading with generic DiffusionPipeline...")
-                    from diffusers import DiffusionPipeline  # type: ignore
+                    # Wan 2.1 models - check if it's FLF2V
+                    is_flf2v_model = 'FLF2V' in model_info['type'] or 'flf2v' in model_info['name'].lower()
 
-                    pipeline = DiffusionPipeline.from_pretrained(
-                        model_info['path'],
-                        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-                        use_safetensors=True
-                    )
+                    if is_flf2v_model:
+                        # FLF2V models MUST use WanImageToVideoPipeline
+                        print("🔄 Loading Wan 2.1 FLF2V model with WanImageToVideoPipeline...")
+
+                        try:
+                            from diffusers import WanImageToVideoPipeline as _WanImageToVideoPipeline  # type: ignore
+                            has_i2v_pipeline = True
+                            WanImageToVideoPipeline = _WanImageToVideoPipeline  # Store class for later checks
+
+                            pipeline = _WanImageToVideoPipeline.from_pretrained(
+                                model_info['path'],
+                                torch_dtype=model_dtype,
+                                low_cpu_mem_usage=True,
+                                use_safetensors=True
+                            )
+                            print_wan_success("✅ Loaded Wan 2.1 FLF2V pipeline (WanImageToVideoPipeline)")
+                        except ImportError:
+                            raise RuntimeError("WanImageToVideoPipeline not available in diffusers. Update diffusers to support FLF2V models.")
+                    else:
+                        # Fallback to generic DiffusionPipeline for other Wan 2.1 models
+                        print("🔄 Loading with generic DiffusionPipeline...")
+                        from diffusers import DiffusionPipeline  # type: ignore
+
+                        pipeline = DiffusionPipeline.from_pretrained(
+                            model_info['path'],
+                            torch_dtype=model_dtype,
+                            use_safetensors=True
+                        )
 
                 # Enable memory optimizations based on model type
                 if torch.cuda.is_available():
@@ -506,7 +529,13 @@ class WanSimpleIntegration:
                         print_wan_info(f"ℹ️ Model type suggests I2V support: {model_info['type']}")
                 
                 i2v_pipeline = None
-                if has_i2v_pipeline and WanImageToVideoPipeline is not None and model_supports_i2v:
+
+                # For FLF2V models, the pipeline itself IS the I2V pipeline
+                if is_flf2v_model and has_i2v_pipeline:
+                    i2v_pipeline = pipeline
+                    print_wan_info("✅ FLF2V model: Using main pipeline as I2V pipeline (same instance)")
+                    model_supports_i2v = True  # FLF2V models support I2V by definition
+                elif has_i2v_pipeline and WanImageToVideoPipeline is not None and model_supports_i2v:
                     try:
                         print_wan_info("🔧 Loading WanImageToVideoPipeline for I2V chaining...")
                         # Build kwargs conditionally - only pass vae if it was loaded
