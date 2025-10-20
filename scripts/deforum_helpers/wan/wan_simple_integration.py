@@ -468,8 +468,44 @@ class WanSimpleIntegration:
 
                         print_wan_success("✅ All VRAM optimizations enabled - should work with <16GB VRAM")
 
+                    elif is_flf2v_model:
+                        # FLF2V 14B models need aggressive VRAM optimizations
+                        print_wan_info("🔧 Enabling aggressive VRAM optimizations for FLF2V 14B model...")
+
+                        # Sequential CPU offload
+                        try:
+                            pipeline.enable_sequential_cpu_offload()
+                            print_wan_success("✅ Sequential CPU offload enabled")
+                        except:
+                            pipeline.enable_model_cpu_offload()
+                            print_wan_success("✅ Model CPU offload enabled (fallback)")
+
+                        # Enable attention slicing
+                        try:
+                            pipeline.enable_attention_slicing(slice_size="auto")
+                            print_wan_success("✅ Attention slicing enabled")
+                        except Exception as e:
+                            print_wan_warning(f"Attention slicing not available: {e}")
+
+                        # Enable VAE tiling for lower VRAM
+                        try:
+                            if hasattr(pipeline, 'enable_vae_tiling'):
+                                pipeline.enable_vae_tiling()
+                                print_wan_success("✅ VAE tiling enabled")
+                        except Exception as e:
+                            print_wan_warning(f"VAE tiling not available: {e}")
+
+                        # Enable VAE slicing
+                        try:
+                            if hasattr(pipeline, 'enable_vae_slicing'):
+                                pipeline.enable_vae_slicing()
+                                print_wan_success("✅ VAE slicing enabled")
+                        except Exception as e:
+                            print_wan_warning(f"VAE slicing not available: {e}")
+
+                        print_wan_success("✅ All VRAM optimizations enabled for FLF2V")
                     else:
-                        # Standard CPU offload for non-FP8 models
+                        # Standard CPU offload for other models
                         print_wan_info("🔧 Enabling model CPU offload to save VRAM...")
                         pipeline.enable_model_cpu_offload()
                         print_wan_success("✅ CPU offload enabled - model will stream to GPU during inference")
