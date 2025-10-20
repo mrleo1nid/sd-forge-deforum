@@ -15,13 +15,8 @@ def generate_and_save_depth_map_if_active(data, opencv_image, i):
         return depth
 
 
-def is_composite_with_depth_mask(anim_args):
-    return anim_args.hybrid_composite != 'None' and anim_args.hybrid_comp_mask_type == 'Depth'
-
-
 def create_depth_model_and_enable_depth_map_saving_if_active(anim_mode, root, anim_args, args):
-    # depth-based hybrid composite mask requires saved depth maps
-    anim_args.save_depth_maps = anim_mode.is_predicting_depths and is_composite_with_depth_mask(anim_args)
+    anim_args.save_depth_maps = anim_mode.is_predicting_depths
     return (DepthModel(root.models_path,
                        memory_utils.select_depth_device(root),
                        root.half_precision,

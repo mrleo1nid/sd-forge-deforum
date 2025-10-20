@@ -66,8 +66,6 @@ def scale():
     return _select('\U0001F4CF')  # 📏
 
 
-def hybrid():
-    return _select('\U0001F3AC')  # 🎬
 
 
 def video_camera():

@@ -471,8 +471,6 @@ def check_render_conditions(data: RenderData):
             log_utils.warn(msg.format(method="optical flow cadence", results=dark_or_dist))
         if data.has_optical_flow_redo():
             log_utils.warn(msg.format(method="optical flow generation", results=dark_or_dist))
-        if data.is_hybrid_available():
-            log_utils.warn(msg.format(method="hybrid video", results="Render process may not run stable."))
 
 
 def update_pseudo_cadence(data: RenderData, value: int):

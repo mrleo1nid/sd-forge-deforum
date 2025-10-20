@@ -2410,7 +2410,7 @@ def create_keyframe_distribution_info_tab():
     create_accordion_md_row("General Recommendations & Warnings", f"""
         - Use with high FPS (e.g., 60) and high cadence (e.g., 15)
         - 'Keyframe_strength' should be lower than 'strength' (ignored when using Parseq)
-        - {emoji_utils.warn} Not recommended with optical flow or hybrid settings
+        - {emoji_utils.warn} Not recommended with optical flow
         - {emoji_utils.warn} Optical flow settings ~may~ will behave unexpectedly.
             - Turn off in tab "Keyframes", sub-tab "Coherence".
         - Prevent issues like dark-outs that add up over frames:

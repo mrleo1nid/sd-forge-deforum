@@ -27,10 +27,6 @@ deprecation_map = {
         ("Match Frame 0 RGB", "RGB", False),
         # ,("removed_value", None, True) # for removed values, if we'll need in the future
     ],
-    "hybrid_composite": [
-        (False, "None", False),
-        (True, "Normal", False),
-    ],
     "optical_flow_redo_generation": [
         (False, "None", False),
         (True, "DIS Fine", False),
