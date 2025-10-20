@@ -33,7 +33,7 @@ def set_arg_lists():
     dr = SimpleNamespace(**RootArgs())  # ROOT args
     dw = SimpleNamespace(**WanArgs())  # Wan args
     dloopArgs = SimpleNamespace(**LoopArgs())  # Guided imgs args
-    return d, da, dp, dv, dr, dfu, dku, dw, dloopArgs
+    return d, da, dp, dv, dr, dw, dloopArgs
 
 def wan_generate_video():
     """
@@ -107,7 +107,7 @@ Error: {str(e)}
         return f"❌ Error: {str(e)}"
 
 def setup_deforum_left_side_ui():
-    d, da, dp, dv, dr, dfu, dku, dw, dloopArgs = set_arg_lists()
+    d, da, dp, dv, dr, dw, dloopArgs = set_arg_lists()
     # set up main info accordion on top of the UI
     with gr.Accordion("Info, Links and Help", open=False, elem_id='main_top_info_accord'):
         gr.HTML(value=get_gradio_html('main'))
