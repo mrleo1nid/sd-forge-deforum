@@ -1480,7 +1480,8 @@ def process_args(args_dict_main, run_id):
     anim_args = SimpleNamespace(**{name: args_dict_main[name] for name in DeforumAnimArgs()})
     video_args = SimpleNamespace(**{name: args_dict_main[name] for name in DeforumOutputArgs()})
     parseq_args = SimpleNamespace(**{name: args_dict_main[name] for name in ParseqArgs()})
-    loop_args = SimpleNamespace(**{name: args_dict_main[name] for name in LoopArgs()})    wan_args = SimpleNamespace(**{name: args_dict_main[name] for name in WanArgs()})
+    loop_args = SimpleNamespace(**{name: args_dict_main[name] for name in LoopArgs()})
+    wan_args = SimpleNamespace(**{name: args_dict_main[name] for name in WanArgs()})
     # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
     # controlnet_args = SimpleNamespace(**{name: args_dict_main[name] for name in controlnet_component_names()})
     controlnet_args = SimpleNamespace()  # Empty namespace for backwards compatibility
