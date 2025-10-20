@@ -108,6 +108,9 @@ class DepthModel:
     def to_image(self, depth: torch.Tensor):
         """Convert depth tensor to PIL Image"""
         depth = depth.cpu().numpy()
+        # Remove extra dimensions (batch, etc.) - squeeze to at most 3D
+        while len(depth.shape) > 3:
+            depth = depth.squeeze(0)
         depth = np.expand_dims(depth, axis=0) if len(depth.shape) == 2 else depth
         self.depth_min, self.depth_max = min(self.depth_min, depth.min()), max(self.depth_max, depth.max())
         denom = max(1e-8, self.depth_max - self.depth_min)
