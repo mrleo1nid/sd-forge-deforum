@@ -186,10 +186,16 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     if not discovered_models:
         raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
 
-    # Use best available FLF2V-capable model
-    flf2v_models = [m for m in discovered_models if m['supports_flf2v']]
+    # Use best available FLF2V model
+    flf2v_models = [m for m in discovered_models if m['type'] == 'FLF2V']
     if not flf2v_models:
-        raise RuntimeError("No FLF2V-capable Wan models found. Please download Wan 2.1+ model.")
+        ti2v_models = [m['name'] for m in discovered_models if m['type'] in ('TI2V', 'T2V', 'I2V')]
+        log_utils.error("❌ No FLF2V model found!", log_utils.RED)
+        if ti2v_models:
+            log_utils.warning(f"   Found T2V/TI2V models: {', '.join(ti2v_models)}", log_utils.YELLOW)
+            log_utils.warning("   ⚠️  TI2V/T2V models CANNOT do FLF2V interpolation!", log_utils.YELLOW)
+        log_utils.info("   Download FLF2V model: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B", log_utils.BLUE)
+        raise RuntimeError("FLF2V model required but not found. TI2V models cannot do FLF2V interpolation.")
 
     model_info = flf2v_models[0]
     log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
