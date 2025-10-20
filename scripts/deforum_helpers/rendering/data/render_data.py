@@ -32,7 +32,8 @@ class RenderInitArgs:
     anim_args: DeforumAnimArgs = None
     video_args: Any = None
     loop_args: LoopArgs = None
-    controlnet_args: Any = None    root: RootArgs = None
+    controlnet_args: Any = None
+    root: RootArgs = None
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)
