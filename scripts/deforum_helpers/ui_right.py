@@ -83,13 +83,6 @@ def on_ui_tabs():
         padding: 0 !important;
         margin: 0 !important;
     }
-
-    /* Golden ratio depth preview scaling */
-    #deforum_depth_gallery {
-        transform: scale(0.618) !important;
-        transform-origin: top left !important;
-        margin-bottom: -20% !important;
-    }
     """
 
     with gr.Blocks(analytics_enabled=False, css=slopcore_css) as deforum_interface:
@@ -132,30 +125,7 @@ def on_ui_tabs():
                         outputs=[i1, close_btn, btn],
                         )
                 id_part = 'deforum'
-                with gr.Row(elem_id=f"{id_part}_generate_box", variant='compact'):
-                    skip = gr.Button('Pause/Resume', elem_id=f"{id_part}_skip", visible=False)
-                    interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", visible=True)
-                    interrupting = gr.Button('Interrupting...', elem_id=f"{id_part}_interrupting", elem_classes="generate-box-interrupting", tooltip="Interrupting generation...")
-                    submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
-                    skip.click(
-                        fn=lambda: state.skip(),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                    interrupt.click(
-                        fn=lambda: state.interrupt(),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                    interrupting.click(
-                        fn=lambda: state.interrupt(),
-                        inputs=[],
-                        outputs=[],
-                    )
-                
                 # Use Deforum-specific output directory
                 deforum_outdir = os.path.join(os.getcwd(), 'outputs', 'deforum')
                 os.makedirs(deforum_outdir, exist_ok=True)
@@ -167,19 +137,48 @@ def on_ui_tabs():
                 html_info= res.html_log
                 deforum_gallery = res.gallery
 
-                # Depth Preview Gallery - shown when save_depth_maps is enabled and animation_mode is 3D
-                # Directly below main preview, no accordion
-                depth_gallery = gr.Gallery(
-                    label="🗺️ Depth Maps",
-                    show_label=True,
-                    elem_id="deforum_depth_gallery",
-                    columns=4,
-                    height="auto",
-                    visible=False,
-                    interactive=False
-                )
+                # Buttons and Depth Preview side by side
+                with gr.Row(elem_id=f"{id_part}_generate_box", variant='compact'):
+                    # Left: Buttons stacked vertically
+                    with gr.Column(scale=1, min_width=200):
+                        skip = gr.Button('Pause/Resume', elem_id=f"{id_part}_skip", visible=False)
+                        interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", visible=True)
+                        interrupting = gr.Button('Interrupting...', elem_id=f"{id_part}_interrupting", elem_classes="generate-box-interrupting", tooltip="Interrupting generation...")
+                        submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
-                components['depth_gallery'] = depth_gallery
+                        skip.click(
+                            fn=lambda: state.skip(),
+                            inputs=[],
+                            outputs=[],
+                        )
+
+                        interrupt.click(
+                            fn=lambda: state.interrupt(),
+                            inputs=[],
+                            outputs=[],
+                        )
+
+                        interrupting.click(
+                            fn=lambda: state.interrupt(),
+                            inputs=[],
+                            outputs=[],
+                        )
+
+                    # Right: Depth preview gallery (compact, beside buttons)
+                    with gr.Column(scale=2):
+                        depth_gallery = gr.Gallery(
+                            label="🗺️ Depth Maps",
+                            show_label=True,
+                            elem_id="deforum_depth_gallery",
+                            columns=3,
+                            rows=1,
+                            height=200,
+                            visible=False,
+                            interactive=False,
+                            object_fit="contain"
+                        )
+
+                        components['depth_gallery'] = depth_gallery
 
                 with gr.Row(variant='compact'):
                     settings_path = gr.Textbox(get_default_settings_path(), elem_id='deforum_settings_path', label="Settings File", info="Settings are automatically loaded on startup. Path can be relative to webui folder OR full/absolute.")
