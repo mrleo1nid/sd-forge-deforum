@@ -18,7 +18,7 @@ import os
 from .args import DeforumOutputArgs, get_component_names, get_settings_component_names
 from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
-from modules.ui_common import open_folder
+from modules.util import open_folder
 from modules.call_queue import wrap_gradio_gpu_call
 from .run_deforum import run_deforum
 from .settings import save_settings, load_all_settings, get_default_settings_path, update_settings_path
