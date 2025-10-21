@@ -236,10 +236,10 @@ def on_ui_tabs():
             outputs=video_settings_component_list,
         )
 
-        # Depth preview visibility toggle based on save_depth_maps and animation_mode
+        # Depth preview visibility toggle based on animation_mode
         def update_depth_preview_visibility(save_depth, anim_mode):
-            # Show depth preview if depth maps are enabled and using 3D mode
-            should_show = save_depth and anim_mode == '3D'
+            # Show depth preview in 3D mode (depth maps are always generated for warping)
+            should_show = anim_mode == '3D'
             return gr.update(visible=should_show)
 
         components['save_depth_maps'].change(
@@ -302,11 +302,10 @@ def on_ui_tabs():
                 settings_component_name_to_obj[key].value = value['value']
 
         # Update depth preview visibility based on loaded settings
-        save_depth = components['save_depth_maps'].value
         anim_mode = components['animation_mode'].value
-        should_show = save_depth and anim_mode == '3D'
+        should_show = anim_mode == '3D'
         depth_gallery.visible = should_show
-        print(f"Depth preview gallery: visible={should_show} (save_depth={save_depth}, anim_mode={anim_mode})")
+        print(f"Depth preview gallery: visible={should_show} (anim_mode={anim_mode})")
 
     # Always load settings on startup - either from persistent settings path (if enabled),
     # from webui root, or from the extension's default settings

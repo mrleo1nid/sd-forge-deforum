@@ -347,12 +347,24 @@ def run_deforum(*args):
         depth_dir = os.path.join(root.output_directory, "depth-maps")
         if os.path.exists(depth_dir):
             from PIL import Image
+            import shutil
             depth_files = sorted([f for f in os.listdir(depth_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
+
+            # Load depth images for preview
             for depth_file in depth_files:
                 try:
                     img = Image.open(os.path.join(depth_dir, depth_file))
                     depth_images.append(img)
                 except Exception as e:
                     print(f"Could not load depth map {depth_file}: {e}")
+
+            # Clean up depth maps if user doesn't want to keep them
+            # (they were saved temporarily for preview purposes)
+            if not anim_args.save_depth_maps:
+                try:
+                    shutil.rmtree(depth_dir)
+                    print(f"Cleaned up temporary depth maps from {depth_dir}")
+                except Exception as e:
+                    print(f"Could not clean up depth maps: {e}")
 
     return processed.images, root.timestring, generation_info_js, processed.info, depth_images

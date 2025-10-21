@@ -5,7 +5,9 @@ from ...depth import DepthModel
 
 
 def generate_and_save_depth_map_if_active(data, opencv_image, i):
-    if data.args.anim_args.save_depth_maps:
+    # Always save depth maps in 3D mode for preview, regardless of save_depth_maps setting
+    # They will be cleaned up later if user doesn't want to keep them
+    if data.depth_model is not None:
         memory_utils.handle_vram_before_depth_map_generation(data)
         depth = data.depth_model.predict(opencv_image, data.args.anim_args.midas_weight,
                                          data.args.root.half_precision)
@@ -20,7 +22,7 @@ def generate_and_save_depth_map_if_active(data, opencv_image, i):
 
 
 def create_depth_model_and_enable_depth_map_saving_if_active(anim_mode, root, anim_args, args):
-    anim_args.save_depth_maps = anim_mode.is_predicting_depths
+    # Don't override user's save_depth_maps setting - we handle saving and cleanup separately
     return (DepthModel(root.models_path,
                        memory_utils.select_depth_device(root),
                        root.half_precision,
