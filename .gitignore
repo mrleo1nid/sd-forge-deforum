@@ -64,3 +64,11 @@ logs/
 
 # Test files
 test_*.py
+
+# Test artifacts
+test-server.log
+.test-server.pid
+.coverage*
+htmlcov/
+.pytest_cache/
+serverlog.txt

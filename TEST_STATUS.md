@@ -47,15 +47,38 @@ From `tests/deforum_postprocess_test.py`:
 - **Solution:** Installed from `requirements-dev.txt`
 - **Status:** ✅ Fixed
 
-## How to Run Tests (When Ready)
+## How to Run Tests
 
-### Option 1: Auto-start Server (Recommended for CI)
+### ⭐ Option 1: Automated Test Runner (Recommended)
+```bash
+cd ~/workspace/stable-diffusion-webui-forge/extensions/sd-forge-deforum
+
+# Run all tests (auto-starts server, runs tests, cleans up)
+./run-tests.sh
+
+# Quick mode (skip slow post-processing tests)
+./run-tests.sh --quick
+
+# Run specific test
+./run-tests.sh tests/deforum_test.py::test_simple_settings
+```
+
+**Features:**
+- ✅ Automatically starts Forge server with `--deforum-api`
+- ✅ Waits for server to be ready (health checks)
+- ✅ Installs test dependencies if missing
+- ✅ Cleans up server on exit (even if tests fail)
+- ✅ Detects if server already running (reuses it)
+- ✅ Colored output for easy reading
+- ✅ Server logs saved to `test-server.log`
+
+### Option 2: Using Pytest's Built-in Server Start
 ```bash
 cd ~/workspace/stable-diffusion-webui-forge
 pytest extensions/sd-forge-deforum/tests/ --start-server
 ```
 
-### Option 2: Manual Server Start (Recommended for Development)
+### Option 3: Manual Server Start
 ```bash
 # Terminal 1: Start server
 cd ~/workspace/stable-diffusion-webui-forge
@@ -64,11 +87,6 @@ python webui.py --deforum-api
 # Terminal 2: Run tests
 cd extensions/sd-forge-deforum
 pytest tests/
-```
-
-### Run Specific Test
-```bash
-pytest tests/deforum_test.py::test_simple_settings -v
 ```
 
 ## Known Issues
