@@ -14,6 +14,7 @@
 
 # Contact the authors: https://deforum.github.io/
 
+import os
 from .args import DeforumOutputArgs, get_component_names, get_settings_component_names
 from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
