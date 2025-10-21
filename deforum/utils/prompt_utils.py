@@ -16,15 +16,18 @@ from typing import Tuple
 
 
 def check_is_number(value: str) -> bool:
-    """Check if string represents a numeric value.
+    """Check if string represents a valid float number.
+
+    Uses regex to properly validate float format.
 
     Args:
         value: String to check
 
     Returns:
-        True if string is a valid number
+        True if string is a valid float number format
     """
-    return value.replace(".", "").replace("-", "").replace("+", "").isdigit()
+    float_pattern = r'^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$'
+    return re.match(float_pattern, value) is not None
 
 
 # ============================================================================

@@ -2,7 +2,7 @@
 
 This module contains all seed-related pure functions extracted from
 scripts/deforum_helpers/seed.py, following functional programming principles
-with no side effects.
+with no side effects (except random.randint for 'random' behavior).
 """
 
 import random
@@ -23,62 +23,64 @@ MAX_SEED = 2**32 - 1
 
 
 def calculate_seed_increment(
-    seed_behavior: SeedBehavior, frame_idx: int, seed_iter_N: int
+    behavior: str, seed_control: int, iter_n: int
 ) -> int:
-    """Calculate seed increment based on behavior and frame index.
+    """Calculate seed increment based on behavior mode.
 
     Args:
-        seed_behavior: Type of seed iteration behavior
-        frame_idx: Current frame index
-        seed_iter_N: Interval for 'iter' behavior
+        behavior: Seed iteration behavior ('iter', 'ladder', 'alternate', 'fixed', 'random')
+        seed_control: Current control state value
+        iter_n: Interval for 'iter' behavior
 
     Returns:
-        Seed increment value (0, 1, or -1)
+        Seed increment value (can be 0, 1, 2, -1, or random for 'random' behavior)
     """
-    if seed_behavior == "iter":
-        return 1 if frame_idx % seed_iter_N == 0 else 0
-    elif seed_behavior == "ladder":
-        return 1
-    elif seed_behavior == "alternate":
-        return 1
-    else:  # "fixed" or "random"
+    if behavior == "iter":
+        return 1 if seed_control % iter_n == 0 else 0
+    elif behavior == "ladder":
+        return 2 if seed_control == 0 else -1
+    elif behavior == "alternate":
+        return 1 if seed_control == 0 else -1
+    elif behavior == "fixed":
         return 0
+    else:  # "random"
+        return random.randint(0, MAX_SEED)
 
 
-def calculate_next_control(control: int, seed_behavior: SeedBehavior) -> int:
-    """Calculate next control value for ladder/alternate behaviors.
+def calculate_next_control(behavior: str, seed_control: int) -> int:
+    """Calculate next control value for stateful seed behaviors.
 
     Args:
-        control: Current control value
-        seed_behavior: Type of seed iteration behavior
+        behavior: Seed iteration behavior
+        seed_control: Current control state value
 
     Returns:
-        Next control value
+        Next control state value
     """
-    if seed_behavior in ("ladder", "alternate"):
-        return -1 if control == 1 else 1
-    return control
+    if behavior in ("ladder", "alternate"):
+        return 1 if seed_control == 0 else 0
+    elif behavior == "iter":
+        return seed_control + 1
+    else:
+        return seed_control
 
 
-def generate_next_seed(
-    seed: int, seed_behavior: SeedBehavior, control: int, seed_increment: int
-) -> int:
-    """Generate next seed value based on behavior.
+def generate_next_seed(seed: int, behavior: str, seed_control: int, iter_n: int) -> tuple[int, int]:
+    """Generate next seed value and control state.
 
     Args:
         seed: Current seed value
-        seed_behavior: Type of seed iteration behavior
-        control: Current control value (for ladder/alternate)
-        seed_increment: Calculated increment value
+        behavior: Seed iteration behavior
+        seed_control: Current control state
+        iter_n: Interval for 'iter' behavior
 
     Returns:
-        Next seed value
+        Tuple of (next_seed, next_control)
     """
-    if seed_behavior == "random":
-        return random.randint(0, MAX_SEED)
-    elif seed_behavior == "ladder":
-        return seed + (seed_increment * control)
-    elif seed_behavior == "alternate":
-        return seed + seed_increment if control == 1 else seed - seed_increment
-    else:  # "iter" or "fixed"
-        return seed + seed_increment
+    if behavior == "random":
+        return random.randint(0, MAX_SEED), seed_control
+
+    increment = calculate_seed_increment(behavior, seed_control, iter_n)
+    next_control = calculate_next_control(behavior, seed_control)
+
+    return seed + increment, next_control

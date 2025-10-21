@@ -61,74 +61,79 @@ class TestGenerateNextSeed:
     """Test complete seed generation logic."""
 
     def test_iter_behavior(self):
-        args = SimpleNamespace(seed_behavior='iter', seed_iter_N=3)
+        behavior = 'iter'
+        iter_n = 3
 
         # First call (control=0, 0 % 3 == 0) -> increment
-        seed, control = generate_next_seed(args, 100, 0)
+        seed, control = generate_next_seed(100, behavior, 0, iter_n)
         assert seed == 101
         assert control == 1
 
         # Second call (control=1, 1 % 3 != 0) -> no increment
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 101
         assert control == 2
 
         # Third call (control=2, 2 % 3 != 0) -> no increment
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 101
         assert control == 3
 
         # Fourth call (control=3, 3 % 3 == 0) -> increment
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 102
         assert control == 4
 
     def test_ladder_behavior(self):
-        args = SimpleNamespace(seed_behavior='ladder', seed_iter_N=1)
+        behavior = 'ladder'
+        iter_n = 1
 
-        seed, control = generate_next_seed(args, 100, 0)
+        seed, control = generate_next_seed(100, behavior, 0, iter_n)
         assert seed == 102  # +2
         assert control == 1
 
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 101  # -1
         assert control == 0
 
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 103  # +2
         assert control == 1
 
     def test_alternate_behavior(self):
-        args = SimpleNamespace(seed_behavior='alternate', seed_iter_N=1)
+        behavior = 'alternate'
+        iter_n = 1
 
-        seed, control = generate_next_seed(args, 100, 0)
+        seed, control = generate_next_seed(100, behavior, 0, iter_n)
         assert seed == 101  # +1
         assert control == 1
 
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 100  # -1
         assert control == 0
 
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 101  # +1
         assert control == 1
 
     def test_fixed_behavior(self):
-        args = SimpleNamespace(seed_behavior='fixed', seed_iter_N=1)
+        behavior = 'fixed'
+        iter_n = 1
 
-        seed, control = generate_next_seed(args, 12345, 0)
+        seed, control = generate_next_seed(12345, behavior, 0, iter_n)
         assert seed == 12345
         assert control == 0
 
-        seed, control = generate_next_seed(args, seed, control)
+        seed, control = generate_next_seed(seed, behavior, control, iter_n)
         assert seed == 12345
         assert control == 0
 
     def test_random_behavior_range(self):
-        args = SimpleNamespace(seed_behavior='random', seed_iter_N=1)
+        behavior = 'random'
+        iter_n = 1
 
         for _ in range(10):
-            seed, control = generate_next_seed(args, 100, 0)
+            seed, control = generate_next_seed(100, behavior, 0, iter_n)
             assert 0 <= seed <= MAX_SEED
             assert control == 0  # Control unchanged for random
 
