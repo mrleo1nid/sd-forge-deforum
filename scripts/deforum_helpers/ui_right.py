@@ -96,10 +96,10 @@ def on_ui_tabs():
         components = {}
         dummy_component = gr.Button(visible=False)
         with gr.Row(elem_id='deforum_progress_row', equal_height=False, variant='compact'):
-            with gr.Column(scale=1, variant='panel'):
+            with gr.Column(scale=1.618, variant='panel'):  # Golden ratio - more space for controls
                 # setting the left side of the ui:
                 components = setup_deforum_left_side_ui()
-            with gr.Column(scale=1, variant='compact'):
+            with gr.Column(scale=1, variant='compact'):  # Right side preview column
                 with gr.Row(variant='compact'):
                     btn = gr.Button("Click here after the generation to show the video")
                     components['btn'] = btn
@@ -168,8 +168,8 @@ def on_ui_tabs():
                 deforum_gallery = res.gallery
 
                 # Depth Preview Gallery - shown when save_depth_maps is enabled and animation_mode is 3D
-                # Start visible=True, will be hidden by update function if conditions not met
-                with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=True, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
+                # Start hidden, update functions will show it when conditions are met
+                with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=False, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
                     gr.Markdown("""
                     **Depth maps will be saved to:** `[output_dir]/depth-maps/`
 
