@@ -26,6 +26,34 @@ from .ui_left import setup_deforum_left_side_ui
 from scripts.deforum_extend_paths import deforum_sys_extend
 import gradio as gr
 
+def get_latest_frames():
+    """Poll for latest frame and depth map during generation"""
+    import glob
+    from pathlib import Path
+
+    deforum_outdir = os.path.join(os.getcwd(), 'outputs', 'deforum')
+
+    # Find most recent directory (Deforum_TIMESTAMP pattern)
+    subdirs = [d for d in glob.glob(os.path.join(deforum_outdir, "Deforum_*")) if os.path.isdir(d)]
+    if not subdirs:
+        return None, None
+
+    latest_dir = max(subdirs, key=os.path.getmtime)
+
+    # Get latest frame (any image file in main directory)
+    frame_pattern = os.path.join(latest_dir, "*.png")
+    frame_files = [f for f in glob.glob(frame_pattern) if not f.endswith('_depth.png')]
+    latest_frame = max(frame_files, key=os.path.getmtime) if frame_files else None
+
+    # Get latest depth map
+    depth_dir = os.path.join(latest_dir, "depth-maps")
+    latest_depth = None
+    if os.path.exists(depth_dir):
+        depth_files = glob.glob(os.path.join(depth_dir, "*_depth.png"))
+        latest_depth = max(depth_files, key=os.path.getmtime) if depth_files else None
+
+    return latest_frame, latest_depth
+
 def on_ui_tabs():
     # extend paths using sys.path.extend so we can access all of our files and folders
     deforum_sys_extend()
@@ -106,7 +134,7 @@ def on_ui_tabs():
     }
 
     /* Ensure depth gallery stays compact */
-    #deforum_depth_gallery {
+    #deforum_depth_preview_image {
         max-height: 200px !important;
     }
     """
@@ -163,6 +191,16 @@ def on_ui_tabs():
                 html_info= res.html_log
                 deforum_gallery = res.gallery
 
+                # Live preview - show latest frame during generation
+                live_preview_image = gr.Image(
+                    label="Latest Frame",
+                    show_label=True,
+                    elem_id="deforum_live_preview",
+                    type="filepath",
+                    interactive=False,
+                    visible=True
+                )
+
                 # Buttons and Depth Preview side by side
                 with gr.Row(elem_id=f"{id_part}_generate_box", variant='compact'):
                     # Left: Buttons stacked vertically
@@ -190,22 +228,19 @@ def on_ui_tabs():
                             outputs=[],
                         )
 
-                    # Right: Depth preview gallery (compact, beside buttons)
+                    # Right: Depth preview (compact, beside buttons)
                     with gr.Column(scale=2):
-                        depth_gallery = gr.Gallery(
-                            label="🗺️ Depth Maps",
+                        depth_preview_image = gr.Image(
+                            label="🗺️ Latest Depth Map",
                             show_label=True,
-                            elem_id="deforum_depth_gallery",
-                            columns=3,
-                            rows=1,
-                            height=200,
-                            visible=False,
+                            elem_id="deforum_depth_preview",
+                            type="filepath",
                             interactive=False,
-                            object_fit="contain",
-                            value=None  # Explicitly set initial value
+                            visible=False,
+                            height=200
                         )
 
-                        components['depth_gallery'] = depth_gallery
+                        components['depth_preview_image'] = depth_preview_image
 
                 with gr.Row(variant='compact'):
                     settings_path = gr.Textbox(get_default_settings_path(), elem_id='deforum_settings_path', label="Settings File", info="Settings are automatically loaded on startup. Path can be relative to webui folder OR full/absolute.", lines=3, max_lines=3)
@@ -224,10 +259,17 @@ def on_ui_tabs():
                          deforum_gallery,
                          components["resume_timestring"],
                          generation_info,
-                         html_info,
-                         depth_gallery
+                         html_info
                     ],
                 )
+
+        # Live preview polling - updates every 500ms during generation
+        live_preview_timer = gr.Timer(value=0.5, active=True)
+        live_preview_timer.tick(
+            fn=get_latest_frames,
+            inputs=[],
+            outputs=[live_preview_image, depth_preview_image]
+        )
         
         settings_component_list = [components[name] for name in get_settings_component_names()]
         video_settings_component_list = [components[name] for name in list(DeforumOutputArgs().keys())]
@@ -271,26 +313,26 @@ def on_ui_tabs():
         components['save_depth_maps'].change(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_gallery]
+            outputs=[depth_preview_image]
         )
 
         components['animation_mode'].change(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_gallery]
+            outputs=[depth_preview_image]
         )
 
         # Also update visibility when settings are loaded
         load_settings_btn.click(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_gallery]
+            outputs=[depth_preview_image]
         )
 
         load_video_settings_btn.click(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_gallery]
+            outputs=[depth_preview_image]
         )
 
     # handle settings loading on UI launch
@@ -330,7 +372,7 @@ def on_ui_tabs():
         # Update depth preview visibility based on loaded settings
         anim_mode = components['animation_mode'].value
         should_show = anim_mode == '3D'
-        depth_gallery.visible = should_show
+        depth_preview_image.visible = should_show
         print(f"Depth preview gallery: visible={should_show} (anim_mode={anim_mode})")
 
     # Always load settings on startup - either from persistent settings path (if enabled),
