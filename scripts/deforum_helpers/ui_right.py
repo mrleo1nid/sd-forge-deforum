@@ -168,23 +168,17 @@ def on_ui_tabs():
                 deforum_gallery = res.gallery
 
                 # Depth Preview Gallery - shown when save_depth_maps is enabled and animation_mode is 3D
-                # Start hidden, update functions will show it when conditions are met
-                with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=False, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
-                    gr.Markdown("""
-                    **Depth maps will be saved to:** `[output_dir]/depth-maps/`
+                # Directly below main preview, no accordion
+                depth_gallery = gr.Gallery(
+                    label="🗺️ Depth Maps",
+                    show_label=True,
+                    elem_id="deforum_depth_gallery",
+                    columns=4,
+                    height="auto",
+                    visible=False,
+                    interactive=False
+                )
 
-                    After generation completes, depth maps can be found in the depth-maps subdirectory.
-                    *Live preview during generation coming soon.*
-                    """)
-                    depth_gallery = gr.Gallery(
-                        label="Depth Maps",
-                        show_label=False,
-                        elem_id="deforum_depth_gallery",
-                        columns=4,
-                        height="auto"
-                    )
-
-                components['depth_preview_accordion'] = depth_preview_accordion
                 components['depth_gallery'] = depth_gallery
 
                 with gr.Row(variant='compact'):
@@ -204,7 +198,8 @@ def on_ui_tabs():
                          deforum_gallery,
                          components["resume_timestring"],
                          generation_info,
-                         html_info                 
+                         html_info,
+                         depth_gallery
                     ],
                 )
         
@@ -245,31 +240,31 @@ def on_ui_tabs():
         def update_depth_preview_visibility(save_depth, anim_mode):
             # Show depth preview if depth maps are enabled and using 3D mode
             should_show = save_depth and anim_mode == '3D'
-            return gr.update(visible=should_show, open=should_show)
+            return gr.update(visible=should_show)
 
         components['save_depth_maps'].change(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_preview_accordion]
+            outputs=[depth_gallery]
         )
 
         components['animation_mode'].change(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_preview_accordion]
+            outputs=[depth_gallery]
         )
 
         # Also update visibility when settings are loaded
         load_settings_btn.click(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_preview_accordion]
+            outputs=[depth_gallery]
         )
 
         load_video_settings_btn.click(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_preview_accordion]
+            outputs=[depth_gallery]
         )
 
     # handle settings loading on UI launch
@@ -310,9 +305,8 @@ def on_ui_tabs():
         save_depth = components['save_depth_maps'].value
         anim_mode = components['animation_mode'].value
         should_show = save_depth and anim_mode == '3D'
-        depth_preview_accordion.visible = should_show
-        depth_preview_accordion.open = should_show
-        print(f"Depth preview accordion: visible={should_show} (save_depth={save_depth}, anim_mode={anim_mode})")
+        depth_gallery.visible = should_show
+        print(f"Depth preview gallery: visible={should_show} (save_depth={save_depth}, anim_mode={anim_mode})")
 
     # Always load settings on startup - either from persistent settings path (if enabled),
     # from webui root, or from the extension's default settings

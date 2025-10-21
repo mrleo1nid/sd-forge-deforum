@@ -170,7 +170,7 @@ def run_deforum(*args):
             traceback.print_exc()
             print("*END OF TRACEBACK*\nUser friendly error message:")
             print(f"Error: {e}. Please, check your prompts with a JSON validator.")
-            return None, None, None, f"Error: '{e}'. Please, check your prompts with a JSON validator. Full error message is in your terminal/ cli."
+            return None, None, None, f"Error: '{e}'. Please, check your prompts with a JSON validator. Full error message is in your terminal/ cli.", []
         if args_loaded_ok is False:
             if times_to_run > 1:
                 print(f"{ORANGE}WARNING:{RESET_COLOR} skipped running from the following setting file, as it contains an invalid JSON: {os.path.basename(args_dict['custom_settings_file'][i].name)}")
@@ -178,7 +178,7 @@ def run_deforum(*args):
             else:
                 JobStatusTracker().fail_job(job_id, error_type="TERMINAL", message="Invalid settings file.")
                 print(f"{RED}ERROR!{RESET_COLOR} Couldn't load data from '{os.path.basename(args_dict['custom_settings_file'][i].name)}'. Make sure it's a valid JSON using a JSON validator")
-                return None, None, None, f"Couldn't load data from '{os.path.basename(args_dict['custom_settings_file'][i].name)}'. Make sure it's a valid JSON using a JSON validator"
+                return None, None, None, f"Couldn't load data from '{os.path.basename(args_dict['custom_settings_file'][i].name)}'. Make sure it's a valid JSON using a JSON validator", []
 
         root.initial_clipskip = shared.opts.data.get("CLIP_stop_at_last_layers", 1)
         root.initial_img2img_fix_steps = shared.opts.data.get("img2img_fix_steps", False)
@@ -231,7 +231,7 @@ def run_deforum(*args):
             print("*END OF TRACEBACK*\n")
             print("User friendly error message:")
             print(f"Error: {e}. Please, check your schedules/ init values.")
-            return None, None, None, f"Error: '{e}'. Before reporting, please check your schedules/ init values. Full error message is in your terminal/ cli."
+            return None, None, None, f"Error: '{e}'. Before reporting, please check your schedules/ init values. Full error message is in your terminal/ cli.", []
         finally:
             shared.total_tqdm = tqdm_backup
             # reset shared.opts.data vals to what they were before we started the animation. Else they will stick to the last value - it actually updates webui settings (config.json)
@@ -341,4 +341,18 @@ def run_deforum(*args):
         if (not shared.state.interrupted):
             JobStatusTracker().complete_job(root.job_id)
 
-    return processed.images, root.timestring, generation_info_js, processed.info
+    # Collect depth map images for depth gallery if they were generated
+    depth_images = []
+    if hasattr(root, 'output_directory'):
+        depth_dir = os.path.join(root.output_directory, "depth-maps")
+        if os.path.exists(depth_dir):
+            from PIL import Image
+            depth_files = sorted([f for f in os.listdir(depth_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
+            for depth_file in depth_files:
+                try:
+                    img = Image.open(os.path.join(depth_dir, depth_file))
+                    depth_images.append(img)
+                except Exception as e:
+                    print(f"Could not load depth map {depth_file}: {e}")
+
+    return processed.images, root.timestring, generation_info_js, processed.info, depth_images

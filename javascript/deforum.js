@@ -34,8 +34,6 @@ function submit_deforum(){
 
 // UI Customization: Apply slopcore gradient and hide unwanted buttons
 function applyDeforumUICustomization() {
-    console.log('🎨 Applying Deforum UI customization...');
-
     // Apply slopcore gradient to Generate button
     const generateSelectors = [
         '#deforum_generate',
@@ -48,7 +46,6 @@ function applyDeforumUICustomization() {
     for (const selector of generateSelectors) {
         generateBtn = gradioApp().querySelector(selector);
         if (generateBtn) {
-            console.log('✓ Found Generate button with selector:', selector);
             generateBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             generateBtn.style.border = 'none';
             generateBtn.style.color = 'white';
@@ -60,20 +57,14 @@ function applyDeforumUICustomization() {
         }
     }
 
-    if (!generateBtn) {
-        console.log('❌ Generate button not found yet');
-    }
-
     // Hide unwanted buttons in results area, keep only folder button
     const resultsDiv = gradioApp().querySelector('#deforum_results');
     if (resultsDiv) {
         const allButtons = resultsDiv.querySelectorAll('button');
-        console.log(`Found ${allButtons.length} buttons in #deforum_results`);
 
-        allButtons.forEach((btn, idx) => {
-            const btnId = btn.id || 'no-id';
+        allButtons.forEach((btn) => {
+            const btnId = btn.id || '';
             const btnText = (btn.textContent || '').trim();
-            console.log(`  Button ${idx}: id="${btnId}", text="${btnText}"`);
 
             // Keep only the folder button
             if (!btnId.includes('open_folder') && !btnText.includes('📁')) {
@@ -84,18 +75,13 @@ function applyDeforumUICustomization() {
                 btn.style.height = '0';
                 btn.style.padding = '0';
                 btn.style.margin = '0';
-                console.log(`  ✓ Hidden button: ${btnId}`);
             }
         });
-    } else {
-        console.log('❌ #deforum_results not found yet');
     }
 }
 
 // Apply UI customization on load and when DOM updates
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎨 Deforum UI customization script loaded');
-
     // Initial application
     setTimeout(applyDeforumUICustomization, 500);
     setTimeout(applyDeforumUICustomization, 1500);
@@ -107,5 +93,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     observer.observe(gradioApp(), { childList: true, subtree: true });
-    console.log('👀 MutationObserver started for Deforum UI customization');
 });
