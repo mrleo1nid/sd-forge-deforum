@@ -2083,43 +2083,43 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
     
     # Button handlers for flash attention
     def check_flash_attention_status():
-    """Check flash attention availability and return status"""
-    try:
-        from .wan.wan_flash_attention_patch import get_flash_attention_status_html
-        return get_flash_attention_status_html()
-    except Exception as e:
-        return f"❌ <span style='color: #f44336;'>Error checking status: {e}</span>"
-    
+        """Check flash attention availability and return status"""
+        try:
+            from .wan.wan_flash_attention_patch import get_flash_attention_status_html
+            return get_flash_attention_status_html()
+        except Exception as e:
+            return f"❌ <span style='color: #f44336;'>Error checking status: {e}</span>"
+
     def update_flash_attention_mode(mode):
-    """Update flash attention mode and return updated status"""
-    try:
-        from .wan.wan_flash_attention_patch import update_patched_flash_attention_mode, get_flash_attention_status_html
-        update_patched_flash_attention_mode(mode)
-        status = get_flash_attention_status_html()
-        return f"{status} - Mode: {mode}"
-    except Exception as e:
-        return f"❌ <span style='color: #f44336;'>Error updating mode: {e}</span>"
+        """Update flash attention mode and return updated status"""
+        try:
+            from .wan.wan_flash_attention_patch import update_patched_flash_attention_mode, get_flash_attention_status_html
+            update_patched_flash_attention_mode(mode)
+            status = get_flash_attention_status_html()
+            return f"{status} - Mode: {mode}"
+        except Exception as e:
+            return f"❌ <span style='color: #f44336;'>Error updating mode: {e}</span>"
     
     # Connect button click to status check
     check_flash_attention_btn.click(
-    fn=check_flash_attention_status,
-    inputs=[],
-    outputs=[wan_flash_attention_status]
+        fn=check_flash_attention_status,
+        inputs=[],
+        outputs=[wan_flash_attention_status]
     )
-    
+
     # Connect mode change to status update
     wan_flash_attention_mode.change(
-    fn=update_flash_attention_mode,
-    inputs=[wan_flash_attention_mode],
-    outputs=[wan_flash_attention_status]
+        fn=update_flash_attention_mode,
+        inputs=[wan_flash_attention_mode],
+        outputs=[wan_flash_attention_status]
     )
-    
+
     # Initialize status on load
     try:
-    from .wan.wan_flash_attention_patch import get_flash_attention_status_html
-    wan_flash_attention_status.value = get_flash_attention_status_html()
+        from .wan.wan_flash_attention_patch import get_flash_attention_status_html
+        wan_flash_attention_status.value = get_flash_attention_status_html()
     except Exception:
-    wan_flash_attention_status.value = "⚠️ <span style='color: #FF9800;'>Status check unavailable</span>"
+        wan_flash_attention_status.value = "⚠️ <span style='color: #FF9800;'>Status check unavailable</span>"
     
     # Get all component names for the handlers
     from .args import get_component_names
