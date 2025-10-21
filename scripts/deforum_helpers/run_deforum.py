@@ -120,11 +120,11 @@ def run_deforum(*args):
     print(f"🔍 DEBUG: Final animation_mode after resume check: '{animation_mode}'")
     print(f"🔍 DEBUG: args_dict['animation_mode']: '{args_dict.get('animation_mode')}'")
     
-    # Check if this is Wan Only mode - no SD model needed
-    is_wan_only_mode = (animation_mode == 'Wan Only')
+    # Check if this is Flux/Wan mode - no SD model needed
+    is_flux_wan_mode = (animation_mode == 'Flux/Wan')
 
-    if is_wan_only_mode:
-        print("🎬 Wan Only mode detected - will use Wan T2V for keyframes + Wan FLF2V for interpolation")
+    if is_flux_wan_mode:
+        print("🎬 Flux/Wan mode detected - will use Flux for keyframes + Wan FLF2V for interpolation")
     elif isinstance(shared.sd_model, FakeInitialModel):
         print("Loading Models...")
         forge_model_reload()
@@ -214,10 +214,6 @@ def run_deforum(*args):
                 render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)#TODO: prettify code
             elif anim_args.animation_mode == 'Interpolation':
                 render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
-            elif anim_args.animation_mode == 'Wan Only':
-                # Wan Only mode: Pure Wan T2V + FLF2V (no SD model needed)
-                from .rendering.render_wan_only import render_wan_only
-                render_wan_only(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root)
             elif anim_args.animation_mode == 'Flux/Wan':
                 # Flux/Wan mode: Flux generates keyframes + Wan FLF2V for interpolation
                 from .rendering.render_wan_flux import render_wan_flux
@@ -253,7 +249,7 @@ def run_deforum(*args):
 
         # Decide whether we need to try and frame interpolate later
         # Note: Wan modes don't support frame interpolation or upscaling (they use simple filename format)
-        is_wan_mode = anim_args.animation_mode in ['Wan Only', 'Flux/Wan']
+        is_wan_mode = anim_args.animation_mode == 'Flux/Wan'
         need_to_frame_interpolate = False
         if video_args.frame_interpolation_engine != "None" and not video_args.skip_video_creation and not video_args.store_frames_in_ram and not is_wan_mode:
             need_to_frame_interpolate = True
