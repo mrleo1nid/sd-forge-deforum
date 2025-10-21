@@ -1,36 +1,37 @@
-# Copyright (C) 2023 Deforum LLC
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, version 3 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-# Contact the authors: https://deforum.github.io/
-
 import cv2
-import pkg_resources
+import numpy as np
 from skimage.exposure import match_histograms
+from typing import Literal
 
-def maintain_colors(prev_img, color_match_sample, mode):
-    
-    match_histograms_kwargs = {'channel_axis': -1}
-    
+# ============================================================================
+# PURE FUNCTIONS
+# ============================================================================
+
+ColorMode = Literal['RGB', 'HSV', 'LAB']
+
+def match_in_rgb(img: np.ndarray, reference: np.ndarray) -> np.ndarray:
+    """Match histogram in RGB color space."""
+    return match_histograms(img, reference, channel_axis=-1)
+
+def match_in_hsv(img: np.ndarray, reference: np.ndarray) -> np.ndarray:
+    """Match histogram in HSV color space."""
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    ref_hsv = cv2.cvtColor(reference, cv2.COLOR_RGB2HSV)
+    matched_hsv = match_histograms(img_hsv, ref_hsv, channel_axis=-1)
+    return cv2.cvtColor(matched_hsv, cv2.COLOR_HSV2RGB)
+
+def match_in_lab(img: np.ndarray, reference: np.ndarray) -> np.ndarray:
+    """Match histogram in LAB color space."""
+    img_lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+    ref_lab = cv2.cvtColor(reference, cv2.COLOR_RGB2LAB)
+    matched_lab = match_histograms(img_lab, ref_lab, channel_axis=-1)
+    return cv2.cvtColor(matched_lab, cv2.COLOR_LAB2RGB)
+
+def maintain_colors(prev_img: np.ndarray, color_match_sample: np.ndarray, mode: ColorMode) -> np.ndarray:
+    """Match color histogram between images using specified color space."""
     if mode == 'RGB':
-        return match_histograms(prev_img, color_match_sample, **match_histograms_kwargs)
+        return match_in_rgb(prev_img, color_match_sample)
     elif mode == 'HSV':
-        prev_img_hsv = cv2.cvtColor(prev_img, cv2.COLOR_RGB2HSV)
-        color_match_hsv = cv2.cvtColor(color_match_sample, cv2.COLOR_RGB2HSV)
-        matched_hsv = match_histograms(prev_img_hsv, color_match_hsv, **match_histograms_kwargs)
-        return cv2.cvtColor(matched_hsv, cv2.COLOR_HSV2RGB)
-    else: # LAB
-        prev_img_lab = cv2.cvtColor(prev_img, cv2.COLOR_RGB2LAB)
-        color_match_lab = cv2.cvtColor(color_match_sample, cv2.COLOR_RGB2LAB)
-        matched_lab = match_histograms(prev_img_lab, color_match_lab, **match_histograms_kwargs)
-        return cv2.cvtColor(matched_lab, cv2.COLOR_LAB2RGB)
+        return match_in_hsv(prev_img, color_match_sample)
+    else:  # LAB
+        return match_in_lab(prev_img, color_match_sample)
