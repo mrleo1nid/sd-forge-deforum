@@ -4,6 +4,86 @@
 
 These rules MUST be followed during all refactoring work. They prioritize functional programming patterns, code quality, and testability.
 
+## Architecture and Package Structure
+
+### Directory Structure
+
+Following WebUI extension conventions and modern Python packaging standards:
+
+```
+extensions/sd-forge-deforum/
+├── deforum/                    # NEW: Clean library package (modern Python standard)
+│   ├── __init__.py
+│   ├── utils/                  # Pure utility functions (PHASE 2: IN PROGRESS)
+│   │   ├── __init__.py
+│   │   ├── seed_utils.py       # Seed generation logic
+│   │   ├── image_utils.py      # Image processing (sharpening, color matching)
+│   │   ├── noise_utils.py      # Perlin noise generation
+│   │   ├── prompt_utils.py     # Prompt parsing and interpolation
+│   │   └── transform_utils.py  # 3D transformations and matrix operations
+│   ├── core/                   # Core business logic (FUTURE)
+│   └── rendering/              # Rendering pipeline (FUTURE)
+├── scripts/
+│   ├── deforum.py              # Main WebUI script (keep as-is)
+│   ├── deforum_api.py          # REST API endpoints (keep)
+│   ├── deforum_api_models.py   # API data models (keep)
+│   └── deforum_helpers/        # LEGACY: Gradually migrate from here
+│       ├── prompt.py           # ✅ Refactored (Phase 1 complete)
+│       ├── animation.py        # ✅ Refactored (Phase 1 complete)
+│       ├── seed.py             # ✅ Refactored (Phase 1 complete)
+│       ├── colors.py           # ✅ Refactored (Phase 1 complete)
+│       ├── image_sharpening.py # ✅ Refactored (Phase 1 complete)
+│       ├── noise.py            # ✅ Refactored (Phase 1 complete)
+│       └── ...                 # Other files to be refactored
+├── tests/
+│   ├── unit/                   # Unit tests for pure functions
+│   │   ├── test_seed.py        # ✅ 13 tests, 63% coverage
+│   │   ├── test_image_sharpening.py  # ✅ 14 tests, 100% coverage
+│   │   ├── test_colors.py      # ✅ 11 tests, 100% coverage
+│   │   ├── test_noise.py       # ✅ 23 tests, 71% coverage
+│   │   ├── test_prompt.py      # ✅ 43 tests, 74% coverage
+│   │   ├── test_animation.py   # ✅ 29 tests, 41% coverage
+│   │   └── ...
+│   └── integration/            # Integration tests (future)
+├── preload.py                  # Early initialization
+├── requirements.txt            # Python dependencies
+├── REFACTORING_RULES.md        # This file
+└── README.md
+```
+
+### Design Rationale
+
+**Why `deforum/` at extension root?**
+1. **WebUI Convention**: Scripts in `scripts/` are discovered by WebUI
+2. **Modern Python Standard**: `src/` layout or package-at-root per Python Packaging Guide
+3. **Forge Pattern**: Matches ControlNet's `lib_controlnet/` pattern
+4. **Clean Separation**: Distinguishes new clean code from legacy `scripts/deforum_helpers/`
+
+**Migration Strategy (Gradual)**
+- **Phase 1** ✅ COMPLETE: Extract pure functions in-place from legacy files
+- **Phase 2** 🔄 IN PROGRESS: Move pure functions to `deforum/utils/`
+- **Phase 3**: Migrate core logic to `deforum/core/`
+- **Phase 4**: Migrate rendering to `deforum/rendering/`
+- **Phase 5**: Remove `scripts/deforum_helpers/` entirely
+
+### Package Organization
+
+**`deforum/utils/`** - Pure utility functions
+- **Criteria**: Side-effect free, mathematical/algorithmic, testable
+- **Examples**: Seed generation, matrix operations, prompt parsing
+
+**`deforum/core/`** (Future) - Core business logic
+- **Criteria**: Frame processing, keyframe distribution, depth estimation
+- **Examples**: `frame_processor.py`, `keyframe_engine.py`
+
+**`deforum/rendering/`** (Future) - Rendering pipeline
+- **Criteria**: Video generation, diffusion integration, output handling
+- **Examples**: `render_loop.py`, `video_encoder.py`
+
+**`scripts/deforum_helpers/`** (Legacy) - To be migrated
+- Keep minimal: WebUI integration, backward compatibility shims
+- Delete files as they're fully migrated to `deforum/`
+
 ## Functional Programming Principles (Python-Adapted)
 
 ### 1. Prefer Expressions Over Statements
@@ -51,7 +131,7 @@ def create_modified_data(data: dict) -> dict:
 ### 3. Static Context for Pure Functions
 - Group related pure functions in utility modules
 - Use module-level functions, not classes, for stateless utilities
-- Organize: `scripts/deforum_helpers/utils/math_utils.py`, `scripts/deforum_helpers/utils/frame_utils.py`
+- Organize in: `deforum/utils/` package (e.g., `deforum/utils/seed_utils.py`, `deforum/utils/transform_utils.py`)
 
 ### 4. Avoid Void Functions
 - Functions should return values
@@ -274,16 +354,16 @@ def create_animation(
 
 ```bash
 # Format code
-black scripts/deforum_helpers/ tests/ --line-length 100
+black deforum/ scripts/deforum_helpers/ tests/ --line-length 100
 
 # Check formatting (don't modify)
-black scripts/deforum_helpers/ tests/ --line-length 100 --check
+black deforum/ scripts/deforum_helpers/ tests/ --line-length 100 --check
 
 # Lint code
-flake8 scripts/deforum_helpers/ tests/ --max-line-length 100
+flake8 deforum/ scripts/deforum_helpers/ tests/ --max-line-length 100
 
 # Type checking
-mypy scripts/deforum_helpers/ --strict
+mypy deforum/ scripts/deforum_helpers/ --strict
 ```
 
 **Configuration (`pyproject.toml`):**
