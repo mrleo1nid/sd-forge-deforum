@@ -30,7 +30,7 @@ def on_ui_tabs():
     # extend paths using sys.path.extend so we can access all of our files and folders
     deforum_sys_extend()
     # set text above generate button
-    style = '"text-align:center;font-weight:bold;margin-bottom:0em"'
+    style = '"text-align:center;font-weight:bold;margin-bottom:0em;line-height:1.6"'
     extension_url = "https://github.com/Tok/sd-forge-deforum"
     link = f"<a href='{extension_url}' target='_blank'>Zirteqs Fluxabled Fork</a>"
     extension_name = f"{link} of the Deforum Extension for WebUI Forge"

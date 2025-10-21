@@ -339,12 +339,19 @@ def run_deforum(*args):
 
     # Collect depth map images for depth gallery if they were generated
     depth_images = []
+    print(f"\n🔍 DEBUG: Checking for depth maps...")
+    print(f"   hasattr(root, 'output_directory'): {hasattr(root, 'output_directory')}")
+
     if hasattr(root, 'output_directory'):
         depth_dir = os.path.join(root.output_directory, "depth-maps")
+        print(f"   depth_dir: {depth_dir}")
+        print(f"   depth_dir exists: {os.path.exists(depth_dir)}")
+
         if os.path.exists(depth_dir):
             from PIL import Image
             import shutil
             depth_files = sorted([f for f in os.listdir(depth_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
+            print(f"   Found {len(depth_files)} depth files")
 
             # Load depth images for preview (as file paths, not PIL Images)
             # Gradio Gallery works better with file paths
@@ -352,14 +359,19 @@ def run_deforum(*args):
                 depth_path = os.path.join(depth_dir, depth_file)
                 if os.path.exists(depth_path):
                     depth_images.append(depth_path)
+                    print(f"   ✓ Added: {depth_path}")
 
-            print(f"📊 Loaded {len(depth_images)} depth maps for preview")
+            print(f"\n📊 Loaded {len(depth_images)} depth maps for preview")
+            if len(depth_images) > 0:
+                print(f"   First depth map: {depth_images[0]}")
 
             # Clean up depth maps if user doesn't want to keep them
             # (they were saved temporarily for preview purposes)
             # Note: We don't delete them immediately because Gradio needs to read them
             # They will be cleaned up on next generation or manually
             if not anim_args.save_depth_maps:
-                print(f"Note: Depth maps will remain in {depth_dir} for preview. Delete manually if needed.")
+                print(f"   Note: Depth maps will remain in {depth_dir} for preview. Delete manually if needed.")
+
+    print(f"   Returning {len(depth_images)} depth images to UI")
 
     return processed.images, root.timestring, generation_info_js, processed.info, depth_images
