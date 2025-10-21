@@ -41,7 +41,9 @@ def on_ui_tabs():
 
     # Slopcore gradient aesthetic for Generate button
     slopcore_css = """
-    #deforum_generate {
+    /* Slopcore gradient for Generate button */
+    button#deforum_generate,
+    #deforum_generate button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         border: none !important;
         color: white !important;
@@ -50,15 +52,26 @@ def on_ui_tabs():
         box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3) !important;
         transition: all 0.3s ease !important;
     }
-    #deforum_generate:hover {
+    button#deforum_generate:hover,
+    #deforum_generate button:hover {
         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
         box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4) !important;
         transform: translateY(-1px) !important;
     }
-    #deforum_generate:active {
+    button#deforum_generate:active,
+    #deforum_generate button:active {
         transform: translateY(0px) !important;
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
     }
+
+    /* Hide unwanted buttons - keep only folder button */
+    #save_zip_deforum,
+    #deforum_send_to_img2img,
+    #deforum_send_to_inpaint,
+    #deforum_send_to_extras {
+        display: none !important;
+    }
+
     /* Golden ratio depth preview scaling */
     #deforum_depth_gallery {
         transform: scale(0.618) !important;
@@ -144,7 +157,12 @@ def on_ui_tabs():
 
                 # Depth Preview Gallery - shown when save_depth_maps is enabled
                 with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=False, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
-                    gr.Markdown("Preview of generated depth maps (updated during rendering)")
+                    gr.Markdown("""
+                    **Depth maps will be saved to:** `[output_dir]/depth-maps/`
+
+                    After generation completes, depth maps can be found in the depth-maps subdirectory.
+                    *Live preview during generation coming soon.*
+                    """)
                     depth_gallery = gr.Gallery(
                         label="Depth Maps",
                         show_label=False,
@@ -214,7 +232,7 @@ def on_ui_tabs():
         def update_depth_preview_visibility(save_depth, anim_mode):
             # Show depth preview if depth maps are enabled and using 3D mode
             should_show = save_depth and anim_mode == '3D'
-            return gr.update(visible=should_show)
+            return gr.update(visible=should_show, open=should_show)
 
         components['save_depth_maps'].change(
             fn=update_depth_preview_visibility,
@@ -223,6 +241,19 @@ def on_ui_tabs():
         )
 
         components['animation_mode'].change(
+            fn=update_depth_preview_visibility,
+            inputs=[components['save_depth_maps'], components['animation_mode']],
+            outputs=[depth_preview_accordion]
+        )
+
+        # Also update visibility when settings are loaded
+        load_settings_btn.click(
+            fn=update_depth_preview_visibility,
+            inputs=[components['save_depth_maps'], components['animation_mode']],
+            outputs=[depth_preview_accordion]
+        )
+
+        load_video_settings_btn.click(
             fn=update_depth_preview_visibility,
             inputs=[components['save_depth_maps'], components['animation_mode']],
             outputs=[depth_preview_accordion]
