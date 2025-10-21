@@ -15,6 +15,18 @@
 
 # Contact the authors: https://deforum.github.io/
 
+import sys
+import os
+
+# Add scripts path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts', 'deforum_helpers'))
+
+try:
+    from startup_banner import print_startup_banner
+    print_startup_banner()
+except Exception as e:
+    print(f"[Deforum] Warning: Could not print startup banner: {e}")
+
 def preload(parser):
     parser.add_argument(
         "--deforum-api",
