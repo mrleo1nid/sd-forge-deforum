@@ -26,13 +26,6 @@ def init_deforum():
     # use sys.path.extend to make sure all of our files are available for importation
     deforum_sys_extend()
 
-    # Print startup banner
-    try:
-        from deforum_helpers.startup_banner import print_startup_banner
-        print_startup_banner()
-    except Exception as e:
-        print(f"[Deforum] Note: Could not print startup banner: {e}")
-
     # Apply compatibility patches for diffusers git main + Forge
     try:
         from deforum_helpers.diffusers_compat_patch import apply_all_patches
