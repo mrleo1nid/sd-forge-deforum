@@ -71,7 +71,8 @@ def handle_change_functions(l_vars):
                                                   outputs=[l_vars['ncnn_upscale_in_vid_fps_ui_window'], l_vars['ncnn_upscale_in_vid_frame_count_window'], l_vars['ncnn_upscale_in_vid_res'],
                                                            l_vars['ncnn_upscale_out_vid_res']])
     # Hybrid video removed - was: 17 lines of hybrid change handlers (lines 73-89)
-    skip_video_creation_outputs = [l_vars['fps_out_format_row'], l_vars['soundtrack_row'], l_vars['store_frames_in_ram'], l_vars['make_gif'], l_vars['r_upscale_row'],
+    # fps_out_format_row and soundtrack_row removed - FPS and soundtrack now in top-level/Prompts tab
+    skip_video_creation_outputs = [l_vars['store_frames_in_ram'], l_vars['make_gif'], l_vars['r_upscale_row'],
                                    l_vars['delete_imgs'], l_vars['delete_input_frames']]
     for output in skip_video_creation_outputs:
         l_vars['skip_video_creation'].change(fn=change_visibility_from_skip_video, inputs=l_vars['skip_video_creation'], outputs=output)
