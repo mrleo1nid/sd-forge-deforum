@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Camera Shakify integration** for realistic camera shake effects from Blender data
 - **QwenPromptExpander** for AI-powered prompt enhancement and movement analysis
 
-The extension operates as a Forge extension that hooks into WebUI's script system to provide animation capabilities across 6 modes: 2D, 3D, Video Input, Interpolation, Wan Only, and Wan Flux.
+The extension operates as a Forge extension that hooks into WebUI's script system to provide animation capabilities across 3 modes: 3D (default), Flux/Wan, and Interpolation.
 
 ## Running the Extension
 
@@ -84,9 +84,8 @@ pip install -r requirements.txt
    - Routes to appropriate rendering pipeline based on animation mode
 
 5. **Rendering Pipelines**
-   - **Standard modes (2D/3D/Video/Interpolation):** `scripts/deforum_helpers/rendering/experimental_core.py:22` - `render_animation()`
-   - **Wan Only mode:** `scripts/deforum_helpers/rendering/render_wan_only.py` - `render_wan_only()` - Pure Wan T2V + FLF2V batch processing
-   - **Wan Flux mode:** `scripts/deforum_helpers/rendering/render_wan_flux.py` - `render_wan_flux()` - Flux keyframes + Wan FLF2V interpolation
+   - **Standard mode (3D/Interpolation):** `scripts/deforum_helpers/rendering/experimental_core.py:22` - `render_animation()`
+   - **Flux/Wan mode:** `scripts/deforum_helpers/rendering/render_wan_flux.py` - `render_wan_flux()` - Flux keyframes + Wan FLF2V interpolation
 
 ### Core Systems
 
@@ -103,10 +102,11 @@ pip install -r requirements.txt
 - Central render loop that:
   1. Creates `RenderData` object (central state container)
   2. Generates subtitle .srt file asynchronously
-  3. Iterates through frames calling `generate_inner()`
+  3. Iterates through frames calling `process_frame()`
   4. Applies transformations (2D/3D movement, depth warping)
-  5. Handles hybrid video, masks, and noise schedules
+  5. Handles masks, noise schedules, and color coherence
   6. Stitches final video with ffmpeg
+- **Note:** Legacy/stable core has been removed - experimental core is now the only render pipeline
 
 **3. Wan Video Pipeline** (`scripts/deforum_helpers/wan/`, `scripts/deforum_helpers/rendering/`)
 - **wan_simple_integration.py** - Wan FLF2V wrapper and utilities
@@ -114,12 +114,7 @@ pip install -r requirements.txt
   - Handles T2V (text-to-video), I2V (image-to-video), and FLF2V (first-last-frame-to-video)
   - Calculates frame counts as 4n+1 per Wan requirements
   - Integrates Deforum prompt scheduling, FPS, seed, and strength
-- **render_wan_only.py** - Wan Only mode batch pipeline
-  - Phase 1: Generate ALL keyframes with Wan T2V
-  - Phase 2: Interpolate ALL tweens with Wan FLF2V
-  - Phase 3: Stitch final video
-  - Resume capability - can restart from Phase 2
-- **render_wan_flux.py** - Wan Flux mode hybrid pipeline
+- **render_wan_flux.py** - Flux/Wan mode hybrid pipeline
   - Phase 1: Generate keyframes with Flux
   - Phase 2: Interpolate tweens with Wan FLF2V
   - Phase 3: Stitch final video
@@ -138,7 +133,7 @@ pip install -r requirements.txt
   - Progress tracking
 
 **5. Depth Estimation** (`scripts/deforum_helpers/depth*.py`)
-- Multiple backends: MiDaS, Depth-Anything V2, AdaBins, LeReS, ZoeDepth
+- Uses Depth-Anything V2 for depth estimation (legacy depth models removed: MiDaS, AdaBins, LeReS, ZoeDepth)
 - Used for 3D mode to warp frames based on estimated depth
 - Models auto-download to `models/Deforum/` on first use
 
@@ -201,21 +196,15 @@ pytest.ini                              # Pytest settings
 ### Key Concepts
 
 **Animation Modes:**
-1. **2D** - Flat transformations (pan, zoom, rotate)
+1. **3D** (Default) - Depth-based warping with 3D camera movement
    - Optional Wan FLF2V integration for AI tween interpolation (via Distribution tab)
-2. **3D** - Depth-based warping with camera movement
-   - Optional Wan FLF2V integration for AI tween interpolation (via Distribution tab)
-3. **Video Input** - Use existing video as initialization
-4. **Interpolation** - Generate between two prompts
-5. **Wan Only** - Pure Wan T2V + FLF2V batch processing (no SD model required)
-   - Phase 1: ALL keyframes with Wan T2V
-   - Phase 2: ALL tweens with Wan FLF2V (guidance_scale=3.5 default)
-   - Phase 3: Stitch final video
-   - Resume capability at Phase 2
-6. **Wan Flux** - Hybrid Flux + Wan workflow
+   - Keyframe distribution: Off, Keyframes Only, Additive, Redistributed
+2. **Flux/Wan** - Hybrid Flux + Wan workflow
    - Phase 1: Keyframes with Flux
    - Phase 2: Tweens with Wan FLF2V (guidance_scale=3.5 default)
    - Phase 3: Stitch final video
+   - Integrated Qwen prompt enhancement
+3. **Interpolation** - Generate smooth transition between two prompts
 
 **Keyframe Distribution:**
 - Replaces traditional cadence-based rendering
@@ -223,9 +212,10 @@ pytest.ini                              # Pytest settings
 - Interpolates (tweens) non-keyframes from nearest keyframes
 - Reduces diffusion steps while maintaining quality
 
-**Experimental Render Core:**
-- Activated when keyframe distribution is enabled
-- Incompatible with some features (Kohya HR Fix, FreeU)
+**Render Core:**
+- Experimental core is now the **only** render core (legacy/stable core has been removed)
+- Keyframe distribution modes: Off, Keyframes Only, Additive, Redistributed
+- Incompatible with some features (Kohya HR Fix, FreeU, ControlNet)
 - Provides better synchronization and less jitter at high/no cadence
 
 **Wan Integration Points:**
@@ -353,9 +343,8 @@ pytest tests/deforum_test.py::test_name -v
 When discussing code, use `file_path:line_number` format:
 - Extension init: `scripts/deforum.py:24`
 - Main orchestrator: `scripts/deforum_helpers/run_deforum.py:43`
-- Standard render pipeline (2D/3D/Video/Interpolation): `scripts/deforum_helpers/rendering/experimental_core.py:22`
-- Wan Only pipeline: `scripts/deforum_helpers/rendering/render_wan_only.py:1`
-- Wan Flux pipeline: `scripts/deforum_helpers/rendering/render_wan_flux.py:1`
+- Standard render pipeline (3D/Interpolation): `scripts/deforum_helpers/rendering/experimental_core.py:22`
+- Flux/Wan pipeline: `scripts/deforum_helpers/rendering/render_wan_flux.py:1`
 - Central state: `scripts/deforum_helpers/rendering/data/render_data.py:42`
 - Wan FLF2V wrapper: `scripts/deforum_helpers/wan/wan_simple_integration.py:1`
 - Qwen enhancement (in Prompts tab): `scripts/deforum_helpers/wan/qwen_prompt_expander.py:1`
@@ -381,14 +370,20 @@ Core dependencies (from `requirements.txt`):
 - **Qwen:** Auto-downloaded to `models/qwen/` when first used (3B/7B/14B variants)
 - **Depth:** Auto-downloaded to `models/Deforum/` on first use per selected model
 
-## Known Limitations with Experimental Core
+## Known Limitations
 
-When keyframe distribution is enabled (experimental render core):
+Known compatibility issues:
 - **Kohya HR Fix** - May need to be disabled
 - **FreeU** - May need to be disabled
 - **ControlNet** - Currently not working
-- **Hybrid Video** - Untested
 - **Flux Schnell** - Limited precision with only 4 steps
+
+**Removed Features:**
+- **Legacy/Stable Core** - Removed in favor of experimental core only
+- **2D Animation Mode** - Removed (3D mode is now default and only depth-based mode)
+- **Wan Only Mode** - Removed (superseded by Flux/Wan mode)
+- **Hybrid Video Mode** - Removed completely
+- **Legacy Depth Models** - MiDaS, AdaBins, LeReS, ZoeDepth removed (Depth-Anything V2 only)
 
 ## Troubleshooting
 
@@ -426,3 +421,164 @@ huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan
 - Use prompt_mode="none" for smoothest interpolation
 - Verify both first and last keyframes are properly generated
 - Check console for FLF2V DEBUG logs in Wan Only/Flux modes
+
+## Refactoring Standards and Rules
+
+**Active Branch:** `refactor/functional-patterns`
+
+When refactoring code in this repository, follow **STRICT** functional programming principles and Python best practices. See `REFACTORING_RULES.md` for complete details.
+
+### Critical Rules (Must Follow)
+
+1. **Complexity Limit:** All functions MUST have McCabe complexity ≤ 10
+2. **Type Hints:** Complete type annotations required on ALL functions  
+3. **Error Handling:** Comprehensive try-catch blocks with graceful fallbacks
+4. **Documentation:** Clear docstrings with Google-style parameter descriptions
+5. **Code Style:** Black formatting (100 char line length), flake8 linting must pass
+
+### Functional Programming Principles
+
+- **Small pure functions:** Max 20 lines, single responsibility, side-effect free
+- **Prefer expressions over statements:** Use ternary operators and comprehensions
+- **No magic numbers:** Extract all constants to module top or `constants.py`
+- **Immutable by default:** Return new objects, don't modify inputs
+- **Function composition:** Design functions that can be chained/composed
+- **Explicit dependencies:** Function params show what data is needed
+- **Separate pure logic from side effects:** Pure functions in `utils/`, side effects in orchestrators
+
+### Refactoring Priority Order
+
+1. Add type hints to all functions
+2. Add docstrings (Google style)
+3. Eliminate code duplication (extract to utils)
+4. Extract magic numbers to constants
+5. Separate pure calculations from side effects
+6. Convert imperative loops to comprehensions (where readable)
+7. Break down complex functions (complexity > 10)
+8. Add error handling and validation
+9. Remove dead code and unused imports
+10. Format with Black, lint with flake8
+11. Write unit tests for pure functions
+
+### Key Architecture Notes
+
+**IMPORTANT:** When refactoring, study these first:
+
+1. **Experimental Core** (`scripts/deforum_helpers/rendering/experimental_core.py:22`)
+   - This is the ONLY render core (legacy core removed)
+   - Main render loop at `render_animation()`
+   - Generates subtitle .srt file asynchronously
+   - Iterates through frames calling `generate_inner()`
+   - Applies transformations (2D/3D movement, depth warping)
+   - Handles hybrid video, masks, and noise schedules
+   - Stitches final video with ffmpeg
+
+2. **IMG2IMG Pipelines** (Forge backend)
+   - Located in `backend/` (cherry-picked from ComfyUI)
+   - `backend/nn/unet.py` - UNet with patching system
+   - `backend/patcher/` - Model patching (LoRA, ControlNet, etc.)
+   - `backend/sampling/` - Sampling implementations
+   - Deforum hooks into Forge's processing pipeline via `modules/processing.py`
+
+3. **Keyframe Distribution System** (`scripts/deforum_helpers/rendering/data/frame/`)
+   - `key_frame_distribution.py` - Distribution algorithms
+   - `diffusion_frame.py` - Frame metadata and state
+   - `tween_frame.py` - Interpolated frames between keyframes
+   - Central to experimental core operation
+
+### Tools and Commands
+
+```bash
+# Check complexity (must be ≤ 10 for all functions)
+pip install radon
+radon cc scripts/deforum_helpers/ -a -nc
+
+# Format code
+pip install black flake8
+black scripts/deforum_helpers/ tests/ --line-length 100
+flake8 scripts/deforum_helpers/ tests/ --max-line-length 100
+
+# Type checking
+pip install mypy
+mypy scripts/deforum_helpers/ --strict
+
+# Run tests with coverage
+pytest tests/unit/ -v --cov-report=html
+
+# Find dead code
+pip install vulture
+vulture scripts/deforum_helpers/
+```
+
+### Example: Good Refactoring
+
+**Before:**
+```python
+def process(frames, settings):
+    results = []
+    for i in range(len(frames)):
+        if frames[i] is not None:
+            if settings['mode'] == '3D':
+                if frames[i]['width'] > 1920:
+                    results.append({'data': frames[i]['data'] * 0.5, 'id': i})
+                else:
+                    results.append({'data': frames[i]['data'], 'id': i})
+    return results
+```
+
+**After:**
+```python
+from typing import NamedTuple
+from dataclasses import dataclass
+
+MAX_WIDTH = 1920
+SCALE_FACTOR = 0.5
+
+@dataclass(frozen=True)
+class Frame:
+    data: np.ndarray
+    width: int
+
+@dataclass(frozen=True) 
+class ProcessedFrame:
+    data: np.ndarray
+    id: int
+
+def should_scale(width: int) -> bool:
+    """Determine if frame needs scaling based on width."""
+    return width > MAX_WIDTH
+
+def process_frame(frame: Frame, frame_id: int) -> ProcessedFrame:
+    """Process single frame with appropriate scaling.
+    
+    Args:
+        frame: Input frame data
+        frame_id: Frame index in sequence
+        
+    Returns:
+        Processed frame with scaling applied if needed
+    """
+    scale = SCALE_FACTOR if should_scale(frame.width) else 1.0
+    return ProcessedFrame(data=frame.data * scale, id=frame_id)
+
+def process_frames(frames: list[Frame | None], mode: str) -> list[ProcessedFrame]:
+    """Process frames in 3D mode with appropriate scaling.
+    
+    Args:
+        frames: List of frames (None entries are skipped)
+        mode: Rendering mode ('2D' or '3D')
+        
+    Returns:
+        List of processed frames
+    """
+    if mode != '3D':
+        return []
+        
+    return [
+        process_frame(frame, idx)
+        for idx, frame in enumerate(frames)
+        if frame is not None
+    ]
+```
+
+See `REFACTORING_RULES.md` for comprehensive guidelines and anti-patterns to avoid.

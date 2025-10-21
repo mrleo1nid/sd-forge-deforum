@@ -62,8 +62,8 @@ temp/
 *.log
 logs/
 
-# Test files
-test_*.py
+# Temporary test files in root (but not actual test suite files in tests/)
+/test_*.py
 
 # Test artifacts
 test-server.log
