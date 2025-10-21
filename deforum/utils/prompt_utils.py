@@ -8,7 +8,8 @@ with no side effects.
 import re
 import numexpr
 import pandas as pd
-from typing import Tuple
+import numpy as np
+from typing import Tuple, Dict
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -52,29 +53,27 @@ def evaluate_weight_expression(expr: str, frame: int, max_frames: int) -> float:
     return float(numexpr.evaluate(expr, local_dict={"t": t, "frame": frame}))
 
 
-def parse_weight(weight_str: str | None, frame: int, max_frames: int) -> float:
-    """Parse weight string into float value.
-
-    Handles numeric strings, expressions, and None.
+def parse_weight(match: re.Match, frame: int = 0, max_frames: int = 0) -> float:
+    """Parse weight from regex match - returns float weight value.
 
     Args:
-        weight_str: Weight as string, expression, or None
+        match: Regex match object with 'weight' group
         frame: Current frame number
         max_frames: Total frames
 
     Returns:
-        Parsed weight (1.0 if None)
+        Parsed weight (1.0 if None or invalid)
     """
-    if weight_str is None or weight_str.strip() == "":
+    w_raw = match.group("weight")
+    if w_raw is None:
         return 1.0
-
-    if check_is_number(weight_str):
-        return float(weight_str)
-
-    try:
-        return evaluate_weight_expression(weight_str, frame, max_frames)
-    except Exception:
+    if check_is_number(w_raw):
+        return float(w_raw)
+    if len(w_raw) < 3:
+        # Invalid expression (too short to be valid: needs at least `x`)
         return 1.0
+    # Strip backticks and evaluate
+    return evaluate_weight_expression(w_raw[1:-1], frame, max_frames)
 
 
 # ============================================================================
@@ -100,33 +99,22 @@ def split_prompt_into_pos_neg(text: str) -> Tuple[str, str]:
 
 
 def substitute_weight_expressions(text: str, frame: int, max_frames: int) -> str:
-    """Substitute `{expression}` patterns with evaluated weights.
+    """Replace all weight expressions in text with evaluated values.
 
     Args:
-        text: Prompt text with embedded weight expressions
+        text: Prompt text with embedded weight expressions in backticks
         frame: Current frame number
         max_frames: Total frames
 
     Returns:
         Text with expressions replaced by numeric values
     """
-    pattern = r"`([^`]+)`"
-
-    def replace_expr(match):
-        expr = match.group(1)
-        try:
-            value = evaluate_weight_expression(expr, frame, max_frames)
-            return str(value)
-        except Exception:
-            return match.group(0)
-
-    return re.sub(pattern, replace_expr, text)
+    math_parser = re.compile(r"(?P<weight>(`[\S\s]*?`))", re.VERBOSE)
+    return re.sub(math_parser, lambda m: str(parse_weight(m, frame, max_frames)), text)
 
 
-def split_weighted_subprompts(text: str, frame: int, max_frames: int) -> list[Tuple[str, float]]:
-    """Split prompt into weighted subprompts.
-
-    Handles both positive and negative prompts with optional weights.
+def split_weighted_subprompts(text: str, frame: int = 0, max_frames: int = 0) -> Tuple[str, str]:
+    """Split prompt into positive/negative after evaluating weight expressions.
 
     Args:
         text: Full prompt text
@@ -134,20 +122,10 @@ def split_weighted_subprompts(text: str, frame: int, max_frames: int) -> list[Tu
         max_frames: Total frames
 
     Returns:
-        List of (prompt_text, weight) tuples
+        Tuple of (positive_prompt, negative_prompt) with weights evaluated
     """
-    positive, negative = split_prompt_into_pos_neg(text)
-    parts = []
-
-    # Add positive prompt
-    if positive:
-        parts.append((positive, 1.0))
-
-    # Add negative prompt
-    if negative:
-        parts.append((negative, -1.0))
-
-    return parts
+    parsed_prompt = substitute_weight_expressions(text, frame, max_frames)
+    return split_prompt_into_pos_neg(parsed_prompt)
 
 
 # ============================================================================
@@ -155,43 +133,38 @@ def split_weighted_subprompts(text: str, frame: int, max_frames: int) -> list[Tu
 # ============================================================================
 
 
-def parse_keyframe_number(key_str: str, max_frames: int) -> int:
-    """Parse keyframe number from string (numeric or expression).
+def parse_keyframe_number(key: str, max_frames: int) -> int:
+    """Parse keyframe number - handles both numeric strings and math expressions.
 
     Args:
-        key_str: Keyframe as string or expression
+        key: Keyframe as string or expression
         max_frames: Total frames for expression evaluation
 
     Returns:
         Keyframe number as integer
     """
-    if check_is_number(key_str):
-        return int(key_str)
-
-    try:
-        # Evaluate expression with max_f variable
-        return int(numexpr.evaluate(key_str, local_dict={"max_f": max_frames}))
-    except Exception:
-        return 0
+    if check_is_number(key):
+        return int(float(key))
+    # Evaluate expression (max_f variable available in numexpr context)
+    max_f = max_frames  # Used by numexpr
+    return int(numexpr.evaluate(key))
 
 
-def parse_animation_prompts_dict(prompt_dict: dict, max_frames: int) -> dict[int, str]:
-    """Parse animation prompts dictionary with expression support.
-
-    Converts string keys (including expressions) to integer frame numbers.
+def parse_animation_prompts_dict(animation_prompts: Dict[str, str], max_frames: int) -> Dict[int, str]:
+    """Convert string keys to integer frame numbers.
 
     Args:
-        prompt_dict: Dict with string keys and prompt values
+        animation_prompts: Dict with string keys and prompt values
         max_frames: Total frames for expression evaluation
 
     Returns:
         Dict with integer keys and prompt values
     """
-    result = {}
-    for key_str, prompt in prompt_dict.items():
-        frame_num = parse_keyframe_number(str(key_str), max_frames)
-        result[frame_num] = prompt
-    return result
+    parsed = {}
+    for key, value in animation_prompts.items():
+        frame_num = parse_keyframe_number(str(key), max_frames)
+        parsed[frame_num] = value
+    return parsed
 
 
 # ============================================================================
@@ -224,7 +197,7 @@ def build_weighted_prompt_part(
     current_weight: float,
     next_weight: float,
 ) -> str:
-    """Build weighted prompt part using composable diffusion syntax.
+    """Build weighted prompt using composable diffusion syntax.
 
     Args:
         current: Current keyframe prompt
@@ -237,40 +210,47 @@ def build_weighted_prompt_part(
     """
     parts = []
     if current:
-        parts.append(f"({current}):{current_weight:.3f}")
+        parts.append(f"({current}):{current_weight}")
     if next_val:
-        parts.append(f"({next_val}):{next_weight:.3f}")
+        parts.append(f"({next_val}):{next_weight}")
     return " AND ".join(parts)
 
 
 def build_interpolated_prompt(
-    current_positive: str | None,
-    next_positive: str | None,
-    current_negative: str | None,
-    next_negative: str | None,
+    current_prompt: str,
+    next_prompt: str,
     current_weight: float,
-    next_weight: float,
-) -> Tuple[str, str]:
-    """Build interpolated positive and negative prompts.
+    next_weight: float
+) -> str:
+    """Build full interpolated prompt with positive and negative parts.
 
     Args:
-        current_positive: Current positive prompt
-        next_positive: Next positive prompt
-        current_negative: Current negative prompt
-        next_negative: Next negative prompt
+        current_prompt: Current keyframe prompt (may contain --neg)
+        next_prompt: Next keyframe prompt (may contain --neg)
         current_weight: Weight for current prompts
         next_weight: Weight for next prompts
 
     Returns:
-        Tuple of (positive_prompt, negative_prompt)
+        Complete interpolated prompt string with "--neg" if needed
     """
-    positive = build_weighted_prompt_part(
-        current_positive, next_positive, current_weight, next_weight
-    )
-    negative = build_weighted_prompt_part(
-        current_negative, next_negative, current_weight, next_weight
-    )
-    return positive, negative
+    current_pos, current_neg = split_prompt_into_pos_neg(current_prompt)
+    next_pos, next_neg = split_prompt_into_pos_neg(next_prompt)
+
+    result_parts = []
+
+    # Build positive part
+    pos_part = build_weighted_prompt_part(current_pos, next_pos, current_weight, next_weight)
+    if pos_part:
+        result_parts.append(pos_part)
+
+    # Build negative part
+    has_neg = (current_neg and len(current_neg.strip()) > 0) or (next_neg and len(next_neg.strip()) > 0)
+    if has_neg:
+        neg_part = build_weighted_prompt_part(current_neg, next_neg, current_weight, next_weight)
+        if neg_part:
+            result_parts.append(f"--neg {neg_part}")
+
+    return " ".join(result_parts)
 
 
 # ============================================================================
@@ -278,35 +258,32 @@ def build_interpolated_prompt(
 # ============================================================================
 
 
-def evaluate_prompt_expression(expr: str, frame: int, max_frames: int) -> str:
-    """Evaluate backtick expression in prompt.
-
-    Supports: t (normalized time), frame, max_f (max frames)
+def evaluate_prompt_expression(expression: str, frame_idx: int, max_frames: int) -> str:
+    """Evaluate math expression in prompt (replaces t and max_f variables).
 
     Args:
-        expr: Expression to evaluate
-        frame: Current frame number
+        expression: Expression to evaluate
+        frame_idx: Current frame number
         max_frames: Total frames
 
     Returns:
         Evaluated result as string
     """
+    max_f = max_frames - 1
+    t = frame_idx / max_f if max_f > 0 else 0
     try:
-        t = frame / (max_frames - 1) if max_frames > 1 else 0
-        result = numexpr.evaluate(
-            expr, local_dict={"t": t, "frame": frame, "max_f": max_frames}
-        )
+        result = numexpr.evaluate(expression, local_dict={'frame': frame_idx, 'max_f': max_frames, 't': t})
         return str(result)
     except Exception:
-        return expr
+        return expression
 
 
-def substitute_prompt_expressions(text: str, frame: int, max_frames: int) -> str:
+def substitute_prompt_expressions(text: str, frame_idx: int, max_frames: int) -> str:
     """Substitute all backtick expressions in prompt text.
 
     Args:
         text: Prompt text with `expression` patterns
-        frame: Current frame number
+        frame_idx: Current frame number
         max_frames: Total frames
 
     Returns:
@@ -316,6 +293,6 @@ def substitute_prompt_expressions(text: str, frame: int, max_frames: int) -> str
 
     def replace_expr(match):
         expr = match.group(1)
-        return evaluate_prompt_expression(expr, frame, max_frames)
+        return evaluate_prompt_expression(expr, frame_idx, max_frames)
 
     return re.sub(pattern, replace_expr, text)

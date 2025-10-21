@@ -12,13 +12,12 @@ def print_startup_banner():
     BOLD = "\033[1m"
 
     # Create gradient characters for border
-    border_top = f"{PURPLE_LIGHT}################" + f"{PURPLE_MID}################" + f"{PURPLE_DARK}#################{RESET}"
-    border_bot = f"{PURPLE_DARK}################" + f"{PURPLE_MID}################" + f"{PURPLE_LIGHT}#################{RESET}"
+    border_top = f"{PURPLE_LIGHT}###############################" + f"{PURPLE_MID}###############################" + f"{PURPLE_DARK}#################################{RESET}"
+    border_bot = f"{PURPLE_DARK}###############################" + f"{PURPLE_MID}###############################" + f"{PURPLE_LIGHT}#################################{RESET}"
 
     banner = f"""
 {border_top}
-{PURPLE_MID}{BOLD}⚡ Stable Diffusion WebUI Forge Enhanced By{RESET}
-{PURPLE_DARK}{BOLD}   Zirteq's Fluxabled Fork of the Deforum Extension ⚡{RESET}
+{PURPLE_MID}{BOLD}⚡ Stable Diffusion WebUI Forge Enhanced By Zirteq's Fluxabled Fork of the Deforum Extension ⚡{RESET}
 {border_bot}
 {WHITE}Applying compatibility patches for enhanced Flux.1 + Wan 2.1 AI Video integration:
   • FlowMatchEulerDiscreteScheduler patching (diffusers_compat_patch.py)
