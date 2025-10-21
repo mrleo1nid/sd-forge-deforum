@@ -39,11 +39,15 @@ def on_ui_tabs():
     i1_store_backup = f"<p style={style}>{extension_name} - Version: {get_commit_date()} | {commit_info}</p>"
     i1_store = i1_store_backup
 
-    # Slopcore gradient aesthetic for Generate button
+    # Slopcore gradient aesthetic for Generate button and hide unwanted buttons
     slopcore_css = """
-    /* Slopcore gradient for Generate button */
+    /* Slopcore gradient for Generate button - multiple selectors for Gradio 4 compatibility */
+    #deforum_generate,
     button#deforum_generate,
-    #deforum_generate button {
+    #deforum_generate > button,
+    [id*="deforum_generate"] button,
+    .generate-box-generating,
+    .generate-box-interrupting {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         border: none !important;
         color: white !important;
@@ -52,24 +56,32 @@ def on_ui_tabs():
         box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3) !important;
         transition: all 0.3s ease !important;
     }
+    #deforum_generate:hover,
     button#deforum_generate:hover,
-    #deforum_generate button:hover {
+    #deforum_generate > button:hover,
+    [id*="deforum_generate"] button:hover {
         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
         box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4) !important;
         transform: translateY(-1px) !important;
     }
-    button#deforum_generate:active,
-    #deforum_generate button:active {
-        transform: translateY(0px) !important;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
-    }
 
-    /* Hide unwanted buttons - keep only folder button */
+    /* Hide ALL unwanted buttons in deforum results - keep only folder button */
+    #deforum_results button[id*="save"],
+    #deforum_results button[id*="send"],
+    #save_deforum,
     #save_zip_deforum,
     #deforum_send_to_img2img,
     #deforum_send_to_inpaint,
-    #deforum_send_to_extras {
+    #deforum_send_to_extras,
+    [id^="save_"][id$="_deforum"],
+    [id^="deforum_send_"] {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
     /* Golden ratio depth preview scaling */
@@ -292,6 +304,15 @@ def on_ui_tabs():
         for key, value in updated_values.items():
             if key in settings_component_name_to_obj:
                 settings_component_name_to_obj[key].value = value['value']
+
+        # Update depth preview visibility based on loaded settings
+        save_depth = components['save_depth_maps'].value
+        anim_mode = components['animation_mode'].value
+        should_show = save_depth and anim_mode == '3D'
+        depth_preview_accordion.visible = should_show
+        depth_preview_accordion.open = should_show
+        print(f"Depth preview accordion: visible={should_show} (save_depth={save_depth}, anim_mode={anim_mode})")
+
     # Always load settings on startup - either from persistent settings path (if enabled),
     # from webui root, or from the extension's default settings
     trigger_load_general_settings()
