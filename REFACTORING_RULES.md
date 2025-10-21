@@ -189,45 +189,78 @@ def load_image(path: str) -> Image | None:
 - Provide user-friendly error messages
 - Never use bare `except:` - use `except Exception:` at minimum
 
-### 4. Documentation (STRICT REQUIREMENT)
-**Clear docstrings with parameter descriptions**
+### 4. Documentation (PRAGMATIC APPROACH)
+**Keep it minimal and meaningful**
 
-Use Google-style docstrings:
+**Three levels of documentation:**
+
+**Level 1: Simple/Internal Functions** - Type hints + one-liner or nothing
 ```python
-def calculate_tween_weight(
-    prev_keyframe: int,
-    next_keyframe: int,
-    current_frame: int
-) -> float:
-    """Calculate interpolation weight for tween frame.
-
-    Computes the linear interpolation weight for a frame between two keyframes.
-    Weight of 0.0 means use prev_keyframe entirely, 1.0 means use next_keyframe.
-
-    Args:
-        prev_keyframe: Frame number of previous keyframe
-        next_keyframe: Frame number of next keyframe
-        current_frame: Frame number to calculate weight for
-
-    Returns:
-        Float between 0.0 and 1.0 representing interpolation weight
-
-    Raises:
-        ValueError: If current_frame is not between prev and next keyframes
-
-    Example:
-        >>> calculate_tween_weight(0, 10, 5)
-        0.5
-        >>> calculate_tween_weight(0, 10, 3)
-        0.3
-    """
+def calculate_tween_weight(prev_keyframe: int, next_keyframe: int, current_frame: int) -> float:
+    """Linear interpolation weight between keyframes."""
     if not prev_keyframe <= current_frame <= next_keyframe:
         raise ValueError(f"Frame {current_frame} not between {prev_keyframe} and {next_keyframe}")
-
-    total_distance = next_keyframe - prev_keyframe
-    current_distance = current_frame - prev_keyframe
-    return current_distance / total_distance
+    return (current_frame - prev_keyframe) / (next_keyframe - prev_keyframe)
 ```
+
+**Level 2: Public API / Complex Logic** - Full docstring when needed
+```python
+def process_frame_distribution(
+    data: RenderData,
+    distribution: KeyFrameDistribution,
+    start_index: int
+) -> list[DiffusionFrame]:
+    """Calculate frame indices using keyframe distribution algorithm.
+
+    Args:
+        data: Central rendering state
+        distribution: Distribution mode (OFF, KEYFRAMES_ONLY, ADDITIVE, REDISTRIBUTED)
+        start_index: Starting frame index
+
+    Returns:
+        List of DiffusionFrame objects with calculated indices
+    """
+    # Complex logic here
+    pass
+```
+
+**Level 3: REST API / External Interfaces** - Full documentation
+```python
+def create_animation(
+    animation_mode: str,
+    max_frames: int,
+    prompts: dict[int, str],
+    **kwargs
+) -> dict:
+    """Create a Deforum animation with given parameters.
+
+    Args:
+        animation_mode: Animation mode ('3D', 'Flux/Wan', 'Interpolation')
+        max_frames: Total number of frames to generate
+        prompts: Dict mapping frame numbers to prompt strings
+        **kwargs: Additional animation parameters
+
+    Returns:
+        Dict containing:
+            - status: "success" or "error"
+            - output_path: Path to generated video
+            - frame_count: Number of frames generated
+
+    Raises:
+        ValueError: If animation_mode is invalid
+        RuntimeError: If generation fails
+
+    Example:
+        >>> create_animation("3D", 120, {0: "mountain", 60: "valley"})
+        {"status": "success", "output_path": "...", "frame_count": 120}
+    """
+    pass
+```
+
+**When to skip docstrings entirely:**
+- Function name + type hints make it obvious: `def lerp(a: float, b: float, t: float) -> float`
+- Getter/setter with clear names: `def get_frame_count(data: RenderData) -> int`
+- Simple wrappers: `def is_3d_mode(mode: str) -> bool`
 
 ### 5. Code Style (STRICT REQUIREMENT)
 **Black formatting, flake8 linting (must pass)**
@@ -409,7 +442,7 @@ def get_value(data: dict | None) -> str:
 When refactoring a module, follow this order:
 
 1. **Add type hints** to all functions (enables better tooling)
-2. **Add docstrings** (documents current behavior before changing it)
+2. **Add minimal docstrings** (only for public APIs or non-obvious logic)
 3. **Eliminate code duplication** through utility extraction
 4. **Extract magic numbers** to named constants
 5. **Separate pure calculations** from side effects
@@ -421,6 +454,12 @@ When refactoring a module, follow this order:
 11. **Remove dead code** and unused imports
 12. **Format with Black** and **lint with flake8**
 13. **Write unit tests** for extracted pure functions
+
+**Documentation priority:**
+- REST API endpoints: Full docstrings (Args, Returns, Raises, Examples)
+- Public interfaces: Full docstrings when behavior is complex
+- Internal functions: Type hints only, or one-liner if needed
+- Obvious functions: No docstring (name + types are documentation)
 
 ## Tools and Commands
 
@@ -474,9 +513,8 @@ def process_frames(frames, settings):
     return results
 ```
 
-### After: Functional, Typed, Documented
+### After: Functional, Typed, Minimal Docs
 ```python
-from typing import NamedTuple
 from dataclasses import dataclass
 
 # Constants
@@ -496,10 +534,7 @@ class ProcessedFrame:
     id: int
 
 def calculate_scale_factor(width: int) -> float:
-    """Determine scale factor based on frame width.
-
-    Large frames (> 1920px) are scaled down to save memory.
-    """
+    # Large frames (>1920px) scaled down to save memory
     return (
         LARGE_FRAME_SCALE_FACTOR
         if width > MAX_WIDTH_BEFORE_SCALING
@@ -507,29 +542,13 @@ def calculate_scale_factor(width: int) -> float:
     )
 
 def process_single_frame(frame: Frame, frame_id: int) -> ProcessedFrame:
-    """Process one frame with appropriate scaling."""
     scale = calculate_scale_factor(frame.width)
-    return ProcessedFrame(
-        data=frame.data * scale,
-        id=frame_id
-    )
+    return ProcessedFrame(data=frame.data * scale, id=frame_id)
 
-def process_frames(
-    frames: list[Frame | None],
-    mode: str
-) -> list[ProcessedFrame]:
-    """Process frames in 3D mode with appropriate scaling.
-
-    Args:
-        frames: List of frames (may contain None for missing frames)
-        mode: Rendering mode ('2D' or '3D')
-
-    Returns:
-        List of processed frames (skips None frames)
-    """
+def process_frames(frames: list[Frame | None], mode: str) -> list[ProcessedFrame]:
+    """Process frames in 3D mode with scaling (skips None frames)."""
     if mode != '3D':
         return []
-
     return [
         process_single_frame(frame, idx)
         for idx, frame in enumerate(frames)

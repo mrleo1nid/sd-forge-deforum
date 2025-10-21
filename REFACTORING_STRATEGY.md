@@ -219,16 +219,17 @@ tests/
 # ============================================================================
 
 def calculate_zoom_factor(zoom_schedule: str, frame: int) -> float:
-    """Calculate zoom factor for a given frame.
+    """Parse zoom schedule and return factor for given frame."""
+    # Pure calculation - type hints are the documentation
+    pass
 
-    Args:
-        zoom_schedule: Schedule string like "0: (1.0), 30: (1.5)"
-        frame: Frame number
+def lerp(a: float, b: float, t: float) -> float:
+    # No docstring needed - name + types are clear
+    return a + (b - a) * t
 
-    Returns:
-        Zoom factor as float
-    """
-    # Pure calculation
+def parse_schedule(schedule_str: str) -> dict[int, float]:
+    """Parse "0:(1.0), 30:(1.5)" format into {0: 1.0, 30: 1.5}."""
+    # Add docstring only because parsing format is non-obvious
     pass
 
 # ============================================================================
@@ -236,8 +237,7 @@ def calculate_zoom_factor(zoom_schedule: str, frame: int) -> float:
 # ============================================================================
 
 def apply_zoom_to_image(image: np.ndarray, zoom: float, output_path: str) -> None:
-    """Apply zoom to image and save (IMPURE: I/O)."""
-    # Side effects here
+    # Side effects here - name + types make it clear
     pass
 ```
 
