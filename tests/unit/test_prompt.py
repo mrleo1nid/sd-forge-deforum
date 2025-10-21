@@ -5,10 +5,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-import sys
-sys.path.insert(0, 'scripts/deforum_helpers')
-
-from prompt import (
+from deforum.utils.prompt_utils import (
     check_is_number,
     evaluate_weight_expression,
     parse_weight,
@@ -21,7 +18,7 @@ from prompt import (
     build_weighted_prompt_part,
     build_interpolated_prompt,
     evaluate_prompt_expression,
-    substitute_prompt_expressions
+    substitute_prompt_expressions,
 )
 
 

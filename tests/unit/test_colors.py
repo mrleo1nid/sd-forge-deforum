@@ -3,14 +3,11 @@
 import numpy as np
 import pytest
 
-import sys
-sys.path.insert(0, 'scripts/deforum_helpers')
-
-from colors import (
+from deforum.utils.image_utils import (
     match_in_rgb,
     match_in_hsv,
     match_in_lab,
-    maintain_colors
+    maintain_colors,
 )
 
 

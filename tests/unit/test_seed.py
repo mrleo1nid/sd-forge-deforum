@@ -3,14 +3,11 @@
 import pytest
 from types import SimpleNamespace
 
-import sys
-sys.path.insert(0, 'scripts/deforum_helpers')
-
-from seed import (
+from deforum.utils.seed_utils import (
     MAX_SEED,
     calculate_seed_increment,
     calculate_next_control,
-    generate_next_seed
+    generate_next_seed,
 )
 
 

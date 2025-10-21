@@ -5,10 +5,7 @@ import numpy as np
 import torch
 import cv2
 
-import sys
-sys.path.insert(0, 'scripts/deforum_helpers')
-
-from animation import (
+from deforum.utils.transform_utils import (
     normalize_image_to_tensor_range,
     denormalize_tensor_to_image_range,
     sample_from_cv2,

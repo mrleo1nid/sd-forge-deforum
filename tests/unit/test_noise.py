@@ -5,16 +5,13 @@ import torch
 import pytest
 from PIL import Image
 
-import sys
-sys.path.insert(0, 'scripts/deforum_helpers')
-
-from noise import (
+from deforum.utils.noise_utils import (
     perlin_fade,
     round_to_multiple,
     normalize_perlin,
     condition_noise_mask,
     rand_perlin_2d,
-    rand_perlin_2d_octaves
+    rand_perlin_2d_octaves,
 )
 
 
