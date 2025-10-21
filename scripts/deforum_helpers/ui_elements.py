@@ -864,7 +864,7 @@ TI2V models are unified text/image-to-video (Wan 2.2) - recommended!
 1. 📝 Go to the **Prompts tab** and configure your animation prompts
 2. 🎬 Set your desired FPS in the **Output tab**
 3. 🎯 Optionally configure seeds in **Keyframes → Seed & SubSeed tab**
-4. 🎬 Click **Generate Wan Only** again
+4. 🎬 Click **Generate Flux/Wan** again
 
 💡 I2V chaining needs your prompt schedule to know what to generate!
 
@@ -877,12 +877,12 @@ Example prompts for seamless I2V chaining:
 
 Each prompt will be smoothly connected using I2V continuity!"""
         
-        # Force animation mode to Wan Only
+        # Force animation mode to Flux/Wan
         component_args = list(component_args)
         
         if animation_mode_index is not None and animation_mode_index < len(component_args):
-            component_args[animation_mode_index] = 'Wan Only'
-            print(f"✅ Set animation mode to 'Wan Only' at index {animation_mode_index}")
+            component_args[animation_mode_index] = 'Flux/Wan'
+            print(f"✅ Set animation mode to 'Flux/Wan' at index {animation_mode_index}")
         else:
             print("⚠️ Could not set animation mode - index not found or out of range")
         
@@ -1471,7 +1471,7 @@ def get_tab_wan(dw: SimpleNamespace):
             
             # Wan Prompts Display - ALWAYS VISIBLE AND PROMINENT
             wan_enhanced_prompts = gr.Textbox(
-                label="Wan Only Prompts (JSON Format)",
+                label="Flux/Wan Prompts (JSON Format)",
                 lines=10,
                 interactive=True,
                 placeholder='REQUIRED: Load prompts first! Click "Load from Deforum Prompts" or "Load Default Wan Prompts" above.',
@@ -1545,12 +1545,12 @@ def get_tab_wan(dw: SimpleNamespace):
 
             # GENERATION SECTION
             gr.Markdown("---")
-            gr.Markdown("### 🎬 Generate Wan Only")
+            gr.Markdown("### 🎬 Generate Flux/Wan")
 
             # Generate Button with Validation
             with FormRow():
                 wan_generate_button = gr.Button(
-                    "🎬 Generate Wan Only (I2V Chaining)",
+                    "🎬 Generate Flux/Wan (I2V Chaining)",
                     variant="primary",
                     size="lg",
                     elem_id="wan_generate_button"
@@ -2039,7 +2039,7 @@ def get_tab_wan(dw: SimpleNamespace):
                 - **For variety**: Leave as 'iter' or 'random'
                 
                 #### Step 6: Generate
-                - Click "Generate Wan Only" button
+                - Click "Generate Flux/Wan" button
                 - Wan reads all settings from Deforum automatically
                 - Each prompt becomes a seamless video clip with strength-controlled transitions
                 """)
@@ -3478,7 +3478,7 @@ def validate_wan_generation(current_prompts):
             return f"""✅ **Ready to Generate!** 
 
 🎬 **Found {num_prompts} prompt{'s' if num_prompts != 1 else ''}** for Wan video generation
-🔥 **Click "Generate Wan Only" above** to start I2V chaining generation
+🔥 **Click "Generate Flux/Wan" above** to start I2V chaining generation
 ⚡ **Optional:** Add movement descriptions or AI enhancement first"""
             
         except json.JSONDecodeError:

@@ -365,7 +365,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
 
 def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
     """Save keyframe image to disk with simple frame number naming (no timestring prefix)"""
-    # Use simple format like Wan Only mode: 000000001.png instead of timestring_000000001.png
+    # Use simple format like Flux/Wan mode: 000000001.png instead of timestring_000000001.png
     filename = f"{frame.i:09d}.png"
     filepath = os.path.join(data.output_directory, filename)
 
