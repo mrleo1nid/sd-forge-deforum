@@ -296,12 +296,6 @@ def on_ui_tabs():
             outputs=[depth_preview_image]
         )
 
-        load_video_settings_btn.click(
-            fn=update_depth_preview_visibility,
-            inputs=[components['save_depth_maps'], components['animation_mode']],
-            outputs=[depth_preview_image]
-        )
-
     # handle settings loading on UI launch
     def trigger_load_general_settings():
         print("Loading general settings...")
