@@ -263,6 +263,13 @@ def create_animation(
 - Simple wrappers: `def is_3d_mode(mode: str) -> bool`
 
 ### 5. Code Style (STRICT REQUIREMENT)
+
+**Copyright headers:**
+- **DO NOT include copyright headers in refactored files**
+- Use the central `LICENSE` file at repository root (AGPL-3.0)
+- **Reason:** Copyright headers waste LLM context (~15 lines × 150 files = 2250 lines)
+- Only the LICENSE file needs to declare copyright and terms
+
 **Black formatting, flake8 linting (must pass)**
 
 ```bash
