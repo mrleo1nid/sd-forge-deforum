@@ -109,9 +109,6 @@ Error: {str(e)}
 
 def setup_deforum_left_side_ui():
     d, da, dp, dv, dr, dw, dloopArgs = set_arg_lists()
-    # set up main info accordion on top of the UI
-    with gr.Accordion("Info, Links and Help", open=False, elem_id='main_top_info_accord'):
-        gr.HTML(value=get_gradio_html('main'))
     # show button to hide/ show gradio's info texts for each element in the UI
     with gr.Row(variant='compact'):
         show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True)
