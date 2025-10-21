@@ -58,6 +58,12 @@ def on_ui_tabs():
         transform: translateY(0px) !important;
         box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
     }
+    /* Golden ratio depth preview scaling */
+    #deforum_depth_gallery {
+        transform: scale(0.618) !important;
+        transform-origin: top left !important;
+        margin-bottom: -20% !important;
+    }
     """
 
     with gr.Blocks(analytics_enabled=False, css=slopcore_css) as deforum_interface:
@@ -128,12 +134,26 @@ def on_ui_tabs():
                 deforum_outdir = os.path.join(os.getcwd(), 'outputs', 'deforum')
                 os.makedirs(deforum_outdir, exist_ok=True)
                 res = create_output_panel("deforum", deforum_outdir)
-                
-                #deforum_gallery, generation_info, html_info, _ 
+
+                #deforum_gallery, generation_info, html_info, _
 
                 generation_info = res.generation_info
                 html_info= res.html_log
                 deforum_gallery = res.gallery
+
+                # Depth Preview Gallery - shown when save_depth_maps is enabled
+                with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=False, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
+                    gr.Markdown("Preview of generated depth maps (updated during rendering)")
+                    depth_gallery = gr.Gallery(
+                        label="Depth Maps",
+                        show_label=False,
+                        elem_id="deforum_depth_gallery",
+                        columns=4,
+                        height="auto"
+                    )
+
+                components['depth_preview_accordion'] = depth_preview_accordion
+                components['depth_gallery'] = depth_gallery
 
                 with gr.Row(variant='compact'):
                     settings_path = gr.Textbox(get_default_settings_path(), elem_id='deforum_settings_path', label="Settings File", info="Settings are automatically loaded on startup. Path can be relative to webui folder OR full/absolute.")
@@ -188,7 +208,25 @@ def on_ui_tabs():
             inputs=[settings_path] + video_settings_component_list,
             outputs=video_settings_component_list,
         )
-        
+
+        # Depth preview visibility toggle based on save_depth_maps and animation_mode
+        def update_depth_preview_visibility(save_depth, anim_mode):
+            # Show depth preview if depth maps are enabled and using 3D mode
+            should_show = save_depth and anim_mode == '3D'
+            return gr.update(visible=should_show)
+
+        components['save_depth_maps'].change(
+            fn=update_depth_preview_visibility,
+            inputs=[components['save_depth_maps'], components['animation_mode']],
+            outputs=[depth_preview_accordion]
+        )
+
+        components['animation_mode'].change(
+            fn=update_depth_preview_visibility,
+            inputs=[components['save_depth_maps'], components['animation_mode']],
+            outputs=[depth_preview_accordion]
+        )
+
     # handle settings loading on UI launch
     def trigger_load_general_settings():
         print("Loading general settings...")
