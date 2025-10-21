@@ -3,4 +3,4 @@ syrupy
 pytest
 tenacity
 pydantic_requests
-moviepy
+moviepy<2.0  # Tests use moviepy 1.x import syntax (from moviepy.editor import VideoFileClip)
