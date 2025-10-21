@@ -36,7 +36,7 @@ def on_ui_tabs():
     extension_name = f"{link} of the Deforum Extension for WebUI Forge"
 
     commit_info = f"Git commit: {get_deforum_version()}"
-    i1_store_backup = f"<p style={style}>{extension_name} - Version: {get_commit_date()} | {commit_info}</p>"
+    i1_store_backup = f"<p style={style}>{extension_name}<br>Version: {get_commit_date()} | {commit_info}</p>"
     i1_store = i1_store_backup
 
     # Slopcore gradient aesthetic for Generate button and hide unwanted buttons
@@ -82,6 +82,32 @@ def on_ui_tabs():
         height: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
+    }
+
+    /* Fixed layout for generate box - prevent buttons from collapsing */
+    #deforum_generate_box {
+        display: grid !important;
+        grid-template-columns: 200px 1fr !important;
+        gap: 10px !important;
+    }
+
+    /* Buttons column - stack vertically */
+    #deforum_generate_box > div:first-child {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+    }
+
+    /* Depth gallery column */
+    #deforum_generate_box > div:last-child {
+        min-height: 200px !important;
+    }
+
+    /* Ensure depth gallery stays compact */
+    #deforum_depth_gallery {
+        max-height: 200px !important;
     }
     """
 
@@ -181,7 +207,7 @@ def on_ui_tabs():
                         components['depth_gallery'] = depth_gallery
 
                 with gr.Row(variant='compact'):
-                    settings_path = gr.Textbox(get_default_settings_path(), elem_id='deforum_settings_path', label="Settings File", info="Settings are automatically loaded on startup. Path can be relative to webui folder OR full/absolute.")
+                    settings_path = gr.Textbox(get_default_settings_path(), elem_id='deforum_settings_path', label="Settings File", info="Settings are automatically loaded on startup. Path can be relative to webui folder OR full/absolute.", lines=3, max_lines=3)
                 with gr.Row(variant='compact'):
                     save_settings_btn = gr.Button('Save Settings', elem_id='deforum_save_settings_btn')
                     load_settings_btn = gr.Button('Load All Settings', elem_id='deforum_load_settings_btn')

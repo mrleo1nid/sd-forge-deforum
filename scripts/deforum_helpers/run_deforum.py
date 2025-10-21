@@ -346,21 +346,20 @@ def run_deforum(*args):
             import shutil
             depth_files = sorted([f for f in os.listdir(depth_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
 
-            # Load depth images for preview
+            # Load depth images for preview (as file paths, not PIL Images)
+            # Gradio Gallery works better with file paths
             for depth_file in depth_files:
-                try:
-                    img = Image.open(os.path.join(depth_dir, depth_file))
-                    depth_images.append(img)
-                except Exception as e:
-                    print(f"Could not load depth map {depth_file}: {e}")
+                depth_path = os.path.join(depth_dir, depth_file)
+                if os.path.exists(depth_path):
+                    depth_images.append(depth_path)
+
+            print(f"📊 Loaded {len(depth_images)} depth maps for preview")
 
             # Clean up depth maps if user doesn't want to keep them
             # (they were saved temporarily for preview purposes)
+            # Note: We don't delete them immediately because Gradio needs to read them
+            # They will be cleaned up on next generation or manually
             if not anim_args.save_depth_maps:
-                try:
-                    shutil.rmtree(depth_dir)
-                    print(f"Cleaned up temporary depth maps from {depth_dir}")
-                except Exception as e:
-                    print(f"Could not clean up depth maps: {e}")
+                print(f"Note: Depth maps will remain in {depth_dir} for preview. Delete manually if needed.")
 
     return processed.images, root.timestring, generation_info_js, processed.info, depth_images
