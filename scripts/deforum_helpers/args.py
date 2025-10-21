@@ -64,7 +64,7 @@ def DeforumAnimArgs():
         "animation_mode": {
             "label": "Animation mode",
             "type": "radio",
-            "choices": ['2D', '3D', 'Video Input', 'Interpolation', 'Wan Only', 'Flux/Wan'],
+            "choices": ['2D', '3D', 'Interpolation', 'Wan Only', 'Flux/Wan'],
             "value": "2D",
             "info": "control animation mode, will hide non relevant params upon change"
         },
@@ -438,7 +438,7 @@ def DeforumAnimArgs():
         "color_coherence": {
             "label": "Color coherence",
             "type": "dropdown",
-            "choices": ['None', 'HSV', 'LAB', 'RGB', 'Video Input', 'Image'],
+            "choices": ['None', 'HSV', 'LAB', 'RGB', 'Image'],
             "value": "None",
             "info": "choose an algorithm/ method for keeping color coherence across the animation"
         },

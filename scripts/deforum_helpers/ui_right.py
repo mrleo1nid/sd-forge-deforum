@@ -38,7 +38,29 @@ def on_ui_tabs():
     i1_store_backup = f"<p style={style}>{extension_name} - Version: {get_commit_date()} | {commit_info}</p>"
     i1_store = i1_store_backup
 
-    with gr.Blocks(analytics_enabled=False) as deforum_interface:
+    # Slopcore gradient aesthetic for Generate button
+    slopcore_css = """
+    #deforum_generate {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3) !important;
+        transition: all 0.3s ease !important;
+    }
+    #deforum_generate:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+        box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4) !important;
+        transform: translateY(-1px) !important;
+    }
+    #deforum_generate:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
+    }
+    """
+
+    with gr.Blocks(analytics_enabled=False, css=slopcore_css) as deforum_interface:
         components = {}
         dummy_component = gr.Button(visible=False)
         with gr.Row(elem_id='deforum_progress_row', equal_height=False, variant='compact'):
@@ -102,7 +124,10 @@ def on_ui_tabs():
                         outputs=[],
                     )
                 
-                res = create_output_panel("deforum", opts.outdir_img2img_samples)
+                # Use Deforum-specific output directory
+                deforum_outdir = os.path.join(os.getcwd(), 'outputs', 'deforum')
+                os.makedirs(deforum_outdir, exist_ok=True)
+                res = create_output_panel("deforum", deforum_outdir)
                 
                 #deforum_gallery, generation_info, html_info, _ 
 

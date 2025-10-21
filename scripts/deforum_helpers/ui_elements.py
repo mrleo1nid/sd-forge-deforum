@@ -80,7 +80,7 @@ def get_tab_run(d, da):
             ancestral_eta_schedule = create_gr_elem(da.ancestral_eta_schedule)
 
         # RUN FROM SETTING FILE ACCORD
-        with gr.Accordion('Batch Mode, Resume and more', open=False):
+        with gr.Accordion('Batch Mode, Resume and more', open=True):
             with gr.Tab('Batch Mode/ run from setting files'):
                 with gr.Row():  # TODO: handle this inside one of the args functions?
                     override_settings_with_file = gr.Checkbox(label="Enable batch mode", value=False, interactive=True,
@@ -89,7 +89,7 @@ def get_tab_run(d, da):
                     custom_settings_file = gr.File(label="Setting files", interactive=True, file_count="multiple",
                                                    file_types=[".txt"], elem_id="custom_setting_file", visible=False)
             # RESUME ANIMATION ACCORD
-            with gr.Tab('Resume Animation'):
+            with gr.Tab('Resume Animation', selected=True):
                 resume_from_timestring, resume_timestring = create_row(
                     da, 'resume_from_timestring', 'resume_timestring')
     return {k: v for k, v in {**locals(), **vars()}.items()}
@@ -104,6 +104,10 @@ def get_tab_keyframes(d, da, dloopArgs):
             with FormColumn(scale=1, min_width=180):
                 border = create_gr_elem(da.border)
         diffusion_cadence, max_frames = create_row(da, 'diffusion_cadence', 'max_frames')
+
+        # Strength settings - moved from subtab for better visibility
+        strength_schedule = create_row(da.strength_schedule)
+        keyframe_strength_schedule = create_row(da.keyframe_strength_schedule)
         # GUIDED IMAGES ACCORD
         with gr.Accordion('Guided Images', open=False, elem_id='guided_images_accord') as guided_images_accord:
             # GUIDED IMAGES INFO ACCORD
@@ -171,9 +175,7 @@ def get_tab_keyframes(d, da, dloopArgs):
                     perspective_flip_fv = create_gr_elem(da.perspective_flip_fv)
 
             # SCHEDULE TABS
-            with gr.TabItem(f"{emoji_utils.strength()} Strength"):
-                strength_schedule = create_row(da.strength_schedule)
-                keyframe_strength_schedule = create_row(da.keyframe_strength_schedule)
+            # NOTE: Strength moved to main level (after animation_mode) for better visibility
 
             with gr.TabItem(f"{emoji_utils.scale()} CFG"):
                 cfg_scale_schedule = create_row(da.cfg_scale_schedule)
@@ -422,7 +424,8 @@ def get_tab_prompts(da, dw):
             )
 
         # COMPOSABLE MASK SCHEDULING ACCORD
-        with gr.Accordion('Composable Mask scheduling', open=False):
+        # NOTE: Deprecated - not needed anymore with modern workflows
+        with gr.Accordion('Composable Mask scheduling', open=False, visible=False):
             gr.HTML(value=get_gradio_html('composable_masks'))
             mask_schedule = create_row(da.mask_schedule)
             use_noise_mask = create_row(da.use_noise_mask)
@@ -521,32 +524,34 @@ def get_tab_qwen(dw: SimpleNamespace):
 def get_tab_shakify(da):
     """Camera Shakify Tab - Integrate realistic camera shake effects"""
     with gr.TabItem(f"{emoji_utils.video_camera()} Shakify"):
-        gr.Markdown("""
-        ## Camera Shakify
-        **Integrate dynamic camera shake effects** into your renders with data sourced from EatTheFuture's 'Camera Shakify' Blender plugin.
+        # Controls first - most important
+        shake_name = create_row(da.shake_name)
+        shake_intensity = create_row(da.shake_intensity)
+        shake_speed = create_row(da.shake_speed)
 
-        This feature enhances the realism of your animations by simulating natural camera movements, adding a layer of depth and engagement to your visuals.
+        # Explanation after controls
+        with gr.Accordion("ℹ️ About Camera Shakify", open=True):
+            gr.Markdown("""
+            ## Camera Shakify
+            **Integrate dynamic camera shake effects** into your renders with data sourced from EatTheFuture's 'Camera Shakify' Blender plugin.
 
-        **Available Shake Patterns:**
-        - EARTHQUAKE - Violent, chaotic shaking
-        - FILM_GRAIN - Subtle analog film vibration
-        - GENTLE_HANDHELD - Natural handheld camera movement
-        - INVESTIGATION - Detective-style documentary camera work
-        - MOVING_HANDHELD - Active walking/running camera movement
-        - PANIC - Frantic, disoriented shaking
-        - ROLLING_SHUTTER - Digital camera sensor distortion
-        - And more...
+            This feature enhances the realism of your animations by simulating natural camera movements, adding a layer of depth and engagement to your visuals.
 
-        **How It Works:**
-        - Shake patterns are layered on top of your scheduled movement (translation, rotation, zoom)
-        - Intensity controls the magnitude of shake
-        - Speed controls how fast the shake pattern plays
-        """)
+            **Available Shake Patterns:**
+            - EARTHQUAKE - Violent, chaotic shaking
+            - FILM_GRAIN - Subtle analog film vibration
+            - GENTLE_HANDHELD - Natural handheld camera movement
+            - INVESTIGATION - Detective-style documentary camera work
+            - MOVING_HANDHELD - Active walking/running camera movement
+            - PANIC - Frantic, disoriented shaking
+            - ROLLING_SHUTTER - Digital camera sensor distortion
+            - And more...
 
-        with gr.Accordion("⚙️ Shakify Settings", open=True):
-            shake_name = create_row(da.shake_name)
-            shake_intensity = create_row(da.shake_intensity)
-            shake_speed = create_row(da.shake_speed)
+            **How It Works:**
+            - Shake patterns are layered on top of your scheduled movement (translation, rotation, zoom)
+            - Intensity controls the magnitude of shake
+            - Speed controls how fast the shake pattern plays
+            """)
 
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
@@ -554,31 +559,11 @@ def get_tab_shakify(da):
 def get_tab_depth_warping(da):
     """3D Depth Warping & FOV Tab - Configure depth estimation and 3D camera settings"""
     with gr.TabItem(f"{emoji_utils.hole()} 3D Depth"):
-        gr.Markdown("""
-        ## 3D Depth Warping & FOV
-        **Transform 2D images into 3D space** using AI depth estimation for realistic camera movement.
-
-        **Depth Algorithms Available:**
-        - **Depth-Anything V2** - Latest, most accurate (recommended)
-        - **MiDaS** - Classic, reliable depth estimation
-        - **AdaBins** - Metric depth with good indoor/outdoor balance
-        - **LeReS** - High-quality depth with multi-resolution support
-        - **ZoeDepth** - Metric depth with zero-shot capability
-
-        **When to Use:**
-        - Required for **3D Animation Mode** to enable camera movement through space
-        - Creates parallax effects by warping images based on depth
-        - Enables true 3D camera controls (translation_z, rotation_3d_x/y/z)
-
-        **FOV (Field of View):**
-        - Controls perspective intensity (lower = more dramatic)
-        - Near/Far planes control depth clipping range
-        """)
-
         # FIXME this should only be visible if animation mode is "3D".
         is_visible = True
         is_info_visible = is_visible
 
+        # Controls first - most important
         with gr.Accordion("⚙️ Depth Settings", open=True):
             depth_warp_msg_html = gr.HTML(
                 value='Please switch to 3D animation mode to view this section.',
@@ -611,6 +596,29 @@ def get_tab_depth_warping(da):
             with FormRow(visible=is_visible) as depth_warp_row_7:
                 far_schedule = create_gr_elem(da.far_schedule)
 
+        # Explanation after controls
+        with gr.Accordion("ℹ️ About 3D Depth Warping", open=False):
+            gr.Markdown("""
+            ## 3D Depth Warping & FOV
+            **Transform 2D images into 3D space** using AI depth estimation for realistic camera movement.
+
+            **Depth Algorithms Available:**
+            - **Depth-Anything V2** - Latest, most accurate (recommended)
+            - **MiDaS** - Classic, reliable depth estimation
+            - **AdaBins** - Metric depth with good indoor/outdoor balance
+            - **LeReS** - High-quality depth with multi-resolution support
+            - **ZoeDepth** - Metric depth with zero-shot capability
+
+            **When to Use:**
+            - Required for **3D Animation Mode** to enable camera movement through space
+            - Creates parallax effects by warping images based on depth
+            - Enables true 3D camera controls (translation_z, rotation_3d_x/y/z)
+
+            **FOV (Field of View):**
+            - Controls perspective intensity (lower = more dramatic)
+            - Near/Far planes control depth clipping range
+            """)
+
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
@@ -627,8 +635,8 @@ def get_tab_init(d, da, dp):
                     strength = create_gr_elem(d.strength)  # TODO rename to init_strength
             init_image = create_row(d.init_image)
             init_image_box = create_row(d.init_image_box)
-        # VIDEO INIT INNER-TAB
-        with gr.Tab('Video Init'):
+        # VIDEO INIT INNER-TAB - Hidden (deprecated - use Image Init or Parseq instead)
+        with gr.Tab('Video Init', visible=False):
             video_init_path = create_row(da.video_init_path)
             with FormRow():
                 extract_from_frame = create_gr_elem(da.extract_from_frame)
@@ -637,8 +645,8 @@ def get_tab_init(d, da, dp):
                 overwrite_extracted_frames = create_gr_elem(da.overwrite_extracted_frames)
                 use_mask_video = create_gr_elem(da.use_mask_video)
             video_mask_path = create_row(da.video_mask_path)
-        # MASK INIT INNER-TAB
-        with gr.Tab('Mask Init'):
+        # MASK INIT INNER-TAB - Hidden (deprecated - use Image Init with alpha channel instead)
+        with gr.Tab('Mask Init', visible=False):
             with FormRow():
                 use_mask = create_gr_elem(d.use_mask)
                 use_alpha_as_mask = create_gr_elem(d.use_alpha_as_mask)
@@ -653,8 +661,8 @@ def get_tab_init(d, da, dp):
                     mask_contrast_adjust = create_gr_elem(d.mask_contrast_adjust)
                 with FormColumn(min_width=250):
                     mask_brightness_adjust = create_gr_elem(d.mask_brightness_adjust)
-        # PARSEQ INNER-TAB
-        with gr.Tab(f"{emoji_utils.numbers()} Parseq"):
+        # PARSEQ INNER-TAB - Default tab
+        with gr.Tab(f"{emoji_utils.numbers()} Parseq", selected=True):
             gr.HTML(value=get_gradio_html('parseq'))
             parseq_manifest = create_row(dp.parseq_manifest)
             parseq_non_schedule_overrides = create_row(dp.parseq_non_schedule_overrides)
@@ -2168,16 +2176,6 @@ def get_tab_wan(dw: SimpleNamespace):
 def get_tab_distribution(da):
     """Distribution & Render Mode - Main workflow control (promoted from Keyframes subtab)"""
     with gr.TabItem(f"{emoji_utils.distribution()} Distribution", elem_id='distribution_tab'):
-        gr.Markdown("""
-        ## Keyframe Distribution & Render Mode
-
-        **This is the main control for switching between rendering modes:**
-        - **Keyframes Only:** Modern experimental render core (recommended for Flux + Wan)
-        - **Cadence:** Traditional rendering with fixed frame intervals
-
-        **Wan FLF2V Integration** is available when using Keyframes Only mode.
-        """)
-
         keyframe_distribution = create_row(da.keyframe_distribution)
 
         # Wan FLF2V Integration
@@ -2221,6 +2219,18 @@ def get_tab_distribution(da):
                     elem_id="auto_assign_keyframe_types_btn"
                 )
                 gr.Markdown("*Analyzes tween distances and suggests optimal types based on chunk size*")
+
+        # Informational section at bottom
+        gr.Markdown("""
+        ---
+        ## Keyframe Distribution & Render Mode
+
+        **This is the main control for switching between rendering modes:**
+        - **Keyframes Only:** Modern experimental render core (recommended for Flux + Wan)
+        - **Cadence:** Traditional rendering with fixed frame intervals
+
+        **Wan FLF2V Integration** is available when using Keyframes Only mode.
+        """)
 
         create_keyframe_distribution_info_tab()
 
