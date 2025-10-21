@@ -1566,7 +1566,7 @@ Error: {diffusers_e}
             # Save frames as PNG files
             saved_paths = []
             for i, frame_np in enumerate(frames):
-                frame_filename = f"{timestring}_{start_frame_idx + i:09d}.png"
+                frame_filename = f"{start_frame_idx + i:09d}.png"
                 frame_path = os.path.join(output_dir, frame_filename)
                 
                 try:

@@ -56,9 +56,9 @@ def get_resume_vars(folder, timestring, cadence):
     next_frame = last_frame - 1
    
     # get prev_img/next_img from prev/next frame index (files start at 0, so subtract 1 for index var)
-    path = os.path.join(folder, f"{timestring}_{prev_frame:09}.png")  
+    path = os.path.join(folder, f"{prev_frame:09}.png")
     prev_img = cv2.imread(path)
-    path = os.path.join(folder, f"{timestring}_{next_frame:09}.png")  
+    path = os.path.join(folder, f"{next_frame:09}.png")
     next_img = cv2.imread(path)
 
     # report resume last/next in console

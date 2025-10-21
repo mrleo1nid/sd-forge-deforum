@@ -22,8 +22,12 @@ def _frame_filename_index(i: int, file_format: FileFormat) -> str:
 
 
 def frame_filename(data, i: int, is_depth=False, file_format=FileFormat.frame_format()) -> str:
-    infix = "_depth_" if is_depth else "_"
-    return f"{data.args.root.timestring}{infix}{_frame_filename_index(i, file_format)}"
+    # Regular frames: just index (000000001.png)
+    # Depth frames: depth-maps subdirectory with _depth suffix (depth-maps/000000001_depth.png)
+    if is_depth:
+        return f"depth-maps/{i:09}_depth.{file_format.value}"
+    else:
+        return f"{i:09}.{file_format.value}"
 
 
 def depth_frame(data, i) -> str:

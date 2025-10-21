@@ -72,7 +72,7 @@ def get_ffmpeg_params(): # get ffmpeg params from webui's settings -> deforum ta
     return [f_location, f_crf, f_preset]
 
 def get_ffmpeg_paths(outdir, timestring, anim_args, video_args, output_suffix=''):
-    image_path = os.path.join(outdir, f"{timestring}_%09d.png")
+    image_path = os.path.join(outdir, "%09d.png")
     mp4_path = os.path.join(outdir, f"{timestring}{output_suffix}.mp4")
     
     real_audio_track = None

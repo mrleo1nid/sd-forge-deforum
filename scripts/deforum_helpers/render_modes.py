@@ -168,7 +168,7 @@ def render_interpolation(args, anim_args, video_args, parseq_args, loop_args, co
 
         image = generate(args, keys, anim_args, loop_args, controlnet_args,
                          root, parseq_adapter, frame_idx, scheduled_sampler_name, scheduled_scheduler_name)
-        filename = f"{root.timestring}_{frame_idx:09}.png"
+        filename = f"{frame_idx:09}.png"
 
         save_image(image, 'PIL', filename, args, video_args, root)
 

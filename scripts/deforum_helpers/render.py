@@ -373,14 +373,17 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
                 # state.current_image = Image.fromarray(cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB))
 
                 # saving cadence frames
-                filename = f"{root.timestring}_{tween_frame_idx:09}.png"
+                filename = f"{tween_frame_idx:09}.png"
                 # Validate image before saving to prevent OpenCV assertion errors
                 if img is not None and hasattr(img, 'shape') and img.size > 0:
                     cv2.imwrite(os.path.join(args.outdir, filename), img)
                 else:
                     print(f"Warning: Skipping save for frame {tween_frame_idx} - invalid or empty image")
                 if anim_args.save_depth_maps:
-                    depth_model.save(os.path.join(args.outdir, f"{root.timestring}_depth_{tween_frame_idx:09}.png"), depth)
+                    # Ensure depth-maps subdirectory exists
+                    depth_dir = os.path.join(args.outdir, "depth-maps")
+                    os.makedirs(depth_dir, exist_ok=True)
+                    depth_model.save(os.path.join(args.outdir, f"depth-maps/{tween_frame_idx:09}_depth.png"), depth)
 
         # Hybrid video removed - was: hybrid_available and video input color coherence (7 lines)
 
@@ -562,7 +565,7 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
             turbo_next_image, turbo_next_frame_idx = opencv_image, frame_idx
             frame_idx += turbo_steps
         else:
-            filename = f"{root.timestring}_{frame_idx:09}.png"
+            filename = f"{frame_idx:09}.png"
             save_image(image, 'PIL', filename, args, video_args, root)
 
             if anim_args.save_depth_maps:
@@ -572,7 +575,10 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
                     devices.torch_gc()
                     depth_model.to(root.device)
                 depth = depth_model.predict(opencv_image, anim_args.midas_weight, root.half_precision)
-                depth_model.save(os.path.join(args.outdir, f"{root.timestring}_depth_{frame_idx:09}.png"), depth)
+                # Ensure depth-maps subdirectory exists
+                depth_dir = os.path.join(args.outdir, "depth-maps")
+                os.makedirs(depth_dir, exist_ok=True)
+                depth_model.save(os.path.join(args.outdir, f"depth-maps/{frame_idx:09}_depth.png"), depth)
                 if cmd_opts.lowvram or cmd_opts.medvram:
                     depth_model.to('cpu')
                     devices.torch_gc()
