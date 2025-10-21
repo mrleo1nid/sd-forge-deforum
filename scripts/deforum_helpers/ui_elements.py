@@ -624,49 +624,50 @@ def get_tab_depth_warping(da):
 
 def get_tab_init(d, da, dp):
     with gr.TabItem('Init'):
-        # IMAGE INIT INNER-TAB
-        with gr.Tab('Image Init'):
-            with FormRow():
-                with gr.Column(min_width=150):
-                    use_init = create_gr_elem(d.use_init)
-                with gr.Column(min_width=150):
-                    strength_0_no_init = create_gr_elem(d.strength_0_no_init)
-                with gr.Column(min_width=170):
-                    strength = create_gr_elem(d.strength)  # TODO rename to init_strength
-            init_image = create_row(d.init_image)
-            init_image_box = create_row(d.init_image_box)
-        # VIDEO INIT INNER-TAB - Hidden (deprecated - use Image Init or Parseq instead)
-        with gr.Tab('Video Init', visible=False):
-            video_init_path = create_row(da.video_init_path)
-            with FormRow():
-                extract_from_frame = create_gr_elem(da.extract_from_frame)
-                extract_to_frame = create_gr_elem(da.extract_to_frame)
-                extract_nth_frame = create_gr_elem(da.extract_nth_frame)
-                overwrite_extracted_frames = create_gr_elem(da.overwrite_extracted_frames)
-                use_mask_video = create_gr_elem(da.use_mask_video)
-            video_mask_path = create_row(da.video_mask_path)
-        # MASK INIT INNER-TAB - Hidden (deprecated - use Image Init with alpha channel instead)
-        with gr.Tab('Mask Init', visible=False):
-            with FormRow():
-                use_mask = create_gr_elem(d.use_mask)
-                use_alpha_as_mask = create_gr_elem(d.use_alpha_as_mask)
-                invert_mask = create_gr_elem(d.invert_mask)
-                overlay_mask = create_gr_elem(d.overlay_mask)
-            mask_file = create_row(d.mask_file)
-            mask_overlay_blur = create_row(d.mask_overlay_blur)
-            fill = create_row(d.fill)
-            full_res_mask, full_res_mask_padding = create_row(d, 'full_res_mask', 'full_res_mask_padding')
-            with FormRow():
-                with FormColumn(min_width=240):
-                    mask_contrast_adjust = create_gr_elem(d.mask_contrast_adjust)
-                with FormColumn(min_width=250):
-                    mask_brightness_adjust = create_gr_elem(d.mask_brightness_adjust)
-        # PARSEQ INNER-TAB - Default tab
-        with gr.Tab(f"{emoji_utils.numbers()} Parseq", selected=True):
-            gr.HTML(value=get_gradio_html('parseq'))
-            parseq_manifest = create_row(dp.parseq_manifest)
-            parseq_non_schedule_overrides = create_row(dp.parseq_non_schedule_overrides)
-            parseq_use_deltas = create_row(dp.parseq_use_deltas)
+        with gr.Tabs():
+            # PARSEQ INNER-TAB - Now first and will be auto-selected
+            with gr.Tab(f"{emoji_utils.numbers()} Parseq"):
+                gr.HTML(value=get_gradio_html('parseq'))
+                parseq_manifest = create_row(dp.parseq_manifest)
+                parseq_non_schedule_overrides = create_row(dp.parseq_non_schedule_overrides)
+                parseq_use_deltas = create_row(dp.parseq_use_deltas)
+            # IMAGE INIT INNER-TAB
+            with gr.Tab('Image Init'):
+                with FormRow():
+                    with gr.Column(min_width=150):
+                        use_init = create_gr_elem(d.use_init)
+                    with gr.Column(min_width=150):
+                        strength_0_no_init = create_gr_elem(d.strength_0_no_init)
+                    with gr.Column(min_width=170):
+                        strength = create_gr_elem(d.strength)  # TODO rename to init_strength
+                init_image = create_row(d.init_image)
+                init_image_box = create_row(d.init_image_box)
+            # VIDEO INIT INNER-TAB - Hidden (deprecated - use Image Init or Parseq instead)
+            with gr.Tab('Video Init', visible=False):
+                video_init_path = create_row(da.video_init_path)
+                with FormRow():
+                    extract_from_frame = create_gr_elem(da.extract_from_frame)
+                    extract_to_frame = create_gr_elem(da.extract_to_frame)
+                    extract_nth_frame = create_gr_elem(da.extract_nth_frame)
+                    overwrite_extracted_frames = create_gr_elem(da.overwrite_extracted_frames)
+                    use_mask_video = create_gr_elem(da.use_mask_video)
+                video_mask_path = create_row(da.video_mask_path)
+            # MASK INIT INNER-TAB - Hidden (deprecated - use Image Init with alpha channel instead)
+            with gr.Tab('Mask Init', visible=False):
+                with FormRow():
+                    use_mask = create_gr_elem(d.use_mask)
+                    use_alpha_as_mask = create_gr_elem(d.use_alpha_as_mask)
+                    invert_mask = create_gr_elem(d.invert_mask)
+                    overlay_mask = create_gr_elem(d.overlay_mask)
+                mask_file = create_row(d.mask_file)
+                mask_overlay_blur = create_row(d.mask_overlay_blur)
+                fill = create_row(d.fill)
+                full_res_mask, full_res_mask_padding = create_row(d, 'full_res_mask', 'full_res_mask_padding')
+                with FormRow():
+                    with FormColumn(min_width=240):
+                        mask_contrast_adjust = create_gr_elem(d.mask_contrast_adjust)
+                    with FormColumn(min_width=250):
+                        mask_brightness_adjust = create_gr_elem(d.mask_brightness_adjust)
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
