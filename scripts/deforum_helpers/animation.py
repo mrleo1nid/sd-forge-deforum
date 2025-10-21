@@ -1,170 +1,223 @@
-# Copyright (C) 2023 Deforum LLC
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, version 3 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-# Contact the authors: https://deforum.github.io/
-
 import numpy as np
 import cv2
-import py3d_tools as p3d # this is actually a file in our /src folder!
 from functools import reduce
 import math
 import torch
 from PIL import Image
 from einops import rearrange
-from modules.shared import state, opts
-from .prompt import check_is_number
-from .general_utils import debug_print
-from .rendering.util import log_utils
+from typing import Tuple, List
 
+# Optional imports (not available in tests)
+try:
+    import py3d_tools as p3d  # From src/ folder
+except ImportError:
+    p3d = None
+
+try:
+    from modules.shared import state, opts
+except ImportError:
+    state = None
+    opts = None
+
+try:
+    from .prompt import check_is_number
+    from .general_utils import debug_print
+    from .rendering.util import log_utils
+except ImportError:
+    # Fallback for testing
+    check_is_number = lambda x: x.replace('.', '').replace('-', '').isdigit()
+    debug_print = lambda x: None
+    log_utils = None
+
+# ============================================================================
+# PURE FUNCTIONS (tensor/array transformations)
+# ============================================================================
+
+def normalize_image_to_tensor_range(img_array: np.ndarray) -> np.ndarray:
+    """Normalize uint8 image [0,255] to tensor range [-1,1]."""
+    return ((img_array.astype(float) / 255.0) * 2) - 1
+
+def denormalize_tensor_to_image_range(tensor_array: np.ndarray) -> np.ndarray:
+    """Denormalize tensor range [-1,1] to image range [0,1]."""
+    return ((tensor_array * 0.5) + 0.5).clip(0, 1)
 
 def sample_from_cv2(sample: np.ndarray) -> torch.Tensor:
-    sample = ((sample.astype(float) / 255.0) * 2) - 1
-    sample = sample[None].transpose(0, 3, 1, 2).astype(np.float16)
-    sample = torch.from_numpy(sample)
-    return sample
+    """Convert CV2 image (HWC uint8) to PyTorch tensor (NCHW float16)."""
+    normalized = normalize_image_to_tensor_range(sample)
+    # Add batch dimension and transpose to NCHW format
+    tensor_data = normalized[None].transpose(0, 3, 1, 2).astype(np.float16)
+    return torch.from_numpy(tensor_data)
 
-def sample_to_cv2(sample: torch.Tensor, type=np.uint8) -> np.ndarray:
-    sample_f32 = rearrange(sample.squeeze().cpu().numpy(), "c h w -> h w c").astype(np.float32)
-    sample_f32 = ((sample_f32 * 0.5) + 0.5).clip(0, 1)
-    sample_int8 = (sample_f32 * 255)
-    return sample_int8.astype(type)
+def sample_to_cv2(sample: torch.Tensor, dtype: type = np.uint8) -> np.ndarray:
+    """Convert PyTorch tensor (NCHW) to CV2 image (HWC uint8)."""
+    # CHW -> HWC and move to CPU
+    array_f32 = rearrange(sample.squeeze().cpu().numpy(), "c h w -> h w c").astype(np.float32)
+    normalized = denormalize_tensor_to_image_range(array_f32)
+    return (normalized * 255).astype(dtype)
 
-def construct_RotationMatrixHomogenous(rotation_angles):
-    assert(type(rotation_angles)==list and len(rotation_angles)==3)
-    RH = np.eye(4,4)
-    cv2.Rodrigues(np.array(rotation_angles), RH[0:3, 0:3])
-    return RH
+def construct_rotation_matrix_rodrigues(rotation_angles: List[float]) -> np.ndarray:
+    """Construct 4x4 homogeneous rotation matrix using Rodrigues formula."""
+    if not (isinstance(rotation_angles, list) and len(rotation_angles) == 3):
+        raise ValueError("rotation_angles must be list of 3 floats")
+    rotation_matrix = np.eye(4, 4)
+    cv2.Rodrigues(np.array(rotation_angles), rotation_matrix[0:3, 0:3])
+    return rotation_matrix
 
-# https://en.wikipedia.org/wiki/Rotation_matrix
-def getRotationMatrixManual(rotation_angles):
-	
-    rotation_angles = [np.deg2rad(x) for x in rotation_angles]
-    
-    phi         = rotation_angles[0] # around x
-    gamma       = rotation_angles[1] # around y
-    theta       = rotation_angles[2] # around z
-    
-    # X rotation
-    Rphi        = np.eye(4,4)
-    sp          = np.sin(phi)
-    cp          = np.cos(phi)
-    Rphi[1,1]   = cp
-    Rphi[2,2]   = Rphi[1,1]
-    Rphi[1,2]   = -sp
-    Rphi[2,1]   = sp
-    
-    # Y rotation
-    Rgamma        = np.eye(4,4)
-    sg            = np.sin(gamma)
-    cg            = np.cos(gamma)
-    Rgamma[0,0]   = cg
-    Rgamma[2,2]   = Rgamma[0,0]
-    Rgamma[0,2]   = sg
-    Rgamma[2,0]   = -sg
-    
-    # Z rotation (in-image-plane)
-    Rtheta      = np.eye(4,4)
-    st          = np.sin(theta)
-    ct          = np.cos(theta)
-    Rtheta[0,0] = ct
-    Rtheta[1,1] = Rtheta[0,0]
-    Rtheta[0,1] = -st
-    Rtheta[1,0] = st
-    
-    R           = reduce(lambda x,y : np.matmul(x,y), [Rphi, Rgamma, Rtheta]) 
-    
-    return R
+def create_rotation_matrix_x(angle_rad: float) -> np.ndarray:
+    """Create 4x4 rotation matrix around X axis."""
+    matrix = np.eye(4, 4)
+    sin_a = np.sin(angle_rad)
+    cos_a = np.cos(angle_rad)
+    matrix[1, 1] = cos_a
+    matrix[2, 2] = cos_a
+    matrix[1, 2] = -sin_a
+    matrix[2, 1] = sin_a
+    return matrix
 
-def getPoints_for_PerspectiveTranformEstimation(ptsIn, ptsOut, W, H, sidelength):
-    
-    ptsIn2D      =  ptsIn[0,:]
-    ptsOut2D     =  ptsOut[0,:]
-    ptsOut2Dlist =  []
-    ptsIn2Dlist  =  []
-    
-    for i in range(0,4):
-        ptsOut2Dlist.append([ptsOut2D[i,0], ptsOut2D[i,1]])
-        ptsIn2Dlist.append([ptsIn2D[i,0], ptsIn2D[i,1]])
-    
-    pin  =  np.array(ptsIn2Dlist)   +  [W/2.,H/2.]
-    pout = (np.array(ptsOut2Dlist)  +  [1.,1.]) * (0.5*sidelength)
-    pin  = pin.astype(np.float32)
-    pout = pout.astype(np.float32)
-    
-    return pin, pout
+def create_rotation_matrix_y(angle_rad: float) -> np.ndarray:
+    """Create 4x4 rotation matrix around Y axis."""
+    matrix = np.eye(4, 4)
+    sin_a = np.sin(angle_rad)
+    cos_a = np.cos(angle_rad)
+    matrix[0, 0] = cos_a
+    matrix[2, 2] = cos_a
+    matrix[0, 2] = sin_a
+    matrix[2, 0] = -sin_a
+    return matrix
 
+def create_rotation_matrix_z(angle_rad: float) -> np.ndarray:
+    """Create 4x4 rotation matrix around Z axis (in-image-plane)."""
+    matrix = np.eye(4, 4)
+    sin_a = np.sin(angle_rad)
+    cos_a = np.cos(angle_rad)
+    matrix[0, 0] = cos_a
+    matrix[1, 1] = cos_a
+    matrix[0, 1] = -sin_a
+    matrix[1, 0] = sin_a
+    return matrix
+
+def get_rotation_matrix_manual(rotation_angles: List[float]) -> np.ndarray:
+    """Construct rotation matrix manually using Euler angles (phi, gamma, theta).
+
+    See: https://en.wikipedia.org/wiki/Rotation_matrix
+    """
+    angles_rad = [np.deg2rad(x) for x in rotation_angles]
+    phi = angles_rad[0]    # around X
+    gamma = angles_rad[1]  # around Y
+    theta = angles_rad[2]  # around Z
+
+    r_phi = create_rotation_matrix_x(phi)
+    r_gamma = create_rotation_matrix_y(gamma)
+    r_theta = create_rotation_matrix_z(theta)
+
+    return reduce(lambda x, y: np.matmul(x, y), [r_phi, r_gamma, r_theta])
+
+def extract_2d_points(pts_3d: np.ndarray) -> np.ndarray:
+    """Extract 2D points from 3D perspective transform output."""
+    pts_2d = pts_3d[0, :]
+    return np.array([[pts_2d[i, 0], pts_2d[i, 1]] for i in range(4)])
+
+def get_perspective_transform_points(
+    pts_in: np.ndarray,
+    pts_out: np.ndarray,
+    width: int,
+    height: int,
+    side_length: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Calculate input/output points for perspective transform estimation."""
+    pts_in_2d = extract_2d_points(pts_in)
+    pts_out_2d = extract_2d_points(pts_out)
+
+    # Center input points
+    pin = pts_in_2d + [width / 2.0, height / 2.0]
+    # Scale and center output points
+    pout = (pts_out_2d + [1.0, 1.0]) * (0.5 * side_length)
+
+    return pin.astype(np.float32), pout.astype(np.float32)
+
+def calculate_fov_parameters(width: int, height: int, fov_deg: float, scale: float) -> Tuple[float, float, float, float]:
+    """Calculate field of view geometry parameters."""
+    fov_half_rad = np.deg2rad(fov_deg / 2.0)
+    diagonal = np.sqrt(width * width + height * height)
+    side_length = scale * diagonal / np.cos(fov_half_rad)
+    focal_distance = diagonal / (2.0 * np.sin(fov_half_rad))
+    near_plane = focal_distance - (diagonal / 2.0)
+    far_plane = focal_distance + (diagonal / 2.0)
+    return side_length, focal_distance, near_plane, far_plane
+
+def create_translation_matrix_z(z_offset: float) -> np.ndarray:
+    """Create 4x4 translation matrix along Z axis."""
+    matrix = np.eye(4, 4)
+    matrix[2, 3] = z_offset
+    return matrix
+
+def create_projection_matrix(fov_half_rad: float, near: float, far: float) -> np.ndarray:
+    """Create 4x4 perspective projection matrix."""
+    matrix = np.eye(4, 4)
+    matrix[0, 0] = 1.0 / np.tan(fov_half_rad)
+    matrix[1, 1] = matrix[0, 0]
+    matrix[2, 2] = -(far + near) / (far - near)
+    matrix[2, 3] = -(2.0 * far * near) / (far - near)
+    matrix[3, 2] = -1.0
+    return matrix
+
+def create_corner_points(width: int, height: int) -> np.ndarray:
+    """Create standard corner points array for perspective transform."""
+    return np.array([[
+        [-width / 2.0, height / 2.0, 0.0],
+        [width / 2.0, height / 2.0, 0.0],
+        [width / 2.0, -height / 2.0, 0.0],
+        [-width / 2.0, -height / 2.0, 0.0]
+    ]])
 
 def warpMatrix(W, H, theta, phi, gamma, scale, fV):
-    
-    # M is to be estimated
-    M          = np.eye(4, 4)
-    
-    fVhalf     = np.deg2rad(fV/2.)
-    d          = np.sqrt(W*W+H*H)
-    sideLength = scale*d/np.cos(fVhalf)
-    h          = d/(2.0*np.sin(fVhalf))
-    n          = h-(d/2.0)
-    f          = h+(d/2.0)
-    
-    # Translation along Z-axis by -h
-    T       = np.eye(4,4)
-    T[2,3]  = -h
-    
-    # Rotation matrices around x,y,z
-    R = getRotationMatrixManual([phi, gamma, theta])
-    
-    
-    # Projection Matrix 
-    P       = np.eye(4,4)
-    P[0,0]  = 1.0/np.tan(fVhalf)
-    P[1,1]  = P[0,0]
-    P[2,2]  = -(f+n)/(f-n)
-    P[2,3]  = -(2.0*f*n)/(f-n)
-    P[3,2]  = -1.0
-    
-    # pythonic matrix multiplication
-    F       = reduce(lambda x,y : np.matmul(x,y), [P, T, R]) 
-    
-    # shape should be 1,4,3 for ptsIn and ptsOut since perspectiveTransform() expects data in this way. 
-    # In C++, this can be achieved by Mat ptsIn(1,4,CV_64FC3);
-    ptsIn = np.array([[
-                 [-W/2., H/2., 0.],[ W/2., H/2., 0.],[ W/2.,-H/2., 0.],[-W/2.,-H/2., 0.]
-                 ]])
-    ptsOut  = np.array(np.zeros((ptsIn.shape), dtype=ptsIn.dtype))
-    ptsOut  = cv2.perspectiveTransform(ptsIn, F)
-    
-    ptsInPt2f, ptsOutPt2f = getPoints_for_PerspectiveTranformEstimation(ptsIn, ptsOut, W, H, sideLength)
-    
-    # check float32 otherwise OpenCV throws an error
-    assert(ptsInPt2f.dtype  == np.float32)
-    assert(ptsOutPt2f.dtype == np.float32)
-    M33 = cv2.getPerspectiveTransform(ptsInPt2f,ptsOutPt2f)
+    """Calculate perspective warp matrix for 3D rotation and projection."""
+    # Calculate FOV parameters
+    side_length, focal_distance, near, far = calculate_fov_parameters(W, H, fV, scale)
+    fov_half_rad = np.deg2rad(fV / 2.0)
 
-    return M33, sideLength
+    # Build transformation matrices
+    T = create_translation_matrix_z(-focal_distance)
+    R = get_rotation_matrix_manual([phi, gamma, theta])
+    P = create_projection_matrix(fov_half_rad, near, far)
 
-def get_flip_perspective_matrix(W, H, keys, frame_idx):
+    # Combine transformations: Projection * Translation * Rotation
+    F = reduce(lambda x, y: np.matmul(x, y), [P, T, R])
+
+    # Create corner points and apply perspective transform
+    pts_in = create_corner_points(W, H)
+    pts_out = cv2.perspectiveTransform(pts_in, F)
+
+    # Get points for final transform estimation
+    pts_in_2f, pts_out_2f = get_perspective_transform_points(pts_in, pts_out, W, H, side_length)
+
+    # Verify float32 type (required by OpenCV)
+    assert pts_in_2f.dtype == np.float32
+    assert pts_out_2f.dtype == np.float32
+
+    # Calculate final 3x3 perspective transform matrix
+    M33 = cv2.getPerspectiveTransform(pts_in_2f, pts_out_2f)
+
+    return M33, side_length
+
+# ============================================================================
+# IMPURE FUNCTIONS (depends on keys, anim_args, side effects)
+# ============================================================================
+
+def get_flip_perspective_matrix(W: int, H: int, keys, frame_idx: int) -> np.ndarray:
+    """Calculate perspective flip matrix from keyframe parameters."""
     perspective_flip_theta = keys.perspective_flip_theta_series[frame_idx]
     perspective_flip_phi = keys.perspective_flip_phi_series[frame_idx]
     perspective_flip_gamma = keys.perspective_flip_gamma_series[frame_idx]
     perspective_flip_fv = keys.perspective_flip_fv_series[frame_idx]
-    M,sl = warpMatrix(W, H, perspective_flip_theta, perspective_flip_phi, perspective_flip_gamma, 1., perspective_flip_fv);
-    post_trans_mat = np.float32([[1, 0, (W-sl)/2], [0, 1, (H-sl)/2]])
-    post_trans_mat = np.vstack([post_trans_mat, [0,0,1]])
+    M, sl = warpMatrix(W, H, perspective_flip_theta, perspective_flip_phi, perspective_flip_gamma, 1.0, perspective_flip_fv)
+    post_trans_mat = np.float32([[1, 0, (W - sl) / 2], [0, 1, (H - sl) / 2]])
+    post_trans_mat = np.vstack([post_trans_mat, [0, 0, 1]])
     bM = np.matmul(M, post_trans_mat)
     return bM
 
-def flip_3d_perspective(anim_args, prev_img_cv2, keys, frame_idx):
+def flip_3d_perspective(anim_args, prev_img_cv2: np.ndarray, keys, frame_idx: int) -> np.ndarray:
+    """Apply 3D perspective flip transformation to image."""
     W, H = (prev_img_cv2.shape[1], prev_img_cv2.shape[0])
     return cv2.warpPerspective(
         prev_img_cv2,
@@ -173,10 +226,19 @@ def flip_3d_perspective(anim_args, prev_img_cv2, keys, frame_idx):
         borderMode=cv2.BORDER_WRAP if anim_args.border == 'wrap' else cv2.BORDER_REPLICATE
     )
 
-
-def anim_frame_warp(prev_img_cv2, args, anim_args, keys, frame_idx, depth_model=None, depth=None,
-                    device='cuda', half_precision=False, shaker=None):
-
+def anim_frame_warp(
+    prev_img_cv2: np.ndarray,
+    args,
+    anim_args,
+    keys,
+    frame_idx: int,
+    depth_model=None,
+    depth=None,
+    device: str = 'cuda',
+    half_precision: bool = False,
+    shaker=None
+) -> Tuple[np.ndarray, np.ndarray | None]:
+    """Main entry point for frame warping - routes to 2D or 3D based on animation mode."""
     if anim_args.use_depth_warping:
         if depth is None and depth_model is not None:
             depth = depth_model.predict(prev_img_cv2, anim_args.midas_weight, half_precision)
@@ -184,16 +246,22 @@ def anim_frame_warp(prev_img_cv2, args, anim_args, keys, frame_idx, depth_model=
         depth = None
 
     if anim_args.animation_mode == '2D':
-        if shaker is not None:
+        if shaker is not None and log_utils:
             log_utils.debug("Camera shake data can not be used in 2D animation mode. Ignoring setup.")
         prev_img = anim_frame_warp_2d(prev_img_cv2, args, anim_args, keys, frame_idx)
     else:  # '3D'
         prev_img = anim_frame_warp_3d(device, prev_img_cv2, depth, anim_args, keys, frame_idx, shaker)
-                
+
     return prev_img, depth
 
-
-def anim_frame_warp_2d(prev_img_cv2, args, anim_args, keys, frame_idx):
+def anim_frame_warp_2d(
+    prev_img_cv2: np.ndarray,
+    args,
+    anim_args,
+    keys,
+    frame_idx: int
+) -> np.ndarray:
+    """Apply 2D warping (rotation, zoom, translation) to frame."""
     angle = keys.angle_series[frame_idx]
     zoom = keys.zoom_series[frame_idx]
     translation_x = keys.translation_x_series[frame_idx]
@@ -203,8 +271,8 @@ def anim_frame_warp_2d(prev_img_cv2, args, anim_args, keys, frame_idx):
     center_point = (args.W * transform_center_x, args.H * transform_center_y)
     rot_mat = cv2.getRotationMatrix2D(center_point, angle, zoom)
     trans_mat = np.float32([[1, 0, translation_x], [0, 1, translation_y]])
-    trans_mat = np.vstack([trans_mat, [0,0,1]])
-    rot_mat = np.vstack([rot_mat, [0,0,1]])
+    trans_mat = np.vstack([trans_mat, [0, 0, 1]])
+    rot_mat = np.vstack([rot_mat, [0, 0, 1]])
     if anim_args.enable_perspective_flip:
         bM = get_flip_perspective_matrix(args.W, args.H, keys, frame_idx)
         rot_mat = np.matmul(bM, rot_mat, trans_mat)
@@ -217,8 +285,15 @@ def anim_frame_warp_2d(prev_img_cv2, args, anim_args, keys, frame_idx):
         borderMode=cv2.BORDER_WRAP if anim_args.border == 'wrap' else cv2.BORDER_REPLICATE
     )
 
-
-def anim_frame_warp_3d(device, prev_img_cv2, depth, anim_args, keys, frame_idx, shaker=None):
+def anim_frame_warp_3d(
+    device: str,
+    prev_img_cv2: np.ndarray,
+    depth,
+    anim_args,
+    keys,
+    frame_idx: int,
+    shaker=None
+) -> np.ndarray:
     is_shake = shaker is not None and shaker.is_enabled
 
     def _maybe_shake(series, transform_type, axis):
