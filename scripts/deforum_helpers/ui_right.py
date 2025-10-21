@@ -18,9 +18,10 @@ import os
 from .args import DeforumOutputArgs, get_component_names, get_settings_component_names
 from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
+from modules.ui_common import open_folder
 from modules.call_queue import wrap_gradio_gpu_call
 from .run_deforum import run_deforum
-from .settings import save_settings, load_all_settings, load_video_settings, get_default_settings_path, update_settings_path
+from .settings import save_settings, load_all_settings, get_default_settings_path, update_settings_path
 from .general_utils import get_deforum_version, get_commit_date
 from .ui_left import setup_deforum_left_side_ui
 from scripts.deforum_extend_paths import deforum_sys_extend
@@ -148,48 +149,19 @@ def on_ui_tabs():
                 components = setup_deforum_left_side_ui()
             with gr.Column(scale=1, variant='compact'):  # Right side preview column
                 with gr.Row(variant='compact'):
-                    btn = gr.Button("Click here after the generation to show the video")
-                    components['btn'] = btn
-                    close_btn = gr.Button("Close the video", visible=False)
-                with gr.Row(variant='compact'):
                     i1 = gr.HTML(i1_store, elem_id='deforum_header')
-                    components['i1'] = i1
-                    def show_vid(): # Show video button related func
-                        from .run_deforum import last_vid_data # get latest vid preview data (this import needs to stay inside the function!)
-                        return {
-                            i1: gr.update(value=last_vid_data, visible=True),
-                            close_btn: gr.update(visible=True),
-                            btn: gr.update(value="Update the video", visible=True),
-                        }
-                    btn.click(
-                        fn=show_vid,
-                        inputs=[],
-                        outputs=[i1, close_btn, btn],
-                        )
-                    def close_vid(): # Close video button related func
-                        return {
-                            i1: gr.update(value=i1_store_backup, visible=True),
-                            close_btn: gr.update(visible=False),
-                            btn: gr.update(value="Click here after the generation to show the video", visible=True),
-                        }
-                    
-                    close_btn.click(
-                        fn=close_vid,
-                        inputs=[],
-                        outputs=[i1, close_btn, btn],
-                        )
                 id_part = 'deforum'
 
-                # Use Deforum-specific output directory
+                # Use Deforum-specific output directory (hidden - only for folder button access)
                 deforum_outdir = os.path.join(os.getcwd(), 'outputs', 'deforum')
                 os.makedirs(deforum_outdir, exist_ok=True)
-                res = create_output_panel("deforum", deforum_outdir)
 
-                #deforum_gallery, generation_info, html_info, _
-
-                generation_info = res.generation_info
-                html_info= res.html_log
-                deforum_gallery = res.gallery
+                # Create hidden output panel (we only need it for the folder button reference)
+                with gr.Row(visible=False):
+                    res = create_output_panel("deforum", deforum_outdir)
+                    generation_info = res.generation_info
+                    html_info= res.html_log
+                    deforum_gallery = res.gallery
 
                 # Live preview - show latest frame during generation
                 live_preview_image = gr.Image(
@@ -247,7 +219,7 @@ def on_ui_tabs():
                 with gr.Row(variant='compact'):
                     save_settings_btn = gr.Button('Save Settings', elem_id='deforum_save_settings_btn')
                     load_settings_btn = gr.Button('Load All Settings', elem_id='deforum_load_settings_btn')
-                    load_video_settings_btn = gr.Button('Load Video Settings', elem_id='deforum_load_video_settings_btn')
+                    open_folder_btn = gr.Button('📂 Open Output Folder', elem_id='deforum_open_folder_btn')
 
         component_list = [components[name] for name in get_component_names()]
 
@@ -292,16 +264,11 @@ def on_ui_tabs():
             outputs=settings_component_list,
         )
 
-        # Create a path update function for video settings
-        def path_updating_load_video_settings(*args):
-            path = args[0]
-            settings_path.value = path
-            return load_video_settings(*args)
-            
-        load_video_settings_btn.click(
-            fn=wrap_gradio_call(path_updating_load_video_settings),
-            inputs=[settings_path] + video_settings_component_list,
-            outputs=video_settings_component_list,
+        # Open output folder button
+        open_folder_btn.click(
+            fn=lambda: open_folder(deforum_outdir),
+            inputs=[],
+            outputs=[],
         )
 
         # Depth preview visibility toggle based on animation_mode

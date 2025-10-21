@@ -19,6 +19,7 @@ import gradio as gr
 from .defaults import get_gradio_html
 from .gradio_funcs import change_css, handle_change_functions
 from .args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, RootArgs, LoopArgs, WanArgs
+from .rendering.util import emoji_utils
 # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
 # from .deforum_controlnet import setup_controlnet_ui
 from .ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
@@ -114,29 +115,72 @@ def setup_deforum_left_side_ui():
     # show button to hide/ show gradio's info texts for each element in the UI
     with gr.Row(variant='compact'):
         show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True)
+
+    # Top-level essential settings before tabs
+    with gr.Row(variant='compact'):
+        from .ui_elements import create_gr_elem
+        animation_mode = create_gr_elem(da.animation_mode)
+        fps = create_gr_elem(dv.fps)
+
     with gr.Blocks():
-        with gr.Tabs():
-            # Get main tab contents:
-            tab_run_params = get_tab_run(d, da)  # Run tab
-            tab_keyframes_params = get_tab_keyframes(d, da, dloopArgs)  # Keyframes tab
-            # NEW: Distribution, Shakify, and Depth Warping promoted to main tab level
-            # NEW: Qwen AI Enhancement integrated into Prompts tab
+        with gr.Tabs() as main_tabs:
+            # Get main tab contents in new workflow order:
+            # Tabs visible in all modes:
+            tab_init_params = get_tab_init(d, da, dp)  # 1. Init - all modes
             from .ui_elements import get_tab_distribution, get_tab_shakify, get_tab_depth_warping
-            tab_distribution_params = get_tab_distribution(da)  # Distribution tab
-            tab_prompts_params = get_tab_prompts(da, dw)  # Prompts tab (with Qwen AI Enhancement accordion)
-            tab_shakify_params = get_tab_shakify(da)  # Shakify tab (camera shake effects)
-            tab_depth_params = get_tab_depth_warping(da)  # 3D Depth tab (depth warping & FOV)
-            tab_init_params = get_tab_init(d, da, dp)  # Init tab
-            # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
-            # controlnet_dict = setup_controlnet_ui()  # ControlNet tab
-            controlnet_dict = {}  # Empty dict for backwards compatibility
-            # Re-enable Wan tab (UI only, imports still isolated)
+            tab_distribution_params = get_tab_distribution(da)  # 2. Distribution - all modes
+            tab_prompts_params = get_tab_prompts(da, dw, dv)  # 3. Prompts - all modes (now includes audio/timing)
+            tab_keyframes_params = get_tab_keyframes(d, da, dloopArgs)  # 4. Keyframes - all modes
+
+            # Mode-specific tabs (with visibility control):
+            # 3D mode only tabs:
+            with gr.TabItem(f"{emoji_utils.hole()} 3D Depth", visible=True) as tab_depth:
+                tab_depth_params = get_tab_depth_warping(da, skip_tabitem=True)  # 5. 3D Depth - 3D mode only
+            with gr.TabItem(f"{emoji_utils.bicycle()} Shakify", visible=True) as tab_shakify:
+                tab_shakify_params = get_tab_shakify(da, skip_tabitem=True)  # 6. Shakify - 3D mode only
+
+            # Flux/Wan mode only tab:
             from .ui_elements import get_tab_wan
-            tab_wan_params = get_tab_wan(dw)  # Re-enable Wan tab
-            tab_output_params = get_tab_output(da, dv)  # Output tab
+            with gr.TabItem(f"{emoji_utils.wan_video()} Wan Models", visible=True) as tab_wan:
+                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 7. Wan Models - Flux/Wan only
+
+            # Always visible tabs:
+            tab_run_params = get_tab_run(d, da)  # 8. Run - all modes
+            tab_output_params = get_tab_output(da, dv)  # 9. Output - all modes
+
+            # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
+            controlnet_dict = {}  # Empty dict for backwards compatibility
+
             # add returned gradio elements from main tabs to locals()
             for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_shakify_params, **tab_depth_params, **tab_init_params, **controlnet_dict, **tab_wan_params, **tab_output_params}.items():
                 locals()[key] = value
+
+            # Add top-level settings to locals()
+            locals()['animation_mode'] = animation_mode
+            locals()['fps'] = fps
+
+            # Store tab references for visibility control
+            locals()['tab_depth'] = tab_depth
+            locals()['tab_shakify'] = tab_shakify
+            locals()['tab_wan'] = tab_wan
+
+    # Tab visibility based on animation mode
+    def update_tab_visibility(mode):
+        """Show/hide tabs based on animation mode"""
+        is_3d = mode == '3D'
+        is_flux_wan = mode == 'Flux/Wan'
+
+        return [
+            gr.update(visible=is_3d),      # tab_depth
+            gr.update(visible=is_3d),      # tab_shakify
+            gr.update(visible=is_flux_wan) # tab_wan
+        ]
+
+    animation_mode.change(
+        fn=update_tab_visibility,
+        inputs=[animation_mode],
+        outputs=[tab_depth, tab_shakify, tab_wan]
+    )
 
     # Gradio's Change functions - hiding and renaming elements based on other elements
     show_info_on_ui.change(fn=change_css, inputs=show_info_on_ui, outputs=[gr.HTML()])
