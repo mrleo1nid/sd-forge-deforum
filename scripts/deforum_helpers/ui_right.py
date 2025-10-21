@@ -219,7 +219,7 @@ def on_ui_tabs():
                 with gr.Row(variant='compact'):
                     save_settings_btn = gr.Button('Save Settings', elem_id='deforum_save_settings_btn')
                     load_settings_btn = gr.Button('Load All Settings', elem_id='deforum_load_settings_btn')
-                    open_folder_btn = gr.Button('📂 Open Output Folder', elem_id='deforum_open_folder_btn')
+                    open_folder_btn = gr.Button('📂 Open Output Directory', elem_id='deforum_open_folder_btn')
 
         component_list = [components[name] for name in get_component_names()]
 
