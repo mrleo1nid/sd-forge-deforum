@@ -30,13 +30,13 @@ def on_ui_tabs():
     # extend paths using sys.path.extend so we can access all of our files and folders
     deforum_sys_extend()
     # set text above generate button
-    style = '"text-align:center;font-weight:bold;margin-bottom:0em;line-height:1.6"'
+    style = '"text-align:center;font-weight:bold;padding:8px 0;min-height:60px;display:block"'
     extension_url = "https://github.com/Tok/sd-forge-deforum"
     link = f"<a href='{extension_url}' target='_blank'>Zirteqs Fluxabled Fork</a>"
     extension_name = f"{link} of the Deforum Extension for WebUI Forge"
 
     commit_info = f"Git commit: {get_deforum_version()}"
-    i1_store_backup = f"<p style={style}>{extension_name}<br>Version: {get_commit_date()} | {commit_info}</p>"
+    i1_store_backup = f"<div style={style}>{extension_name}<br>Version: {get_commit_date()} | {commit_info}</div>"
     i1_store = i1_store_backup
 
     # Slopcore gradient aesthetic for Generate button and hide unwanted buttons
@@ -201,7 +201,8 @@ def on_ui_tabs():
                             height=200,
                             visible=False,
                             interactive=False,
-                            object_fit="contain"
+                            object_fit="contain",
+                            value=None  # Explicitly set initial value
                         )
 
                         components['depth_gallery'] = depth_gallery
