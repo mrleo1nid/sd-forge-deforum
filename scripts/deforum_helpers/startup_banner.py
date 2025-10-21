@@ -24,8 +24,9 @@ def print_startup_banner():
   • FlowMatchEulerDiscreteScheduler patching (diffusers_compat_patch.py)
   • Wan FLF2V pipeline integration with Forge's Flux backend
   • Unified Flux + Wan workflows with seamless model management{RESET}
-{BOLD}💡 Note:{RESET} This fork is optimized for Flux/Wan workflows. For best results,
-   run in a dedicated Forge instance.
+{BOLD}💡 Note:{RESET} This fork is optimized for Flux/Wan workflows.
+{BOLD}For best results:{RESET} Run in a dedicated Forge instance to avoid interfering
+   with other extensions and Forge base functionality.
 {BOLD}📚 More Info:{RESET} https://github.com/Tok/sd-forge-deforum
 {border_top}
 """
