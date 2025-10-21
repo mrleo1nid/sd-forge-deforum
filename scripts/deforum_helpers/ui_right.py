@@ -163,7 +163,7 @@ def on_ui_tabs():
             }, 100);
         })();
         </script>
-        """, visible=False)
+        """)
 
         components = {}
         dummy_component = gr.Button(visible=False)
