@@ -2177,13 +2177,13 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
 
     # Connect prompt template loading buttons
     # NOTE: These will be properly connected in ui_left.py where animation_prompts is accessible
-    
+
     # Store button references for connection in ui_left.py
     if 'load_wan_prompts_btn' in locals():
-    locals()['load_wan_prompts_btn']._handler = load_wan_prompts_handler
+        locals()['load_wan_prompts_btn']._handler = load_wan_prompts_handler
     if 'load_deforum_prompts_btn' in locals():
-    locals()['load_deforum_prompts_btn']._handler = load_deforum_prompts_handler
-    
+        locals()['load_deforum_prompts_btn']._handler = load_deforum_prompts_handler
+
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
 
