@@ -2255,7 +2255,12 @@ def get_tab_output(da, dv):
     with gr.TabItem(f"{emoji_utils.document()} Output", elem_id='output_tab'):
         # VID OUTPUT ACCORD
         with gr.Accordion('Video Output Settings', open=True):
-            # fps moved to top-level setting in ui_left.py
+            # fps moved to top-level setting in ui_left.py - create hidden copy for button handlers
+            with gr.Row(visible=False):
+                fps = create_gr_elem(dv.fps)
+                add_soundtrack = create_gr_elem(dv.add_soundtrack)
+                soundtrack_path = create_gr_elem(dv.soundtrack_path)
+
             with FormColumn():
                 with FormRow():
                     skip_video_creation = create_gr_elem(dv.skip_video_creation)
