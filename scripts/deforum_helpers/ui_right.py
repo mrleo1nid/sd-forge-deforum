@@ -203,7 +203,7 @@ def on_ui_tabs():
                     # Right: Depth preview (compact, beside buttons)
                     with gr.Column(scale=2):
                         depth_preview_image = gr.Image(
-                            label="🗺️ Latest Depth Map",
+                            label="Latest Depth Map",
                             show_label=True,
                             elem_id="deforum_depth_preview",
                             type="filepath",
