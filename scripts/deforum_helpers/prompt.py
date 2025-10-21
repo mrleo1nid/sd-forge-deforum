@@ -1,74 +1,76 @@
-# Copyright (C) 2023 Deforum LLC
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, version 3 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-# Contact the authors: https://deforum.github.io/
-
 import re
 import numexpr
+import pandas as pd
+import numpy as np
+from typing import Dict, Tuple
 from .rendering.util.log_utils import RED, GREEN, PURPLE, RESET_COLOR
 
-def check_is_number(value):
-    float_pattern = r'^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$'
-    return re.match(float_pattern, value)
+# ============================================================================
+# PURE FUNCTIONS
+# ============================================================================
 
-def parse_weight(match, frame=0, max_frames=0) -> float:
+def check_is_number(value: str) -> bool:
+    """Check if string represents a valid float number."""
+    float_pattern = r'^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$'
+    return re.match(float_pattern, value) is not None
+
+def evaluate_weight_expression(expression: str, frame: int, max_frames: int) -> float:
+    """Evaluate weight expression using numexpr (t and max_f variables available)."""
+    t = frame
+    max_f = max_frames  # Used by numexpr
+    return float(numexpr.evaluate(expression))
+
+def parse_weight(match: re.Match, frame: int = 0, max_frames: int = 0) -> float:
+    """Parse weight from regex match - returns float weight value."""
     w_raw = match.group("weight")
-    max_f = max_frames  # this line has to be left intact as it's in use by numexpr even though it looks like it doesn't
     if w_raw is None:
-        return 1
+        return 1.0
     if check_is_number(w_raw):
         return float(w_raw)
-    else:
-        t = frame
-        if len(w_raw) < 3:
-            print('the value inside `-characters cannot represent a math function')
-            return 1
-        return float(numexpr.evaluate(w_raw[1:-1]))
+    if len(w_raw) < 3:
+        # Invalid expression (too short to be valid: needs at least `x`)
+        return 1.0
+    # Strip backticks and evaluate
+    return evaluate_weight_expression(w_raw[1:-1], frame, max_frames)
 
-def split_weighted_subprompts(text, frame=0, max_frames=0):
-    """
-    splits the prompt based on deforum webui implementation, moved from generate.py 
-    """
-    math_parser = re.compile("(?P<weight>(`[\S\s]*?`))", re.VERBOSE)
+def split_prompt_into_pos_neg(text: str) -> Tuple[str, str]:
+    """Split prompt text into positive and negative parts using --neg delimiter."""
+    parts = text.split("--neg", 1)
+    if len(parts) > 1:
+        return parts[0], parts[1]
+    return parts[0], ""
 
-    parsed_prompt = re.sub(math_parser, lambda m: str(parse_weight(m, frame)), text)
+def substitute_weight_expressions(text: str, frame: int, max_frames: int) -> str:
+    """Replace all weight expressions in text with evaluated values."""
+    math_parser = re.compile(r"(?P<weight>(`[\S\s]*?`))", re.VERBOSE)
+    return re.sub(math_parser, lambda m: str(parse_weight(m, frame, max_frames)), text)
 
-    negative_prompts = []
-    positive_prompts = []
+def split_weighted_subprompts(text: str, frame: int = 0, max_frames: int = 0) -> Tuple[str, str]:
+    """Split prompt into positive/negative after evaluating weight expressions."""
+    parsed_prompt = substitute_weight_expressions(text, frame, max_frames)
+    return split_prompt_into_pos_neg(parsed_prompt)
 
-    prompt_split = parsed_prompt.split("--neg")
-    if len(prompt_split) > 1:
-        positive_prompts, negative_prompts = parsed_prompt.split("--neg")  # TODO: add --neg to vanilla Deforum for compat
-    else:
-        positive_prompts = prompt_split[0]
-        negative_prompts = ""
+def parse_keyframe_number(key: str, max_frames: int) -> int:
+    """Parse keyframe number - handles both numeric strings and math expressions."""
+    if check_is_number(key):
+        return int(float(key))
+    # Evaluate expression (max_f variable available in numexpr context)
+    max_f = max_frames  # Used by numexpr
+    return int(numexpr.evaluate(key))
 
-    return positive_prompts, negative_prompts
-
-def interpolate_prompts(animation_prompts, max_frames):
-    import numpy as np
-    import pandas as pd
-    # Get prompts sorted by keyframe
-    max_f = max_frames
-    parsed_animation_prompts = {}
+def parse_animation_prompts_dict(animation_prompts: Dict[str, str], max_frames: int) -> Dict[int, str]:
+    """Convert string keys to integer frame numbers."""
+    parsed = {}
     for key, value in animation_prompts.items():
-        if check_is_number(key):  # default case 0:(1 + t %5), 30:(5-t%2)
-            parsed_animation_prompts[key] = value
-        else:  # math on the left hand side case 0:(1 + t %5), maxKeyframes/2:(5-t%2)
-            parsed_animation_prompts[int(numexpr.evaluate(key))] = value
+        frame_num = parse_keyframe_number(str(key), max_frames)
+        parsed[frame_num] = value
+    return parsed
 
-    sorted_prompts = sorted(parsed_animation_prompts.items(), key=lambda item: int(item[0]))
+def interpolate_prompts(animation_prompts: Dict[str, str], max_frames: int) -> pd.Series:
+    """Interpolate prompts between keyframes using composable diffusion."""
+    # Parse and sort prompts by keyframe
+    parsed_prompts = parse_animation_prompts_dict(animation_prompts, max_frames)
+    sorted_prompts = sorted(parsed_prompts.items(), key=lambda item: int(item[0]))
 
     # Setup container for interpolated prompts
     prompt_series = pd.Series([np.nan for a in range(max_frames)])
