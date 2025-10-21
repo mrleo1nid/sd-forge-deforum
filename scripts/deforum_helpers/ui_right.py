@@ -92,7 +92,72 @@ def on_ui_tabs():
     }
     """
 
-    with gr.Blocks(analytics_enabled=False, css=slopcore_css) as deforum_interface:
+    with gr.Blocks(analytics_enabled=False, css=slopcore_css, head="""
+        <script>
+        function applyDeforumStyles() {
+            console.log('🎨 Applying Deforum custom styles...');
+
+            // Find all buttons in deforum_results and log them
+            const resultsDiv = document.querySelector('#deforum_results');
+            if (resultsDiv) {
+                console.log('Found #deforum_results');
+                const allButtons = resultsDiv.querySelectorAll('button');
+                console.log(`Found ${allButtons.length} buttons in results area`);
+
+                allButtons.forEach((btn, idx) => {
+                    const btnId = btn.id || 'no-id';
+                    const btnText = btn.textContent || 'no-text';
+                    console.log(`  Button ${idx}: id="${btnId}", text="${btnText}"`);
+
+                    // Hide everything except folder button
+                    if (!btnId.includes('open_folder')) {
+                        btn.style.display = 'none';
+                        console.log(`  ✓ Hidden button: ${btnId}`);
+                    }
+                });
+            } else {
+                console.log('❌ #deforum_results not found yet');
+            }
+
+            // Apply slopcore gradient to Generate button
+            const generateBtn = document.querySelector('#deforum_generate button') ||
+                               document.querySelector('button#deforum_generate');
+
+            if (generateBtn) {
+                console.log('✓ Found Generate button, applying gradient...');
+                generateBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                generateBtn.style.border = 'none';
+                generateBtn.style.color = 'white';
+                generateBtn.style.fontWeight = '600';
+                generateBtn.style.textShadow = '0 1px 2px rgba(0,0,0,0.2)';
+                generateBtn.style.boxShadow = '0 4px 6px rgba(102, 126, 234, 0.3)';
+            } else {
+                console.log('❌ Generate button not found yet');
+            }
+        }
+
+        // Apply on load with multiple attempts
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyDeforumStyles);
+        } else {
+            applyDeforumStyles();
+        }
+
+        setTimeout(applyDeforumStyles, 500);
+        setTimeout(applyDeforumStyles, 1500);
+        setTimeout(applyDeforumStyles, 3000);
+
+        // Re-apply when Gradio updates the DOM
+        const observer = new MutationObserver(() => {
+            applyDeforumStyles();
+        });
+
+        setTimeout(() => {
+            observer.observe(document.body, { childList: true, subtree: true });
+            console.log('👀 MutationObserver started');
+        }, 100);
+        </script>
+    """) as deforum_interface:
         components = {}
         dummy_component = gr.Button(visible=False)
         with gr.Row(elem_id='deforum_progress_row', equal_height=False, variant='compact'):
@@ -167,8 +232,9 @@ def on_ui_tabs():
                 html_info= res.html_log
                 deforum_gallery = res.gallery
 
-                # Depth Preview Gallery - shown when save_depth_maps is enabled
-                with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=False, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
+                # Depth Preview Gallery - shown when save_depth_maps is enabled and animation_mode is 3D
+                # Start visible=True, will be hidden by update function if conditions not met
+                with gr.Accordion("🗺️ Depth Map Preview", open=False, visible=True, elem_id="deforum_depth_preview_accordion") as depth_preview_accordion:
                     gr.Markdown("""
                     **Depth maps will be saved to:** `[output_dir]/depth-maps/`
 
