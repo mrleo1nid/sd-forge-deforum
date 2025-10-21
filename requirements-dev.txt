@@ -1,6 +1,7 @@
 coverage
-syrupy
 pytest
+pytest-cov  # Pytest plugin for coverage reporting
+syrupy
 tenacity
 pydantic_requests
 moviepy<2.0  # Tests use moviepy 1.x import syntax (from moviepy.editor import VideoFileClip)
