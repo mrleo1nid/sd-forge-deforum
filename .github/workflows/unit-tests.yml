@@ -33,9 +33,9 @@ jobs:
           python -m pip install --upgrade pip
           # Install test dependencies first
           pip install pytest pytest-cov coverage
-          # Install minimal dependencies needed for unit tests
-          pip install numpy torch torchvision opencv-python-headless pandas pillow
-          # Install other requirements
+          # Install minimal dependencies needed for unit tests (core ML/vision libs)
+          pip install numpy torch torchvision opencv-python-headless pandas pillow einops
+          # Install other requirements from requirements.txt
           pip install numexpr matplotlib av pims imageio_ffmpeg rich gdown easydict
           echo "Installed packages:"
           pip list
