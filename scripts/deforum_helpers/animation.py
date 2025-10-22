@@ -25,6 +25,10 @@ from deforum.utils.transform_utils import (
     create_corner_points,
     warpMatrix,
 )
+from deforum.utils.depth_utils import (
+    prepare_depth_tensor,
+    get_depth_min_max_formatted as depth_min_max_and_formatted,
+)
 
 # Re-export for backward compatibility
 __all__ = [
@@ -45,6 +49,8 @@ __all__ = [
     'create_corner_points',
     'warpMatrix',
     'anim_frame_warp',
+    'prepare_depth_tensor',
+    'depth_min_max_and_formatted',
 ]
 
 # Optional imports (not available in tests)
@@ -357,52 +363,7 @@ def transform_image_3d_new(device, prev_img_cv2, depth_tensor, rot_mat, translat
 
     # convert back to cv2 style numpy array
     result = rearrange(
-        new_image.squeeze().clamp(0,255), 
+        new_image.squeeze().clamp(0,255),
         'c h w -> h w c'
     ).cpu().numpy().astype(prev_img_cv2.dtype)
     return result
-
-def prepare_depth_tensor(depth_tensor=None):
-    # Prepares a depth tensor with normalization & equalization between 0 and 1
-    depth_range = depth_tensor.max() - depth_tensor.min()
-    depth_tensor = (depth_tensor - depth_tensor.min()) / depth_range
-    depth_tensor = depth_equalization(depth_tensor=depth_tensor)    
-    return depth_tensor
-
-def depth_equalization(depth_tensor):
-    """
-    Perform histogram equalization on a single-channel depth tensor.
-
-    Args:
-    depth_tensor (torch.Tensor): A 2D depth tensor (H, W).
-
-    Returns:
-    torch.Tensor: Equalized depth tensor (2D).
-    """
-
-    # Convert the depth tensor to a NumPy array for processing
-    depth_array = depth_tensor.cpu().numpy()
-
-    # Calculate the histogram of the depth values using a specified number of bins
-    # Increase the number of bins for higher precision depth tensors
-    hist, bin_edges = np.histogram(depth_array, bins=1024, range=(0, 1))
-
-    # Calculate the cumulative distribution function (CDF) of the histogram
-    cdf = hist.cumsum()
-
-    # Normalize the CDF so that the maximum value is 1
-    cdf = cdf / float(cdf[-1])
-
-    # Perform histogram equalization by mapping the original depth values to the CDF values
-    equalized_depth_array = np.interp(depth_array, bin_edges[:-1], cdf)
-
-    # Convert the equalized depth array back to a PyTorch tensor and return it
-    equalized_depth_tensor = torch.from_numpy(equalized_depth_array).to(depth_tensor.device)
-
-    return equalized_depth_tensor
-
-
-def depth_min_max_and_formatted(depth_tensor):
-    depth_min = depth_tensor.min()
-    depth_max = depth_tensor.max()
-    return depth_min, depth_max, '{:5.2f}'.format(float(depth_min)), '{:5.2f}'.format(float(depth_max))

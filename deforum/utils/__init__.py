@@ -31,6 +31,7 @@ Modules:
     video_path_utils: Video and image path generation
     conversion_utils: Type conversion and random name generation
     schedule_utils: Schedule string parsing and interpolation
+    depth_utils: Depth tensor normalization and equalization
 """
 
 __all__ = [
@@ -53,4 +54,5 @@ __all__ = [
     "video_path_utils",
     "conversion_utils",
     "schedule_utils",
+    "depth_utils",
 ]
