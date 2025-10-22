@@ -29,6 +29,8 @@ Modules:
     format_utils: Value formatting and conversion utilities
     interpolation_utils: Frame interpolation calculations
     video_path_utils: Video and image path generation
+    conversion_utils: Type conversion and random name generation
+    schedule_utils: Schedule string parsing and interpolation
 """
 
 __all__ = [
@@ -49,4 +51,6 @@ __all__ = [
     "format_utils",
     "interpolation_utils",
     "video_path_utils",
+    "conversion_utils",
+    "schedule_utils",
 ]

@@ -1,6 +1,5 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import argparse
-import binascii
 import os
 import os.path as osp
 
@@ -8,16 +7,13 @@ import imageio
 import torch
 import torchvision
 
-__all__ = ['cache_video', 'cache_image', 'str2bool']
+# Import pure functions from refactored utils module
+from deforum.utils.conversion_utils import (
+    generate_random_name as rand_name,
+    string_to_boolean as str2bool_pure,
+)
 
-
-def rand_name(length=8, suffix=''):
-    name = binascii.b2a_hex(os.urandom(length)).decode('utf-8')
-    if suffix:
-        if not suffix.startswith('.'):
-            suffix = '.' + suffix
-        name += suffix
-    return name
+__all__ = ['cache_video', 'cache_image', 'str2bool', 'rand_name']
 
 
 def cache_video(tensor,
@@ -92,8 +88,7 @@ def cache_image(tensor,
 
 
 def str2bool(v):
-    """
-    Convert a string to a boolean.
+    """Convert a string to a boolean (wrapper for backward compatibility).
 
     Supported true values: 'yes', 'true', 't', 'y', '1'
     Supported false values: 'no', 'false', 'f', 'n', '0'
@@ -107,12 +102,8 @@ def str2bool(v):
     Raises:
         argparse.ArgumentTypeError: If the value cannot be converted to boolean.
     """
-    if isinstance(v, bool):
-        return v
-    v_lower = v.lower()
-    if v_lower in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v_lower in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected (True/False)')
+    try:
+        return str2bool_pure(v)
+    except ValueError as e:
+        # Convert ValueError to ArgumentTypeError for backward compatibility
+        raise argparse.ArgumentTypeError(str(e))

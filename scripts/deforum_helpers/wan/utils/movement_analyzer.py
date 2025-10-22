@@ -5,11 +5,16 @@ Supports basic movements (pan, dolly, zoom, tilt) and complex patterns (circle, 
 Integrates with Camera Shakify to generate combined movement schedules
 """
 
-import re
 import math
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 from types import SimpleNamespace
+
+# Import pure functions from refactored utils module
+from deforum.utils.schedule_utils import (
+    parse_schedule_string,
+    interpolate_schedule_values as interpolate_schedule,
+)
 
 # Try to import Camera Shakify components for integration
 try:
@@ -31,80 +36,7 @@ try:
 except ImportError:
     DEFORUM_AVAILABLE = False
 
-def parse_schedule_string(schedule_str: str, max_frames: int = 100) -> List[Tuple[int, float]]:
-    """
-    Parse Deforum schedule string into frame-value pairs
-    
-    Format: "0:(1.0), 30:(2.0), 60:(1.5)"
-    Returns: [(0, 1.0), (30, 2.0), (60, 1.5)]
-    """
-    if not schedule_str or schedule_str.strip() == "":
-        return [(0, 0.0)]
-        
-    # Clean the string
-    schedule_str = schedule_str.strip()
-    
-    # Pattern to match frame:(value) pairs
-    pattern = r'(\d+):\s*\(([^)]+)\)'
-    matches = re.findall(pattern, schedule_str)
-    
-    if not matches:
-        # Try to parse as single value
-        try:
-            value = float(schedule_str)
-            return [(0, value)]
-        except ValueError:
-            return [(0, 0.0)]
-    
-    # Convert matches to frame-value pairs
-    keyframes = []
-    for frame_str, value_str in matches:
-        try:
-            frame = int(frame_str)
-            value = float(value_str)
-            keyframes.append((frame, value))
-        except ValueError:
-            continue
-    
-    # Sort by frame number
-    keyframes.sort(key=lambda x: x[0])
-    
-    return keyframes if keyframes else [(0, 0.0)]
-
-
-def interpolate_schedule(keyframes: List[Tuple[int, float]], max_frames: int) -> List[float]:
-    """
-    Interpolate schedule values across all frames
-    """
-    if not keyframes:
-        return [0.0] * max_frames
-    
-    values = []
-    
-    for frame in range(max_frames):
-        # Find surrounding keyframes
-        prev_kf = None
-        next_kf = None
-        
-        for kf in keyframes:
-            if kf[0] <= frame:
-                prev_kf = kf
-            if kf[0] >= frame and next_kf is None:
-                next_kf = kf
-        
-        if prev_kf is None:
-            values.append(keyframes[0][1])
-        elif next_kf is None:
-            values.append(prev_kf[1])
-        elif prev_kf[0] == next_kf[0]:
-            values.append(prev_kf[1])
-        else:
-            # Linear interpolation
-            t = (frame - prev_kf[0]) / (next_kf[0] - prev_kf[0])
-            value = prev_kf[1] + t * (next_kf[1] - prev_kf[1])
-            values.append(value)
-    
-    return values
+# parse_schedule_string and interpolate_schedule imported from deforum.utils.schedule_utils
 
 
 def create_shakify_data(shake_name: str, shake_intensity: float, shake_speed: float, target_fps: int = 30, max_frames: int = 120, frame_start: int = 0) -> Optional[Dict]:
