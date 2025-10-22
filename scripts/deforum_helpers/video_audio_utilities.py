@@ -43,6 +43,10 @@ from deforum.utils.path_utils import (
     extract_number_from_string,
     get_frame_name,
 )
+from deforum.utils.video_path_utils import (
+    get_next_frame_path,
+    get_output_video_path as get_manual_frame_to_vid_output_path,
+)
 
 SUPPORTED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "bmp", "webp"]
 SUPPORTED_VIDEO_EXTENSIONS = ["mov", "mpeg", "mp4", "m4v", "avi", "mpg", "webm"]
@@ -388,9 +392,9 @@ def ffmpeg_stitch_video(ffmpeg_location=None, fps=None, outmp4_path=None, stitch
 # get_frame_name imported from deforum.utils.path_utils
 
 def get_next_frame(outdir, video_path, frame_idx, mask=False):
-    frame_path = 'inputframes'
-    if (mask): frame_path = 'maskframes'
-    return os.path.join(outdir, frame_path, get_frame_name(video_path) + f"{frame_idx:09}.jpg")
+    """Legacy wrapper for get_next_frame_path - extracts video name from path."""
+    video_name = get_frame_name(video_path)
+    return get_next_frame_path(outdir, video_name, frame_idx, mask)
      
 def find_ffmpeg_binary():
     try:
@@ -406,18 +410,10 @@ def find_ffmpeg_binary():
             return files[0] if files else 'ffmpeg'
         except:
             return 'ffmpeg'
-          
-# These 2 functions belong to "stitch frames to video" in Output tab
-def get_manual_frame_to_vid_output_path(input_path):
-    dir_name = os.path.dirname(input_path)
-    folder_name = os.path.basename(dir_name)
-    output_path = os.path.join(dir_name, f"{folder_name}.mp4")
-    i = 1
-    while os.path.exists(output_path):
-        output_path = os.path.join(dir_name, f"{folder_name}_{i}.mp4")
-        i += 1
-    return output_path
 
+# get_manual_frame_to_vid_output_path imported from deforum.utils.video_path_utils (aliased as get_output_video_path)
+
+# These 2 functions belong to "stitch frames to video" in Output tab
 def direct_stitch_vid_from_frames(image_path, fps, add_soundtrack, audio_path):
     f_location, f_crf, f_preset = get_ffmpeg_params()
     matching_files = glob.glob(re.sub(r'%\d*d', '*', image_path))

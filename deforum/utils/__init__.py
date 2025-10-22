@@ -28,6 +28,7 @@ Modules:
     optical_flow_utils: Optical flow consistency checking
     format_utils: Value formatting and conversion utilities
     interpolation_utils: Frame interpolation calculations
+    video_path_utils: Video and image path generation
 """
 
 __all__ = [
@@ -47,4 +48,5 @@ __all__ = [
     "optical_flow_utils",
     "format_utils",
     "interpolation_utils",
+    "video_path_utils",
 ]
