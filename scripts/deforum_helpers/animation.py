@@ -1,11 +1,50 @@
 import numpy as np
 import cv2
-from functools import reduce
 import math
 import torch
 from PIL import Image
-from einops import rearrange
 from typing import Tuple, List
+
+# Import pure functions from refactored utils module
+from deforum.utils.transform_utils import (
+    normalize_image_to_tensor_range,
+    denormalize_tensor_to_image_range,
+    sample_from_cv2,
+    sample_to_cv2,
+    construct_rotation_matrix_rodrigues,
+    create_rotation_matrix_x,
+    create_rotation_matrix_y,
+    create_rotation_matrix_z,
+    get_rotation_matrix_manual,
+    extract_2d_points,
+    get_perspective_transform_points,
+    calculate_fov_parameters,
+    create_translation_matrix_z,
+    create_projection_matrix,
+    create_corner_points,
+    warpMatrix,
+)
+
+# Re-export for backward compatibility
+__all__ = [
+    'normalize_image_to_tensor_range',
+    'denormalize_tensor_to_image_range',
+    'sample_from_cv2',
+    'sample_to_cv2',
+    'construct_rotation_matrix_rodrigues',
+    'create_rotation_matrix_x',
+    'create_rotation_matrix_y',
+    'create_rotation_matrix_z',
+    'get_rotation_matrix_manual',
+    'extract_2d_points',
+    'get_perspective_transform_points',
+    'calculate_fov_parameters',
+    'create_translation_matrix_z',
+    'create_projection_matrix',
+    'create_corner_points',
+    'warpMatrix',
+    'anim_frame_warp',
+]
 
 # Optional imports (not available in tests)
 try:
@@ -28,177 +67,6 @@ except ImportError:
     check_is_number = lambda x: x.replace('.', '').replace('-', '').isdigit()
     debug_print = lambda x: None
     log_utils = None
-
-# ============================================================================
-# PURE FUNCTIONS (tensor/array transformations)
-# ============================================================================
-
-def normalize_image_to_tensor_range(img_array: np.ndarray) -> np.ndarray:
-    """Normalize uint8 image [0,255] to tensor range [-1,1]."""
-    return ((img_array.astype(float) / 255.0) * 2) - 1
-
-def denormalize_tensor_to_image_range(tensor_array: np.ndarray) -> np.ndarray:
-    """Denormalize tensor range [-1,1] to image range [0,1]."""
-    return ((tensor_array * 0.5) + 0.5).clip(0, 1)
-
-def sample_from_cv2(sample: np.ndarray) -> torch.Tensor:
-    """Convert CV2 image (HWC uint8) to PyTorch tensor (NCHW float16)."""
-    normalized = normalize_image_to_tensor_range(sample)
-    # Add batch dimension and transpose to NCHW format
-    tensor_data = normalized[None].transpose(0, 3, 1, 2).astype(np.float16)
-    return torch.from_numpy(tensor_data)
-
-def sample_to_cv2(sample: torch.Tensor, dtype: type = np.uint8) -> np.ndarray:
-    """Convert PyTorch tensor (NCHW) to CV2 image (HWC uint8)."""
-    # CHW -> HWC and move to CPU
-    array_f32 = rearrange(sample.squeeze().cpu().numpy(), "c h w -> h w c").astype(np.float32)
-    normalized = denormalize_tensor_to_image_range(array_f32)
-    return (normalized * 255).astype(dtype)
-
-def construct_rotation_matrix_rodrigues(rotation_angles: List[float]) -> np.ndarray:
-    """Construct 4x4 homogeneous rotation matrix using Rodrigues formula."""
-    if not (isinstance(rotation_angles, list) and len(rotation_angles) == 3):
-        raise ValueError("rotation_angles must be list of 3 floats")
-    rotation_matrix = np.eye(4, 4)
-    cv2.Rodrigues(np.array(rotation_angles), rotation_matrix[0:3, 0:3])
-    return rotation_matrix
-
-def create_rotation_matrix_x(angle_rad: float) -> np.ndarray:
-    """Create 4x4 rotation matrix around X axis."""
-    matrix = np.eye(4, 4)
-    sin_a = np.sin(angle_rad)
-    cos_a = np.cos(angle_rad)
-    matrix[1, 1] = cos_a
-    matrix[2, 2] = cos_a
-    matrix[1, 2] = -sin_a
-    matrix[2, 1] = sin_a
-    return matrix
-
-def create_rotation_matrix_y(angle_rad: float) -> np.ndarray:
-    """Create 4x4 rotation matrix around Y axis."""
-    matrix = np.eye(4, 4)
-    sin_a = np.sin(angle_rad)
-    cos_a = np.cos(angle_rad)
-    matrix[0, 0] = cos_a
-    matrix[2, 2] = cos_a
-    matrix[0, 2] = sin_a
-    matrix[2, 0] = -sin_a
-    return matrix
-
-def create_rotation_matrix_z(angle_rad: float) -> np.ndarray:
-    """Create 4x4 rotation matrix around Z axis (in-image-plane)."""
-    matrix = np.eye(4, 4)
-    sin_a = np.sin(angle_rad)
-    cos_a = np.cos(angle_rad)
-    matrix[0, 0] = cos_a
-    matrix[1, 1] = cos_a
-    matrix[0, 1] = -sin_a
-    matrix[1, 0] = sin_a
-    return matrix
-
-def get_rotation_matrix_manual(rotation_angles: List[float]) -> np.ndarray:
-    """Construct rotation matrix manually using Euler angles (phi, gamma, theta).
-
-    See: https://en.wikipedia.org/wiki/Rotation_matrix
-    """
-    angles_rad = [np.deg2rad(x) for x in rotation_angles]
-    phi = angles_rad[0]    # around X
-    gamma = angles_rad[1]  # around Y
-    theta = angles_rad[2]  # around Z
-
-    r_phi = create_rotation_matrix_x(phi)
-    r_gamma = create_rotation_matrix_y(gamma)
-    r_theta = create_rotation_matrix_z(theta)
-
-    return reduce(lambda x, y: np.matmul(x, y), [r_phi, r_gamma, r_theta])
-
-def extract_2d_points(pts_3d: np.ndarray) -> np.ndarray:
-    """Extract 2D points from 3D perspective transform output."""
-    pts_2d = pts_3d[0, :]
-    return np.array([[pts_2d[i, 0], pts_2d[i, 1]] for i in range(4)])
-
-def get_perspective_transform_points(
-    pts_in: np.ndarray,
-    pts_out: np.ndarray,
-    width: int,
-    height: int,
-    side_length: float
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Calculate input/output points for perspective transform estimation."""
-    pts_in_2d = extract_2d_points(pts_in)
-    pts_out_2d = extract_2d_points(pts_out)
-
-    # Center input points
-    pin = pts_in_2d + [width / 2.0, height / 2.0]
-    # Scale and center output points
-    pout = (pts_out_2d + [1.0, 1.0]) * (0.5 * side_length)
-
-    return pin.astype(np.float32), pout.astype(np.float32)
-
-def calculate_fov_parameters(width: int, height: int, fov_deg: float, scale: float) -> Tuple[float, float, float, float]:
-    """Calculate field of view geometry parameters."""
-    fov_half_rad = np.deg2rad(fov_deg / 2.0)
-    diagonal = np.sqrt(width * width + height * height)
-    side_length = scale * diagonal / np.cos(fov_half_rad)
-    focal_distance = diagonal / (2.0 * np.sin(fov_half_rad))
-    near_plane = focal_distance - (diagonal / 2.0)
-    far_plane = focal_distance + (diagonal / 2.0)
-    return side_length, focal_distance, near_plane, far_plane
-
-def create_translation_matrix_z(z_offset: float) -> np.ndarray:
-    """Create 4x4 translation matrix along Z axis."""
-    matrix = np.eye(4, 4)
-    matrix[2, 3] = z_offset
-    return matrix
-
-def create_projection_matrix(fov_half_rad: float, near: float, far: float) -> np.ndarray:
-    """Create 4x4 perspective projection matrix."""
-    matrix = np.eye(4, 4)
-    matrix[0, 0] = 1.0 / np.tan(fov_half_rad)
-    matrix[1, 1] = matrix[0, 0]
-    matrix[2, 2] = -(far + near) / (far - near)
-    matrix[2, 3] = -(2.0 * far * near) / (far - near)
-    matrix[3, 2] = -1.0
-    return matrix
-
-def create_corner_points(width: int, height: int) -> np.ndarray:
-    """Create standard corner points array for perspective transform."""
-    return np.array([[
-        [-width / 2.0, height / 2.0, 0.0],
-        [width / 2.0, height / 2.0, 0.0],
-        [width / 2.0, -height / 2.0, 0.0],
-        [-width / 2.0, -height / 2.0, 0.0]
-    ]])
-
-def warpMatrix(W, H, theta, phi, gamma, scale, fV):
-    """Calculate perspective warp matrix for 3D rotation and projection."""
-    # Calculate FOV parameters
-    side_length, focal_distance, near, far = calculate_fov_parameters(W, H, fV, scale)
-    fov_half_rad = np.deg2rad(fV / 2.0)
-
-    # Build transformation matrices
-    T = create_translation_matrix_z(-focal_distance)
-    R = get_rotation_matrix_manual([phi, gamma, theta])
-    P = create_projection_matrix(fov_half_rad, near, far)
-
-    # Combine transformations: Projection * Translation * Rotation
-    F = reduce(lambda x, y: np.matmul(x, y), [P, T, R])
-
-    # Create corner points and apply perspective transform
-    pts_in = create_corner_points(W, H)
-    pts_out = cv2.perspectiveTransform(pts_in, F)
-
-    # Get points for final transform estimation
-    pts_in_2f, pts_out_2f = get_perspective_transform_points(pts_in, pts_out, W, H, side_length)
-
-    # Verify float32 type (required by OpenCV)
-    assert pts_in_2f.dtype == np.float32
-    assert pts_out_2f.dtype == np.float32
-
-    # Calculate final 3x3 perspective transform matrix
-    M33 = cv2.getPerspectiveTransform(pts_in_2f, pts_out_2f)
-
-    return M33, side_length
 
 # ============================================================================
 # IMPURE FUNCTIONS (depends on keys, anim_args, side effects)
