@@ -1,37 +1,51 @@
-from enum import Enum
+"""Filename utilities - Mixed pure and impure functions.
+
+This module contains:
+- Pure formatting functions imported from deforum.utils.filename_utils
+- Impure path construction functions (kept here due to dependencies)
+"""
+
 from pathlib import Path
 
 from ...video_audio_utilities import get_frame_name
 
-
-class FileFormat(Enum):
-    JPG = "jpg"
-    PNG = "png"
-
-    @staticmethod
-    def frame_format():
-        return FileFormat.PNG
-
-    @staticmethod
-    def video_frame_format():
-        return FileFormat.JPG
+# Import pure functions from refactored utils module
+from deforum.utils.filename_utils import (
+    FileFormat,
+    format_frame_index as _frame_filename_index,
+    format_frame_filename,
+    format_depth_filename,
+)
 
 
-def _frame_filename_index(i: int, file_format: FileFormat) -> str:
-    return f"{i:09}.{file_format.value}"
+def frame_filename(data, i: int, is_depth=False, file_format=None) -> str:
+    """Legacy wrapper for format_frame_filename.
 
+    Args:
+        data: RenderData object (unused, kept for backward compatibility)
+        i: Frame index
+        is_depth: Whether this is a depth map
+        file_format: File format (defaults to PNG)
 
-def frame_filename(data, i: int, is_depth=False, file_format=FileFormat.frame_format()) -> str:
-    # Regular frames: just index (000000001.png)
-    # Depth frames: depth-maps subdirectory with _depth suffix (depth-maps/000000001_depth.png)
-    if is_depth:
-        return f"depth-maps/{i:09}_depth.{file_format.value}"
-    else:
-        return f"{i:09}.{file_format.value}"
+    Returns:
+        Formatted filename path
+    """
+    if file_format is None:
+        file_format = FileFormat.frame_format()
+    return format_frame_filename(i, is_depth=is_depth, file_format=file_format)
 
 
 def depth_frame(data, i) -> str:
-    return frame_filename(data, i, True)
+    """Legacy wrapper for format_depth_filename.
+
+    Args:
+        data: RenderData object (unused, kept for backward compatibility)
+        i: Frame index
+
+    Returns:
+        Depth map filename
+    """
+    return format_depth_filename(i)
 
 
 def preview_video_image_path(data, i) -> Path:

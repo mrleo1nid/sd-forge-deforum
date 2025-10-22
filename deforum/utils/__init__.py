@@ -13,11 +13,12 @@ All functions in this package follow functional programming principles:
 
 Modules:
     seed_utils: Seed generation and iteration logic
-    image_utils: Image processing (sharpening, color matching)
+    image_utils: Image processing (sharpening, color matching, conversions)
     noise_utils: Perlin noise generation
     prompt_utils: Prompt parsing and interpolation
     transform_utils: 3D transformations and matrix operations
     functional_utils: Functional programming helpers and utilities
+    filename_utils: Filename formatting and path generation
 """
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "prompt_utils",
     "transform_utils",
     "functional_utils",
+    "filename_utils",
 ]
