@@ -5,21 +5,25 @@ scripts/deforum_helpers/noise.py, following functional programming principles
 with no side effects.
 """
 
+import torch
 import numpy as np
+from PIL import Image, ImageOps
+import math
 from typing import Callable
+
+# Global noise generator for reproducible results
+deforum_noise_gen = torch.Generator(device='cpu')
 
 # ============================================================================
 # PERLIN NOISE HELPER FUNCTIONS
 # ============================================================================
 
 
-def perlin_fade(t: np.ndarray) -> np.ndarray:
-    """Perlin fade function for smooth interpolation.
-
-    Formula: 6t^5 - 15t^4 + 10t^3
+def perlin_fade(t: torch.Tensor) -> torch.Tensor:
+    """Perlin fade function: 6t^5 - 15t^4 + 10t^3.
 
     Args:
-        t: Input values (typically 0-1)
+        t: Input tensor values (typically 0-1)
 
     Returns:
         Smoothed values
@@ -27,29 +31,29 @@ def perlin_fade(t: np.ndarray) -> np.ndarray:
     return 6 * t**5 - 15 * t**4 + 10 * t**3
 
 
-def round_to_multiple(x: int, multiple: int) -> int:
-    """Round integer down to nearest multiple.
+def round_to_multiple(value: int, multiple: int) -> int:
+    """Round value down to nearest multiple.
 
     Args:
-        x: Value to round
+        value: Value to round
         multiple: Multiple to round to
 
     Returns:
-        Largest multiple <= x
+        Largest multiple <= value
     """
-    return (x // multiple) * multiple
+    return value - value % multiple
 
 
-def normalize_perlin(noise: np.ndarray) -> np.ndarray:
-    """Normalize Perlin noise from [-1, 1] to [0, 1].
+def normalize_perlin(noise: torch.Tensor) -> torch.Tensor:
+    """Shift Perlin noise from [-1, 1] to [0, 1] range.
 
     Args:
-        noise: Raw Perlin noise values
+        noise: Raw Perlin noise tensor
 
     Returns:
         Normalized values in [0, 1]
     """
-    return (noise + 1.0) / 2.0
+    return (noise + torch.ones(noise.shape)) / 2
 
 
 # ============================================================================
@@ -57,32 +61,21 @@ def normalize_perlin(noise: np.ndarray) -> np.ndarray:
 # ============================================================================
 
 
-def condition_noise_mask(noise_mask: np.ndarray, invert: bool = False) -> np.ndarray:
-    """Condition noise mask for application.
-
-    Converts mask to grayscale, normalizes to [0, 1], and optionally inverts.
+def condition_noise_mask(noise_mask: Image.Image, invert_mask: bool = False) -> torch.Tensor:
+    """Convert PIL mask to normalized torch tensor.
 
     Args:
-        noise_mask: Input mask image (HWC format, uint8)
-        invert: Whether to invert the mask
+        noise_mask: PIL Image mask
+        invert_mask: Whether to invert the mask
 
     Returns:
-        Conditioned mask as float32 in [0, 1]
+        Conditioned mask as torch tensor in [0, 1]
     """
-    # Convert RGB to grayscale if needed
-    if noise_mask.ndim == 3 and noise_mask.shape[2] == 3:
-        grayscale = np.mean(noise_mask, axis=2)
-    else:
-        grayscale = noise_mask.squeeze()
-
-    # Normalize to [0, 1]
-    normalized = grayscale.astype(np.float32) / 255.0
-
-    # Invert if requested
-    if invert:
-        normalized = 1.0 - normalized
-
-    return normalized
+    if invert_mask:
+        noise_mask = ImageOps.invert(noise_mask)
+    mask_array = np.array(noise_mask.convert("L")).astype(np.float32) / 255.0
+    mask_array = np.around(mask_array, decimals=0)
+    return torch.from_numpy(mask_array)
 
 
 # ============================================================================
@@ -93,55 +86,62 @@ def condition_noise_mask(noise_mask: np.ndarray, invert: bool = False) -> np.nda
 def rand_perlin_2d(
     shape: tuple[int, int],
     res: tuple[int, int],
-    fade: Callable[[np.ndarray], np.ndarray] = perlin_fade,
-) -> np.ndarray:
-    """Generate 2D Perlin noise.
+    fade: Callable[[torch.Tensor], torch.Tensor] = perlin_fade,
+    generator: torch.Generator | None = None
+) -> torch.Tensor:
+    """Generate 2D Perlin noise pattern.
+
+    Based on: https://gist.github.com/vadimkantorov/ac1b097753f217c5c11bc2ff396e0a57
 
     Args:
         shape: Output shape (height, width)
         res: Resolution (frequency) of noise
         fade: Fade function for interpolation
+        generator: Random generator for reproducibility
 
     Returns:
-        2D array of Perlin noise values in [-1, 1]
+        2D tensor of Perlin noise values in [-1, 1]
     """
+    if generator is None:
+        generator = deforum_noise_gen
+
     delta = (res[0] / shape[0], res[1] / shape[1])
     d = (shape[0] // res[0], shape[1] // res[1])
 
-    grid = (
-        np.mgrid[0 : res[0] : delta[0], 0 : res[1] : delta[1]].transpose(1, 2, 0) % 1
-    )
+    grid = torch.stack(
+        torch.meshgrid(
+            torch.arange(0, res[0], delta[0]),
+            torch.arange(0, res[1], delta[1]),
+            indexing='ij'
+        ),
+        dim=-1
+    ) % 1
 
-    angles = 2 * np.pi * np.random.rand(res[0] + 1, res[1] + 1)
-    gradients = np.stack((np.cos(angles), np.sin(angles)), axis=-1)
+    angles = 2 * math.pi * torch.rand(res[0]+1, res[1]+1, generator=generator)
+    gradients = torch.stack((torch.cos(angles), torch.sin(angles)), dim=-1)
 
-    def tile_grads(slice1, slice2):
-        return np.repeat(
-            np.repeat(gradients[slice1[0] : slice1[1], slice2[0] : slice2[1]], d[0], axis=0),
-            d[1],
-            axis=1,
-        )
+    def tile_grads(slice1: list[int | None], slice2: list[int | None]) -> torch.Tensor:
+        return gradients[slice1[0]:slice1[1], slice2[0]:slice2[1]].repeat_interleave(
+            d[0], 0
+        ).repeat_interleave(d[1], 1)
 
-    def dot(grad, shift):
-        return (
-            np.stack(
-                (
-                    grid[: shape[0], : shape[1], 0] + shift[0],
-                    grid[: shape[0], : shape[1], 1] + shift[1],
-                ),
-                axis=-1,
-            )
-            * grad[: shape[0], : shape[1]]
-        ).sum(axis=-1)
+    def dot(grad: torch.Tensor, shift: list[int]) -> torch.Tensor:
+        shifted = torch.stack((
+            grid[:shape[0], :shape[1], 0] + shift[0],
+            grid[:shape[0], :shape[1], 1] + shift[1]
+        ), dim=-1)
+        return (shifted * grad[:shape[0], :shape[1]]).sum(dim=-1)
 
     n00 = dot(tile_grads([0, -1], [0, -1]), [0, 0])
     n10 = dot(tile_grads([1, None], [0, -1]), [-1, 0])
     n01 = dot(tile_grads([0, -1], [1, None]), [0, -1])
     n11 = dot(tile_grads([1, None], [1, None]), [-1, -1])
 
-    t = fade(grid[: shape[0], : shape[1]])
-    return np.sqrt(2) * np.lerp(
-        np.lerp(n00, n10, t[..., 0]), np.lerp(n01, n11, t[..., 0]), t[..., 1]
+    t = fade(grid[:shape[0], :shape[1]])
+    return math.sqrt(2) * torch.lerp(
+        torch.lerp(n00, n10, t[..., 0]),
+        torch.lerp(n01, n11, t[..., 0]),
+        t[..., 1]
     )
 
 
@@ -150,34 +150,31 @@ def rand_perlin_2d_octaves(
     res: tuple[int, int],
     octaves: int = 1,
     persistence: float = 0.5,
-    fade: Callable[[np.ndarray], np.ndarray] = perlin_fade,
-) -> np.ndarray:
-    """Generate multi-octave 2D Perlin noise for more natural appearance.
+    generator: torch.Generator | None = None
+) -> torch.Tensor:
+    """Generate multi-octave Perlin noise by layering frequencies.
 
     Args:
         shape: Output shape (height, width)
         res: Base resolution (frequency) of noise
         octaves: Number of octaves to combine
         persistence: Amplitude decay per octave
-        fade: Fade function for interpolation
+        generator: Random generator for reproducibility
 
     Returns:
-        2D array of multi-octave Perlin noise in [-1, 1]
+        2D tensor of multi-octave Perlin noise
     """
-    if octaves <= 0:
-        return np.zeros(shape)
-
-    noise = np.zeros(shape)
+    noise = torch.zeros(shape)
     frequency = 1
-    amplitude = 1
-    max_amplitude = 0
+    amplitude = 1.0
 
-    for _ in range(octaves):
-        octave_res = (res[0] * frequency, res[1] * frequency)
-        noise += amplitude * rand_perlin_2d(shape, octave_res, fade)
-
-        max_amplitude += amplitude
-        amplitude *= persistence
+    for _ in range(int(octaves)):
+        noise += amplitude * rand_perlin_2d(
+            shape,
+            (frequency * res[0], frequency * res[1]),
+            generator=generator
+        )
         frequency *= 2
+        amplitude *= persistence
 
-    return noise / max_amplitude
+    return noise

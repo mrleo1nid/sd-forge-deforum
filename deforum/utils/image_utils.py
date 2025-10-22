@@ -7,52 +7,57 @@ following functional programming principles with no side effects.
 
 import cv2
 import numpy as np
-from typing import Tuple
 
 # ============================================================================
 # IMAGE SHARPENING FUNCTIONS
 # ============================================================================
 
 
-def clamp_to_uint8(array: np.ndarray) -> np.ndarray:
-    """Clamp array values to uint8 range [0, 255].
+def clamp_to_uint8(image: np.ndarray) -> np.ndarray:
+    """Clamp image values to valid uint8 range [0, 255].
 
     Args:
-        array: Input array with any numeric values
+        image: Input array with any numeric values
 
     Returns:
-        Array with values clamped to [0, 255] and converted to uint8
+        Array with values clamped to [0, 255], rounded, and converted to uint8
     """
-    return np.clip(array, 0, 255).astype(np.uint8)
+    clamped = np.clip(image, 0, 255)
+    return clamped.round().astype(np.uint8)
 
 
 def calculate_sharpened_image(
-    image: np.ndarray, blurred: np.ndarray, amount: float
+    img: np.ndarray,
+    blurred: np.ndarray,
+    amount: float
 ) -> np.ndarray:
-    """Calculate sharpened image using unsharp mask formula.
-
-    Formula: sharpened = image + amount * (image - blurred)
+    """Apply unsharp mask formula: (1+amount)*img - amount*blurred.
 
     Args:
-        image: Original image
+        img: Original image
         blurred: Blurred version of image
         amount: Sharpening strength
 
     Returns:
-        Sharpened image (may exceed uint8 range, needs clamping)
+        Sharpened image clamped to uint8 range
     """
-    return image + amount * (image - blurred)
+    sharpened = float(amount + 1) * img - float(amount) * blurred
+    return clamp_to_uint8(sharpened)
 
 
 def apply_threshold_mask(
-    sharpened: np.ndarray, image: np.ndarray, threshold: int
+    sharpened: np.ndarray,
+    original: np.ndarray,
+    blurred: np.ndarray,
+    threshold: float
 ) -> np.ndarray:
-    """Apply threshold mask to preserve low-contrast areas.
+    """Preserve original pixels where contrast is below threshold.
 
     Args:
         sharpened: Sharpened image
-        image: Original image
-        threshold: Contrast threshold (0-255)
+        original: Original image
+        blurred: Blurred version of original
+        threshold: Contrast threshold
 
     Returns:
         Image with sharpening applied only to high-contrast areas
@@ -60,17 +65,23 @@ def apply_threshold_mask(
     if threshold <= 0:
         return sharpened
 
-    lowcontrast = np.absolute(image - cv2.GaussianBlur(image, (5, 5), 0)) < threshold
-    return np.where(lowcontrast, image, sharpened)
+    low_contrast_mask = np.absolute(original - blurred) < threshold
+    result = sharpened.copy()
+    np.copyto(result, original, where=low_contrast_mask)
+    return result
 
 
-def apply_spatial_mask(sharpened: np.ndarray, image: np.ndarray, mask) -> np.ndarray:
-    """Apply spatial mask to selectively sharpen regions.
+def apply_spatial_mask(
+    sharpened: np.ndarray,
+    original: np.ndarray,
+    mask: np.ndarray | None
+) -> np.ndarray:
+    """Apply sharpening only to masked regions.
 
     Args:
         sharpened: Sharpened image
-        image: Original image
-        mask: Binary mask (PIL Image or None)
+        original: Original image
+        mask: Optional binary mask array
 
     Returns:
         Image with sharpening applied only in masked regions
@@ -78,40 +89,40 @@ def apply_spatial_mask(sharpened: np.ndarray, image: np.ndarray, mask) -> np.nda
     if mask is None:
         return sharpened
 
-    mask_array = np.array(mask.convert("L")) / 255.0
-    mask_3channel = np.stack([mask_array] * 3, axis=-1)
-    return (sharpened * mask_3channel + image * (1 - mask_3channel)).astype(np.uint8)
+    mask_array = np.array(mask)
+    masked_sharpened = cv2.bitwise_and(sharpened, sharpened, mask=mask_array)
+    masked_original = cv2.bitwise_and(original, original, mask=255 - mask_array)
+    return cv2.add(masked_original, masked_sharpened)
 
 
 def unsharp_mask(
-    image: np.ndarray,
-    kernel_size: Tuple[int, int] = (5, 5),
+    img: np.ndarray,
+    kernel_size: tuple[int, int] = (5, 5),
     sigma: float = 1.0,
     amount: float = 1.0,
-    threshold: int = 0,
-    mask=None,
+    threshold: float = 0,
+    mask: np.ndarray | None = None
 ) -> np.ndarray:
     """Apply unsharp mask sharpening to image.
 
     Args:
-        image: Input image (HWC format, uint8)
+        img: Input image (uint8)
         kernel_size: Gaussian blur kernel size
         sigma: Gaussian blur sigma
-        amount: Sharpening strength (0.0 = no sharpening)
-        threshold: Contrast threshold for selective sharpening
-        mask: Optional spatial mask (PIL Image)
+        amount: Sharpening strength (0 = no sharpening)
+        threshold: Low-contrast threshold (preserve pixels below this)
+        mask: Optional spatial mask (sharpen only masked areas)
 
     Returns:
         Sharpened image (uint8)
     """
-    if amount == 0.0:
-        return image
+    if amount == 0:
+        return img
 
-    blurred = cv2.GaussianBlur(image, kernel_size, sigma)
-    sharpened = calculate_sharpened_image(image, blurred, amount)
-    sharpened = apply_threshold_mask(sharpened, image, threshold)
-    sharpened = clamp_to_uint8(sharpened)
-    sharpened = apply_spatial_mask(sharpened, image, mask)
+    blurred = cv2.GaussianBlur(img, kernel_size, sigma)
+    sharpened = calculate_sharpened_image(img, blurred, amount)
+    sharpened = apply_threshold_mask(sharpened, img, blurred, threshold)
+    sharpened = apply_spatial_mask(sharpened, img, mask)
 
     return sharpened
 
