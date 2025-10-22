@@ -128,6 +128,61 @@ def unsharp_mask(
 
 
 # ============================================================================
+# IMAGE CONVERSION FUNCTIONS
+# ============================================================================
+
+
+def bgr_to_rgb(bgr_img: np.ndarray) -> np.ndarray:
+    """Convert BGR image to RGB color space.
+
+    Args:
+        bgr_img: Image in BGR format
+
+    Returns:
+        Image in RGB format
+    """
+    return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+
+
+def numpy_to_pil(np_image: np.ndarray) -> "Image.Image":
+    """Convert NumPy array to PIL Image.
+
+    Args:
+        np_image: NumPy array (BGR format)
+
+    Returns:
+        PIL Image (RGB format)
+    """
+    from PIL import Image
+    return Image.fromarray(bgr_to_rgb(np_image))
+
+
+def pil_to_numpy(pil_image: "Image.Image") -> np.ndarray:
+    """Convert PIL Image to NumPy array.
+
+    Args:
+        pil_image: PIL Image
+
+    Returns:
+        NumPy array
+    """
+    return np.array(pil_image)
+
+
+def is_PIL(image) -> bool:
+    """Check if image is a PIL Image.
+
+    Args:
+        image: Object to check
+
+    Returns:
+        True if image is PIL Image
+    """
+    from PIL import Image
+    return type(image) is Image.Image
+
+
+# ============================================================================
 # COLOR MATCHING FUNCTIONS
 # ============================================================================
 
