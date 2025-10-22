@@ -381,7 +381,12 @@ class DiffusionFrame:
                                     disable=shared.cmd_opts.disable_console_progressbars,
                                     colour=log_utils.HEX_YELLOW):
             DiffusionFrame._assign_subseed_properties(data, diffusion_frame, False)
-            the_next_seed, the_next_seed_control = generate_next_seed(data.args.args, last_seed, last_seed_control)
+            the_next_seed, the_next_seed_control = generate_next_seed(
+                last_seed,
+                data.args.args.seed_behavior,
+                last_seed_control,
+                data.args.args.seed_iter_N
+            )
             log_utils.debug(f"Seed {the_next_seed:010}. " +
                             (f"Subseed {diffusion_frame.subseed:010} at {diffusion_frame.subseed_strength}."
                              if diffusion_frame.subseed != -1 else ""))
