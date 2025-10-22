@@ -33,6 +33,9 @@ from deforum.utils.subtitle_utils import (
     get_user_param_names,
 )
 
+# Backward compatibility alias
+get_user_values = get_user_param_names
+
 
 def init_srt_file(filename, fps, precision=20):
     with open(filename, "w") as f:
