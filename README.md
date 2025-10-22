@@ -1,5 +1,8 @@
 # Zirteq Fluxabled Fork
 
+[![Unit Tests](https://github.com/Tok/sd-forge-deforum/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/Tok/sd-forge-deforum/actions/workflows/unit-tests.yml)
+[![codecov](https://codecov.io/gh/Tok/sd-forge-deforum/branch/main/graph/badge.svg)](https://codecov.io/gh/Tok/sd-forge-deforum)
+
 Experimental fork of the [Deforum extension](https://github.com/deforum-art/sd-forge-deforum)
 for [Stable Diffusion WebUI Forge](https://github.com/lllyasviel/stable-diffusion-webui-forge), 
 fix'd up to work with Flux.1, integrate Parseq keyframe redistribution logic, and support **Wan 2.1 AI Video Generation**.
