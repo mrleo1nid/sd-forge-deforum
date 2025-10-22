@@ -2,6 +2,7 @@ import torch
 from torch.nn.functional import interpolate
 import numpy as np
 import cv2
+from PIL import Image
 
 # Import pure functions from refactored utils module
 from deforum.utils.noise_utils import (
