@@ -31,6 +31,10 @@ from deforum.utils.string_utils import (
     clean_gradio_path_strings,
     tick_or_cross as tickOrCross,
 )
+from deforum.utils.file_utils import (
+    get_max_path_length as _get_max_path_length,
+    count_files_in_folder,
+)
 
 
 def debug_print(message):
@@ -128,9 +132,10 @@ def test_long_path_support(base_folder_path):
 
 
 def get_max_path_length(base_folder_path):
-    if get_os() == 'Windows':
-        return (32767 if test_long_path_support(base_folder_path) else 260) - len(base_folder_path) - 1
-    return 4096 - len(base_folder_path) - 1
+    """Get maximum path length for OS (wrapper with side effects for testing)."""
+    os_name = get_os()
+    supports_long_paths = test_long_path_support(base_folder_path) if os_name == 'Windows' else False
+    return _get_max_path_length(base_folder_path, os_name, supports_long_paths)
 
 
 def substitute_placeholders(template, arg_list, base_folder_path):
@@ -164,12 +169,7 @@ def substitute_placeholders(template, arg_list, base_folder_path):
     return formatted_string[:max_length]
 
 
-def count_files_in_folder(folder_path):
-    import glob
-    file_pattern = folder_path + "/*"
-    file_count = len(glob.glob(file_pattern))
-    return file_count
-
+# count_files_in_folder imported from deforum.utils.file_utils
 
 # clean_gradio_path_strings imported from deforum.utils.string_utils
 

@@ -22,6 +22,9 @@ Modules:
     subtitle_utils: Subtitle time formatting and parameter display
     string_utils: String manipulation and formatting utilities
     path_utils: Path manipulation and parsing utilities
+    validation_utils: Image validation and checking utilities
+    math_utils: Mathematical calculations and 3D transformations
+    file_utils: File and path operations
 """
 
 __all__ = [
@@ -35,4 +38,7 @@ __all__ = [
     "subtitle_utils",
     "string_utils",
     "path_utils",
+    "validation_utils",
+    "math_utils",
+    "file_utils",
 ]

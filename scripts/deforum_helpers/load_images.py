@@ -21,6 +21,12 @@ import socket
 import torchvision.transforms.functional as TF
 from .general_utils import clean_gradio_path_strings
 
+# Import pure functions from refactored utils module
+from deforum.utils.validation_utils import (
+    blank_if_none,
+    none_if_blank,
+)
+
 def load_img(path : str, image_box :Image.Image, shape=None, use_alpha_as_mask=False):
     # use_alpha_as_mask: Read the alpha channel of the image as the mask image
     image = load_image(path, image_box)
@@ -108,8 +114,5 @@ def get_mask(args):
 def get_mask_from_file(mask_file, args):
     return prepare_mask(mask_file, (args.W, args.H), args.mask_contrast_adjust, args.mask_brightness_adjust)
 
-def blank_if_none(mask, w, h, mode):
-    return Image.new(mode, (w, h), (0)) if mask is None else mask
-
-def none_if_blank(mask):
-    return None if mask.getextrema() == (0,0) else mask
+# blank_if_none imported from deforum.utils.validation_utils
+# none_if_blank imported from deforum.utils.validation_utils
