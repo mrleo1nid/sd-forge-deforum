@@ -25,6 +25,8 @@ Modules:
     validation_utils: Image validation and checking utilities
     math_utils: Mathematical calculations and 3D transformations
     file_utils: File and path operations
+    optical_flow_utils: Optical flow consistency checking
+    format_utils: Value formatting and conversion utilities
 """
 
 __all__ = [
@@ -41,4 +43,6 @@ __all__ = [
     "validation_utils",
     "math_utils",
     "file_utils",
+    "optical_flow_utils",
+    "format_utils",
 ]

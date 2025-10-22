@@ -17,6 +17,9 @@
 # This file is used to map deprecated setting names in a dictionary
 # and print a message containing the old and the new names
 
+# Import pure function from refactored utils module
+from deforum.utils.format_utils import format_value_to_schedule
+
 deprecation_map = {
     "histogram_matching": None,
     "flip_2d_perspective": "enable_perspective_flip",
@@ -50,9 +53,9 @@ deprecation_map = {
     "use_zoe_depth": ("depth_algorithm", [("True", "Zoe+AdaBins (old)"), ("False", "Midas+AdaBins (old)")]),
 }
 
-def dynamic_num_to_schedule_formatter(old_value):
-    return f"0:({old_value})"
-    
+# Use refactored pure function (backward compatibility alias)
+dynamic_num_to_schedule_formatter = format_value_to_schedule
+
 for i in range(1, 6): # 5 CN models in total
     deprecation_map[f"cn_{i}_weight"] = dynamic_num_to_schedule_formatter
     deprecation_map[f"cn_{i}_guidance_start"] = dynamic_num_to_schedule_formatter
