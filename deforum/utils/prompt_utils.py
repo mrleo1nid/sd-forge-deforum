@@ -296,3 +296,60 @@ def substitute_prompt_expressions(text: str, frame_idx: int, max_frames: int) ->
         return evaluate_prompt_expression(expr, frame_idx, max_frames)
 
     return re.sub(pattern, replace_expr, text)
+
+# ============================================================================
+# PROMPT INTERPOLATION
+# ============================================================================
+
+
+def interpolate_prompts(animation_prompts: Dict[str, str], max_frames: int) -> pd.Series:
+    """Interpolate prompts between keyframes using composable diffusion.
+
+    Takes a dictionary of frame-indexed prompts and creates a smooth
+    interpolation between keyframes using weighted composable diffusion.
+
+    Args:
+        animation_prompts: Dictionary mapping frame numbers (as strings) to prompt text
+        max_frames: Total number of frames in animation
+
+    Returns:
+        pandas Series with interpolated prompts for each frame
+
+    Examples:
+        >>> prompts = {"0": "cat", "10": "dog"}
+        >>> series = interpolate_prompts(prompts, 20)
+        >>> series[0]
+        'cat'
+        >>> series[10]
+        'dog'
+        >>> # Frames 1-9 will have interpolated weights between cat and dog
+    """
+    parsed_prompts = parse_animation_prompts_dict(animation_prompts, max_frames)
+    sorted_prompts = sorted(parsed_prompts.items(), key=lambda item: int(item[0]))
+
+    prompt_series = pd.Series([np.nan for _ in range(max_frames)])
+
+    # Interpolate between consecutive keyframes
+    for i in range(len(sorted_prompts) - 1):
+        current_frame = int(sorted_prompts[i][0])
+        next_frame = int(sorted_prompts[i + 1][0])
+
+        if current_frame >= next_frame:
+            continue  # Skip invalid ordering
+
+        current_prompt = sorted_prompts[i][1]
+        next_prompt = sorted_prompts[i + 1][1]
+
+        for f in range(current_frame, next_frame):
+            current_weight, next_weight = calculate_interpolation_weights(
+                f, current_frame, next_frame
+            )
+            prompt_series[f] = build_interpolated_prompt(
+                current_prompt, next_prompt, current_weight, next_weight
+            )
+
+    # Set keyframe prompts (overwrite interpolated values)
+    for frame_num, prompt in parsed_prompts.items():
+        prompt_series[int(frame_num)] = prompt
+
+    return prompt_series.ffill().bfill()

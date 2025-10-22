@@ -21,6 +21,7 @@ Modules:
     filename_utils: Filename formatting and path generation
     subtitle_utils: Subtitle time formatting and parameter display
     string_utils: String manipulation and formatting utilities
+    path_utils: Path manipulation and parsing utilities
 """
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
     "filename_utils",
     "subtitle_utils",
     "string_utils",
+    "path_utils",
 ]

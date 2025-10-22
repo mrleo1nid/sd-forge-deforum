@@ -38,6 +38,12 @@ from .general_utils import checksum, clean_gradio_path_strings, debug_print
 from .http_client import get_http_client
 from .rich import console
 
+# Import pure functions from refactored utils module
+from deforum.utils.path_utils import (
+    extract_number_from_string,
+    get_frame_name,
+)
+
 SUPPORTED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "bmp", "webp"]
 SUPPORTED_VIDEO_EXTENSIONS = ["mov", "mpeg", "mp4", "m4v", "avi", "mpg", "webm"]
 
@@ -85,9 +91,8 @@ def get_ffmpeg_paths(outdir, timestring, anim_args, video_args, output_suffix=''
         
     return [image_path, mp4_path, real_audio_track, srt_path]
 
-# e.g gets 'x2' returns just 2 as int
-def extract_number(string):
-    return int(string[1:]) if len(string) > 1 and string[1:].isdigit() else -1
+# Backward compatibility alias (imported from deforum.utils.path_utils)
+extract_number = extract_number_from_string
     
 def save_frame(image, file_path):
     cv2.imwrite(file_path, image)
@@ -380,11 +385,8 @@ def ffmpeg_stitch_video(ffmpeg_location=None, fps=None, outmp4_path=None, stitch
 
     print(status_summary, flush=True)
 
-def get_frame_name(path):
-    name = os.path.basename(path)
-    name = os.path.splitext(name)[0]
-    return name
-    
+# get_frame_name imported from deforum.utils.path_utils
+
 def get_next_frame(outdir, video_path, frame_idx, mask=False):
     frame_path = 'inputframes'
     if (mask): frame_path = 'maskframes'

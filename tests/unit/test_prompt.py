@@ -289,3 +289,65 @@ class TestSubstitutePromptExpressions:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+class TestInterpolatePrompts:
+    """Test interpolate_prompts function."""
+
+    def test_simple_two_keyframes(self):
+        from deforum.utils.prompt_utils import interpolate_prompts
+        
+        prompts = {"0": "cat", "10": "dog"}
+        result = interpolate_prompts(prompts, 20)
+        
+        # Check keyframes are preserved
+        assert result[0] == "cat"
+        assert result[10] == "dog"
+        
+        # Check interpolation exists between keyframes
+        assert "(cat)" in result[5]
+        assert "(dog)" in result[5]
+        
+        # Check forward fill after last keyframe
+        assert result[15] == "dog"
+
+    def test_three_keyframes(self):
+        from deforum.utils.prompt_utils import interpolate_prompts
+        
+        prompts = {"0": "morning", "50": "noon", "100": "night"}
+        result = interpolate_prompts(prompts, 150)
+        
+        assert result[0] == "morning"
+        assert result[50] == "noon"
+        assert result[100] == "night"
+        
+        # Check interpolation between first and second
+        assert "(morning)" in result[25]
+        assert "(noon)" in result[25]
+        
+        # Check forward fill after last keyframe
+        assert result[125] == "night"
+
+    def test_single_keyframe(self):
+        from deforum.utils.prompt_utils import interpolate_prompts
+        
+        prompts = {"0": "static"}
+        result = interpolate_prompts(prompts, 10)
+        
+        # All frames should have the same prompt
+        for i in range(10):
+            assert result[i] == "static"
+
+    def test_with_weights(self):
+        from deforum.utils.prompt_utils import interpolate_prompts
+        
+        prompts = {"0": "(cat):1.5", "10": "(dog):2.0"}
+        result = interpolate_prompts(prompts, 20)
+        
+        # Keyframes should preserve original weights
+        assert result[0] == "(cat):1.5"
+        assert result[10] == "(dog):2.0"
+        
+        # Interpolated frames should have both prompts
+        assert "cat" in result[5]
+        assert "dog" in result[5]

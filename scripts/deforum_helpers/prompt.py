@@ -17,6 +17,7 @@ from deforum.utils.prompt_utils import (
     build_interpolated_prompt,
     evaluate_prompt_expression,
     substitute_prompt_expressions,
+    interpolate_prompts,
 )
 
 # Re-export for backward compatibility
@@ -51,56 +52,8 @@ except ImportError:
         RESET_COLOR = "\033[0m"
 
 # ============================================================================
-# COMPLEX PURE FUNCTIONS (not yet extracted)
+# All pure functions imported from deforum.utils.prompt_utils
 # ============================================================================
-
-def interpolate_prompts(animation_prompts: Dict[str, str], max_frames: int) -> pd.Series:
-    """Interpolate prompts between keyframes using composable diffusion."""
-    parsed_prompts = parse_animation_prompts_dict(animation_prompts, max_frames)
-    sorted_prompts = sorted(parsed_prompts.items(), key=lambda item: int(item[0]))
-
-    prompt_series = pd.Series([np.nan for _ in range(max_frames)])
-
-    # Interpolate between consecutive keyframes
-    for i in range(len(sorted_prompts) - 1):
-        current_frame = int(sorted_prompts[i][0])
-        next_frame = int(sorted_prompts[i + 1][0])
-
-        if current_frame >= next_frame:
-            continue  # Skip invalid ordering
-
-        current_prompt = sorted_prompts[i][1]
-        next_prompt = sorted_prompts[i + 1][1]
-
-        for f in range(current_frame, next_frame):
-            current_weight, next_weight = calculate_interpolation_weights(f, current_frame, next_frame)
-            prompt_series[f] = build_interpolated_prompt(
-                current_prompt, next_prompt, current_weight, next_weight
-            )
-
-    # Set keyframe prompts (overwrite interpolated values)
-    for frame_num, prompt in parsed_prompts.items():
-        prompt_series[int(frame_num)] = prompt
-
-    return prompt_series.ffill().bfill()
-
-def evaluate_prompt_expression(expression: str, frame_idx: int, max_frames: int) -> str:
-    """Evaluate math expression in prompt (replaces t and max_f variables)."""
-    max_f = max_frames - 1
-    expression_clean = expression.replace('t', f'{frame_idx}').replace("max_f", f"{max_f}")
-    return str(numexpr.evaluate(expression_clean))
-
-def substitute_prompt_expressions(text: str, frame_idx: int, max_frames: int) -> str:
-    """Replace all backtick-wrapped expressions in prompt with evaluated values."""
-    pattern = r'`.*?`'
-    regex = re.compile(pattern)
-    result = text
-    for match in regex.finditer(text):
-        matched_string = match.group(0)
-        expression = matched_string.strip('`')
-        evaluated = evaluate_prompt_expression(expression, frame_idx, max_frames)
-        result = result.replace(matched_string, evaluated)
-    return result
 
 # ============================================================================
 # IMPURE FUNCTIONS (side effects: printing)
