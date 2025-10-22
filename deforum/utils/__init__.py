@@ -17,6 +17,7 @@ Modules:
     noise_utils: Perlin noise generation
     prompt_utils: Prompt parsing and interpolation
     transform_utils: 3D transformations and matrix operations
+    functional_utils: Functional programming helpers and utilities
 """
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "noise_utils",
     "prompt_utils",
     "transform_utils",
+    "functional_utils",
 ]
