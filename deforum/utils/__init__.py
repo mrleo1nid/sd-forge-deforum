@@ -20,6 +20,7 @@ Modules:
     functional_utils: Functional programming helpers and utilities
     filename_utils: Filename formatting and path generation
     subtitle_utils: Subtitle time formatting and parameter display
+    string_utils: String manipulation and formatting utilities
 """
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     "functional_utils",
     "filename_utils",
     "subtitle_utils",
+    "string_utils",
 ]

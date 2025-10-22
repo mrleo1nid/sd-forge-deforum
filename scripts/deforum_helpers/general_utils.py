@@ -24,6 +24,14 @@ from torch.hub import download_url_to_file
 
 from .rendering.util import log_utils
 
+# Import pure functions from refactored utils module
+from deforum.utils.string_utils import (
+    get_os,
+    custom_placeholder_format,
+    clean_gradio_path_strings,
+    tick_or_cross as tickOrCross,
+)
+
 
 def debug_print(message):
     is_debug_mode = opts.data.get("deforum_debug_mode_enabled", False)
@@ -39,9 +47,7 @@ def checksum(filename, hash_factory=hashlib.blake2b, chunk_num_blocks=128):
     return h.hexdigest()
 
 
-def get_os():
-    import platform
-    return {"Windows": "Windows", "Linux": "Linux", "Darwin": "Mac"}.get(platform.system(), "Unknown")
+# get_os imported from deforum.utils.string_utils
 
 
 # used in src/rife/inference_video.py and more, soon
@@ -107,14 +113,7 @@ def _get_extension_info():
         return None
 
 
-def custom_placeholder_format(value_dict, placeholder_match):
-    key = placeholder_match.group(1).lower()
-    value = value_dict.get(key, key) or "_"
-    if isinstance(value, dict) and value:
-        first_key = list(value.keys())[0]
-        value = str(value[first_key][0]) if isinstance(value[first_key], list) and value[first_key] else str(
-            value[first_key])
-    return str(value)[:50]
+# custom_placeholder_format imported from deforum.utils.string_utils
 
 
 def test_long_path_support(base_folder_path):
@@ -172,11 +171,7 @@ def count_files_in_folder(folder_path):
     return file_count
 
 
-def clean_gradio_path_strings(input_str):
-    if isinstance(input_str, str) and input_str.startswith('"') and input_str.endswith('"'):
-        return input_str[1:-1]
-    else:
-        return input_str
+# clean_gradio_path_strings imported from deforum.utils.string_utils
 
 
 def download_file_with_checksum(url, expected_checksum, dest_folder, dest_filename):
@@ -190,8 +185,4 @@ def download_file_with_checksum(url, expected_checksum, dest_folder, dest_filena
                             f"Please manually download from: {url}\nAnd place it in: {dest_folder}")
 
 
-def tickOrCross(value):
-    is_use_simple_symbols = True  # TODO? re-enable console emojis
-    tick = "✔" if is_use_simple_symbols else "\U00002705"  # Check mark ✅
-    cross = "✖" if is_use_simple_symbols else "\U0000274C"  # Cross mark ❌
-    return tick if value else cross
+# tickOrCross imported from deforum.utils.string_utils (aliased from tick_or_cross)

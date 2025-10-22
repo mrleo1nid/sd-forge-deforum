@@ -21,6 +21,9 @@ import pandas as pd
 from .prompt import check_is_number
 from modules import scripts, shared
 
+# Import pure function from refactored utils module
+from deforum.utils.string_utils import sanitize_keyframe_value
+
 class DeformAnimKeys():
     def __init__(self, anim_args, seed=-1):
         self.fi = FrameInterpolater(anim_args.max_frames, seed)
@@ -107,7 +110,8 @@ class FrameInterpolater():
         return self.get_inbetweens(self.parse_key_frames(value, filename = filename), filename = filename, is_single_string = is_single_string)
 
     def sanitize_value(self, value):
-        return value.replace("'","").replace('"',"").replace('(',"").replace(')',"")
+        # Wrapper for backward compatibility - delegates to imported pure function
+        return sanitize_keyframe_value(value)
 
     def get_inbetweens(self, key_frames, integer=False, interp_method='Linear', is_single_string = False, filename = 'unknown'):
         key_frame_series = pd.Series([np.nan for a in range(self.max_frames)])
