@@ -32,6 +32,7 @@ Modules:
     conversion_utils: Type conversion and random name generation
     schedule_utils: Schedule string parsing and interpolation
     depth_utils: Depth tensor normalization and equalization
+    camera_analysis_utils: Camera movement analysis and description generation
 """
 
 __all__ = [
@@ -55,4 +56,5 @@ __all__ = [
     "conversion_utils",
     "schedule_utils",
     "depth_utils",
+    "camera_analysis_utils",
 ]
