@@ -4,6 +4,7 @@ import math
 import torch
 from PIL import Image
 from typing import Tuple, List
+from einops import rearrange
 
 # Import pure functions from refactored utils module
 from deforum.utils.transform_utils import (
