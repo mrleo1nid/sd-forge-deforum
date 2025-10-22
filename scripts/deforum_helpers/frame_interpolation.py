@@ -22,30 +22,15 @@ from film_interpolation.film_inference import run_film_interp_infer
 from .general_utils import duplicate_pngs_from_folder, checksum, convert_images_from_list
 from modules.shared import opts
 
+# Import pure functions from refactored utils module
+from deforum.utils.interpolation_utils import (
+    extract_rife_name,
+    clean_folder_name,
+    set_interp_out_fps,
+    calculate_frames_to_add,
+)
+
 DEBUG_MODE = opts.data.get("deforum_debug_mode_enabled", False)
-
-# gets 'RIFE v4.3', returns: 'RIFE43'   
-def extract_rife_name(string):
-    parts = string.split()
-    if len(parts) != 2 or parts[0] != "RIFE" or (parts[1][0] != "v" or not parts[1][1:].replace('.','').isdigit()):
-        raise ValueError("Input string should contain exactly 2 words, first word should be 'RIFE' and second word should start with 'v' followed by 2 numbers")
-    return "RIFE"+parts[1][1:].replace('.','')
-
-# This function usually gets a filename, and converts it to a legal linux/windows *folder* name
-def clean_folder_name(string):
-    illegal_chars = "/\\<>:\"|?*.,\" "
-    translation_table = str.maketrans(illegal_chars, "_"*len(illegal_chars))
-    return string.translate(translation_table)
-
-def set_interp_out_fps(interp_x, slow_x_enabled, slom_x, in_vid_fps):
-    if interp_x == 'Disabled' or in_vid_fps in ('---', None, '', 'None'):
-        return '---'
-
-    fps = float(in_vid_fps) * int(interp_x)
-    # if slom_x != -1:
-    if slow_x_enabled:
-        fps /= int(slom_x)
-    return int(fps) if fps.is_integer() else fps
     
 # get uploaded video frame count, fps, and return 3 valuees for the gradio UI: in fcount, in fps, out fps (using the set_interp_out_fps function above)
 def gradio_f_interp_get_fps_and_fcount(vid_path, interp_x, slow_x_enabled, slom_x):
@@ -155,7 +140,7 @@ def prepare_film_inference(deforum_models_path, x_am, sl_enabled, sl_am, keep_im
         total_frames = duplicate_pngs_from_folder(raw_output_imgs_path, temp_convert_raw_png_path, img_batch_id, None)
     check_and_download_film_model('film_net_fp16.pt', film_model_folder) # TODO: split this part
     
-    # get number of in-between-frames to provide to FILM - mimics how RIFE works, we should get the same amount of total frames in the end
+    # Get number of in-between-frames to provide to FILM - mimics how RIFE works
     film_in_between_frames_count = calculate_frames_to_add(total_frames, x_am)
     # Run actual FILM inference
     run_film_interp_infer(
@@ -208,12 +193,11 @@ def check_and_download_film_model(model_name, model_dest_folder):
             raise Exception(f"Error while downloading {model_name}. Please download from: {download_url}, and put in: {model_dest_folder}")
     except Exception as e:
         raise Exception(f"Error while downloading {model_name}. Please download from: {download_url}, and put in: {model_dest_folder}")
-        
-# get film no. of frames to add after each pic from tot frames in interp_x values
-def calculate_frames_to_add(total_frames, interp_x):
-    frames_to_add = (total_frames * interp_x - total_frames) / (total_frames - 1)
-    return int(round(frames_to_add))
- 
+
+
+# calculate_frames_to_add imported from deforum.utils.interpolation_utils
+
+
 def process_interp_pics_upload_logic(pic_list, engine, x_am, sl_enabled, sl_am, keep_imgs, f_location, f_crf, f_preset, fps, f_models_path, resolution, add_soundtrack, audio_track):
     pic_path_list = [pic.name for pic in pic_list]
     print(f"got a request to *frame interpolate* a set of {len(pic_list)} images.")

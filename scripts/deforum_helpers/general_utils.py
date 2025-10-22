@@ -35,6 +35,15 @@ from deforum.utils.file_utils import (
     get_max_path_length as _get_max_path_length,
     count_files_in_folder,
 )
+from deforum.utils.interpolation_utils import (
+    extract_rife_name,
+    clean_folder_name as _clean_folder_name,
+    set_interp_out_fps,
+    calculate_frames_to_add,
+)
+
+# Backward compatibility aliases
+clean_folder_name = _clean_folder_name
 
 
 def debug_print(message):

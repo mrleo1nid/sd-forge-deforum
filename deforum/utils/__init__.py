@@ -27,6 +27,7 @@ Modules:
     file_utils: File and path operations
     optical_flow_utils: Optical flow consistency checking
     format_utils: Value formatting and conversion utilities
+    interpolation_utils: Frame interpolation calculations
 """
 
 __all__ = [
@@ -45,4 +46,5 @@ __all__ = [
     "file_utils",
     "optical_flow_utils",
     "format_utils",
+    "interpolation_utils",
 ]
