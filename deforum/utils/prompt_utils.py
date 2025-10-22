@@ -327,7 +327,8 @@ def interpolate_prompts(animation_prompts: Dict[str, str], max_frames: int) -> p
     parsed_prompts = parse_animation_prompts_dict(animation_prompts, max_frames)
     sorted_prompts = sorted(parsed_prompts.items(), key=lambda item: int(item[0]))
 
-    prompt_series = pd.Series([np.nan for _ in range(max_frames)])
+    # Use dtype=object to allow string values (fixes pandas FutureWarning)
+    prompt_series = pd.Series([np.nan for _ in range(max_frames)], dtype=object)
 
     # Interpolate between consecutive keyframes
     for i in range(len(sorted_prompts) - 1):
