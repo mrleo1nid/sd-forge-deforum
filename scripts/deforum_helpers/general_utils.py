@@ -14,7 +14,6 @@
 import datetime
 # Contact the authors: https://deforum.github.io/
 
-import hashlib
 import os
 import shutil
 
@@ -41,6 +40,9 @@ from deforum.utils.interpolation_utils import (
     set_interp_out_fps,
     calculate_frames_to_add,
 )
+from deforum.utils.hash_utils import (
+    compute_file_checksum_with_factory as checksum,
+)
 
 # Backward compatibility aliases
 clean_folder_name = _clean_folder_name
@@ -52,13 +54,7 @@ def debug_print(message):
         log_utils.debug(message)
 
 
-def checksum(filename, hash_factory=hashlib.blake2b, chunk_num_blocks=128):
-    h = hash_factory()
-    with open(filename, 'rb') as f:
-        while chunk := f.read(chunk_num_blocks * h.block_size):
-            h.update(chunk)
-    return h.hexdigest()
-
+# checksum imported from deforum.utils.hash_utils
 
 # get_os imported from deforum.utils.string_utils
 

@@ -1,5 +1,10 @@
 from . import opt_utils
 
+# Import pure functions from refactored utils module
+from deforum.utils.color_utils import (
+    hex_to_ansi_foreground as from_hex_color,
+)
+
 ESC = "\033["  # ANSI escape character with bracket. Same as "\x1b[".
 TERM = "m"  # ANSI terminator
 
@@ -18,15 +23,7 @@ HEX_GREEN = '#8FE968'
 HEX_BLUE = '#36CEDC'
 HEX_PURPLE = '#A587CA'
 
-
-def from_hex_color(hex_color):
-    def _hex_to_rgb(color):
-        color = color.lstrip('#')  # Remove '#' if present
-        return tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
-
-    r, g, b = _hex_to_rgb(hex_color)
-    return f"{ESC}{TEXT}{r};{g};{b}{TERM}"
-
+# from_hex_color imported from deforum.utils.color_utils
 
 RED = from_hex_color(HEX_RED)
 ORANGE = from_hex_color(HEX_ORANGE)

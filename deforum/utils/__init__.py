@@ -33,6 +33,8 @@ Modules:
     schedule_utils: Schedule string parsing and interpolation
     schedule_manipulation_utils: Schedule combination and manipulation
     expression_utils: Expression parsing and evaluation utilities
+    hash_utils: File hashing and checksum calculation utilities
+    color_utils: Color conversion and ANSI formatting utilities
     depth_utils: Depth tensor normalization and equalization
     camera_analysis_utils: Camera movement analysis and description generation
     url_utils: URL and file extension parsing utilities
@@ -60,6 +62,8 @@ __all__ = [
     "schedule_utils",
     "schedule_manipulation_utils",
     "expression_utils",
+    "hash_utils",
+    "color_utils",
     "depth_utils",
     "camera_analysis_utils",
     "url_utils",
