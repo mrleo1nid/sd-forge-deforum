@@ -20,6 +20,16 @@ from PIL import Image
 from torchvision import io, transforms
 from torchvision.transforms import InterpolationMode
 
+# Import pure math functions from refactored utils module
+from deforum.utils.math_utils import (
+    round_by_factor,
+    ceil_by_factor,
+    floor_by_factor,
+    smart_resize,
+    smart_nframes as smart_nframes_pure,
+    FRAME_FACTOR,
+)
+
 logger = logging.getLogger(__name__)
 
 IMAGE_FACTOR = 28
@@ -30,56 +40,29 @@ MAX_RATIO = 200
 VIDEO_MIN_PIXELS = 128 * 28 * 28
 VIDEO_MAX_PIXELS = 768 * 28 * 28
 VIDEO_TOTAL_PIXELS = 24576 * 28 * 28
-FRAME_FACTOR = 2
+# FRAME_FACTOR imported from deforum.utils.math_utils
 FPS = 2.0
 FPS_MIN_FRAMES = 4
 FPS_MAX_FRAMES = 768
 
-
-def round_by_factor(number: int, factor: int) -> int:
-    """Returns the closest integer to 'number' that is divisible by 'factor'."""
-    return round(number / factor) * factor
-
-
-def ceil_by_factor(number: int, factor: int) -> int:
-    """Returns the smallest integer greater than or equal to 'number' that is divisible by 'factor'."""
-    return math.ceil(number / factor) * factor
-
-
-def floor_by_factor(number: int, factor: int) -> int:
-    """Returns the largest integer less than or equal to 'number' that is divisible by 'factor'."""
-    return math.floor(number / factor) * factor
+# ============================================================================
+# Pure functions moved to deforum/utils/math_utils.py:
+# - round_by_factor(number, factor)
+# - ceil_by_factor(number, factor)
+# - floor_by_factor(number, factor)
+# - smart_resize(height, width, factor, min_pixels, max_pixels)
+# - smart_nframes(total_frames, video_fps, target_fps, nframes, min_frames, max_frames)
+# ============================================================================
 
 
-def smart_resize(height: int,
+# Backward compatibility wrapper - actual implementation in deforum.utils.math_utils
+def smart_resize_compat(height: int,
                  width: int,
                  factor: int = IMAGE_FACTOR,
                  min_pixels: int = MIN_PIXELS,
                  max_pixels: int = MAX_PIXELS) -> tuple[int, int]:
-    """
-    Rescales the image so that the following conditions are met:
-
-    1. Both dimensions (height and width) are divisible by 'factor'.
-
-    2. The total number of pixels is within the range ['min_pixels', 'max_pixels'].
-
-    3. The aspect ratio of the image is maintained as closely as possible.
-    """
-    if max(height, width) / min(height, width) > MAX_RATIO:
-        raise ValueError(
-            f"absolute aspect ratio must be smaller than {MAX_RATIO}, got {max(height, width) / min(height, width)}"
-        )
-    h_bar = max(factor, round_by_factor(height, factor))
-    w_bar = max(factor, round_by_factor(width, factor))
-    if h_bar * w_bar > max_pixels:
-        beta = math.sqrt((height * width) / max_pixels)
-        h_bar = floor_by_factor(height / beta, factor)
-        w_bar = floor_by_factor(width / beta, factor)
-    elif h_bar * w_bar < min_pixels:
-        beta = math.sqrt(min_pixels / (height * width))
-        h_bar = ceil_by_factor(height * beta, factor)
-        w_bar = ceil_by_factor(width * beta, factor)
-    return h_bar, w_bar
+    """Wrapper for smart_resize from deforum.utils.math_utils (backward compatibility)."""
+    return smart_resize(height, width, factor, min_pixels, max_pixels)
 
 
 def fetch_image(ele: dict[str, str | Image.Image],
@@ -130,48 +113,49 @@ def fetch_image(ele: dict[str, str | Image.Image],
     return image
 
 
+# Backward compatibility wrapper - uses pure function from deforum.utils.math_utils
 def smart_nframes(
     ele: dict,
     total_frames: int,
     video_fps: int | float,
 ) -> int:
-    """calculate the number of frames for video used for model inputs.
+    """Calculate number of frames for video used for model inputs (wrapper).
+
+    This is a backward compatibility wrapper that converts the dict-based API
+    to the pure smart_nframes function from deforum.utils.math_utils.
 
     Args:
-        ele (dict): a dict contains the configuration of video.
-            support either `fps` or `nframes`:
-                - nframes: the number of frames to extract for model inputs.
-                - fps: the fps to extract frames for model inputs.
-                    - min_frames: the minimum number of frames of the video, only used when fps is provided.
-                    - max_frames: the maximum number of frames of the video, only used when fps is provided.
-        total_frames (int): the original total number of frames of the video.
-        video_fps (int | float): the original fps of the video.
+        ele (dict): Configuration dict supporting either 'fps' or 'nframes':
+                - nframes: Number of frames to extract for model inputs.
+                - fps: FPS to extract frames for model inputs.
+                    - min_frames: Minimum frames (only used when fps provided).
+                    - max_frames: Maximum frames (only used when fps provided).
+        total_frames (int): Original total number of frames of the video.
+        video_fps (int | float): Original fps of the video.
 
     Raises:
-        ValueError: nframes should in interval [FRAME_FACTOR, total_frames].
+        ValueError: nframes should be in interval [FRAME_FACTOR, total_frames].
 
     Returns:
-        int: the number of frames for video used for model inputs.
+        int: Number of frames for video used for model inputs.
     """
-    assert not ("fps" in ele and
-                "nframes" in ele), "Only accept either `fps` or `nframes`"
-    if "nframes" in ele:
-        nframes = round_by_factor(ele["nframes"], FRAME_FACTOR)
-    else:
-        fps = ele.get("fps", FPS)
-        min_frames = ceil_by_factor(
-            ele.get("min_frames", FPS_MIN_FRAMES), FRAME_FACTOR)
-        max_frames = floor_by_factor(
-            ele.get("max_frames", min(FPS_MAX_FRAMES, total_frames)),
-            FRAME_FACTOR)
-        nframes = total_frames / video_fps * fps
-        nframes = min(max(nframes, min_frames), max_frames)
-        nframes = round_by_factor(nframes, FRAME_FACTOR)
-    if not (FRAME_FACTOR <= nframes and nframes <= total_frames):
-        raise ValueError(
-            f"nframes should in interval [{FRAME_FACTOR}, {total_frames}], but got {nframes}."
-        )
-    return nframes
+    assert not ("fps" in ele and "nframes" in ele), "Only accept either `fps` or `nframes`"
+
+    # Extract parameters from ele dict
+    nframes_param = ele.get("nframes")
+    target_fps = ele.get("fps")
+    min_frames = ele.get("min_frames")
+    max_frames = ele.get("max_frames")
+
+    # Call the pure function
+    return smart_nframes_pure(
+        total_frames=total_frames,
+        video_fps=video_fps,
+        target_fps=target_fps,
+        nframes=nframes_param,
+        min_frames=min_frames,
+        max_frames=max_frames,
+    )
 
 
 def _read_video_torchvision(ele: dict,) -> torch.Tensor:

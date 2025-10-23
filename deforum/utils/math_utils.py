@@ -1,12 +1,28 @@
 """Pure functions for mathematical calculations and 3D transformations.
 
 This module contains math-related pure functions extracted from
-scripts/deforum_helpers/auto_navigation.py, following functional programming
-principles with no side effects.
+scripts/deforum_helpers/auto_navigation.py and wan/utils/qwen_vl_utils.py,
+following functional programming principles with no side effects.
 """
 
+import math
 import numpy as np
 import torch
+from typing import Tuple
+
+# Constants from qwen_vl_utils
+IMAGE_FACTOR = 28
+MIN_PIXELS = 4 * 28 * 28
+MAX_PIXELS = 16384 * 28 * 28
+MAX_RATIO = 200
+
+VIDEO_MIN_PIXELS = 128 * 28 * 28
+VIDEO_MAX_PIXELS = 768 * 28 * 28
+VIDEO_TOTAL_PIXELS = 24576 * 28 * 28
+FRAME_FACTOR = 2
+FPS = 2.0
+FPS_MIN_FRAMES = 4
+FPS_MAX_FRAMES = 768
 
 
 def rotation_matrix(axis: np.ndarray | list, angle: float) -> np.ndarray:
@@ -130,3 +146,278 @@ def rotate_camera_towards_depth(
     rotation_matrix_tensor = rotation_matrix_tensor.unsqueeze(0)
 
     return rotation_matrix_tensor
+
+
+# ============================================================================
+# Factor-based rounding functions (from qwen_vl_utils.py)
+# ============================================================================
+
+
+def round_by_factor(number: int | float, factor: int) -> int:
+    """Round number to closest integer divisible by factor.
+
+    Returns the closest integer to 'number' that is divisible by 'factor'.
+
+    Args:
+        number: Number to round (int or float).
+        factor: Factor to round by (must be non-zero).
+
+    Returns:
+        Closest integer to number that is divisible by factor.
+
+    Raises:
+        ValueError: If factor is zero.
+        TypeError: If inputs are not numeric.
+
+    Examples:
+        >>> round_by_factor(17, 5)
+        15
+        >>> round_by_factor(18, 5)
+        20
+        >>> round_by_factor(100, 28)
+        112
+    """
+    if not isinstance(number, (int, float)):
+        raise TypeError(f"number must be int or float, got {type(number).__name__}")
+    if not isinstance(factor, int):
+        raise TypeError(f"factor must be int, got {type(factor).__name__}")
+    if factor == 0:
+        raise ValueError("factor cannot be zero")
+
+    return round(number / factor) * factor
+
+
+def ceil_by_factor(number: int | float, factor: int) -> int:
+    """Round number up to smallest integer divisible by factor.
+
+    Returns the smallest integer greater than or equal to 'number' that is
+    divisible by 'factor'.
+
+    Args:
+        number: Number to round up (int or float).
+        factor: Factor to round by (must be non-zero).
+
+    Returns:
+        Smallest integer >= number that is divisible by factor.
+
+    Raises:
+        ValueError: If factor is zero.
+        TypeError: If inputs are not numeric.
+
+    Examples:
+        >>> ceil_by_factor(17, 5)
+        20
+        >>> ceil_by_factor(20, 5)
+        20
+        >>> ceil_by_factor(100, 28)
+        112
+    """
+    if not isinstance(number, (int, float)):
+        raise TypeError(f"number must be int or float, got {type(number).__name__}")
+    if not isinstance(factor, int):
+        raise TypeError(f"factor must be int, got {type(factor).__name__}")
+    if factor == 0:
+        raise ValueError("factor cannot be zero")
+
+    return math.ceil(number / factor) * factor
+
+
+def floor_by_factor(number: int | float, factor: int) -> int:
+    """Round number down to largest integer divisible by factor.
+
+    Returns the largest integer less than or equal to 'number' that is
+    divisible by 'factor'.
+
+    Args:
+        number: Number to round down (int or float).
+        factor: Factor to round by (must be non-zero).
+
+    Returns:
+        Largest integer <= number that is divisible by factor.
+
+    Raises:
+        ValueError: If factor is zero.
+        TypeError: If inputs are not numeric.
+
+    Examples:
+        >>> floor_by_factor(17, 5)
+        15
+        >>> floor_by_factor(20, 5)
+        20
+        >>> floor_by_factor(100, 28)
+        84
+    """
+    if not isinstance(number, (int, float)):
+        raise TypeError(f"number must be int or float, got {type(number).__name__}")
+    if not isinstance(factor, int):
+        raise TypeError(f"factor must be int, got {type(factor).__name__}")
+    if factor == 0:
+        raise ValueError("factor cannot be zero")
+
+    return math.floor(number / factor) * factor
+
+
+# ============================================================================
+# Smart resize/frame calculation functions (from qwen_vl_utils.py)
+# ============================================================================
+
+
+def smart_resize(
+    height: int,
+    width: int,
+    factor: int = IMAGE_FACTOR,
+    min_pixels: int = MIN_PIXELS,
+    max_pixels: int = MAX_PIXELS,
+) -> Tuple[int, int]:
+    """Calculate resize dimensions maintaining aspect ratio within pixel bounds.
+
+    Rescales image dimensions so that:
+    1. Both dimensions (height and width) are divisible by 'factor'.
+    2. Total pixels is within range [min_pixels, max_pixels].
+    3. Aspect ratio is maintained as closely as possible.
+
+    Args:
+        height: Original height in pixels.
+        width: Original width in pixels.
+        factor: Factor both dimensions must be divisible by (default: 28).
+        min_pixels: Minimum total pixels allowed (default: 3136).
+        max_pixels: Maximum total pixels allowed (default: 12845056).
+
+    Returns:
+        Tuple of (new_height, new_width) meeting all constraints.
+
+    Raises:
+        ValueError: If aspect ratio exceeds MAX_RATIO (200).
+        TypeError: If inputs are not integers.
+
+    Examples:
+        >>> smart_resize(1080, 1920)  # HD video
+        (1092, 1932)
+        >>> smart_resize(100, 100, factor=28)  # Small square
+        (112, 112)
+        >>> smart_resize(5000, 5000)  # Very large, will be scaled down
+        (3528, 3528)
+    """
+    if not isinstance(height, int):
+        raise TypeError(f"height must be int, got {type(height).__name__}")
+    if not isinstance(width, int):
+        raise TypeError(f"width must be int, got {type(width).__name__}")
+    if not isinstance(factor, int):
+        raise TypeError(f"factor must be int, got {type(factor).__name__}")
+    if not isinstance(min_pixels, int):
+        raise TypeError(f"min_pixels must be int, got {type(min_pixels).__name__}")
+    if not isinstance(max_pixels, int):
+        raise TypeError(f"max_pixels must be int, got {type(max_pixels).__name__}")
+
+    if height <= 0 or width <= 0:
+        raise ValueError(f"height and width must be positive, got {height}x{width}")
+    if factor <= 0:
+        raise ValueError(f"factor must be positive, got {factor}")
+
+    # Check aspect ratio constraint
+    aspect_ratio = max(height, width) / min(height, width)
+    if aspect_ratio > MAX_RATIO:
+        raise ValueError(
+            f"absolute aspect ratio must be smaller than {MAX_RATIO}, got {aspect_ratio}"
+        )
+
+    # Initial rounding to factor
+    h_bar = max(factor, round_by_factor(height, factor))
+    w_bar = max(factor, round_by_factor(width, factor))
+
+    # Scale down if too large
+    if h_bar * w_bar > max_pixels:
+        beta = math.sqrt((height * width) / max_pixels)
+        h_bar = floor_by_factor(height / beta, factor)
+        w_bar = floor_by_factor(width / beta, factor)
+
+    # Scale up if too small
+    elif h_bar * w_bar < min_pixels:
+        beta = math.sqrt(min_pixels / (height * width))
+        h_bar = ceil_by_factor(height * beta, factor)
+        w_bar = ceil_by_factor(width * beta, factor)
+
+    return h_bar, w_bar
+
+
+def smart_nframes(
+    total_frames: int,
+    video_fps: int | float,
+    target_fps: float | None = None,
+    nframes: int | None = None,
+    min_frames: int | None = None,
+    max_frames: int | None = None,
+) -> int:
+    """Calculate optimal number of frames for model input.
+
+    Calculates the number of frames to extract from video for model inputs,
+    ensuring the result is divisible by FRAME_FACTOR (2).
+
+    Can specify either target_fps OR nframes, but not both.
+
+    Args:
+        total_frames: Total number of frames in original video.
+        video_fps: Original video FPS.
+        target_fps: Target FPS for frame extraction (default: 2.0).
+        nframes: Explicit number of frames to extract (overrides FPS calculation).
+        min_frames: Minimum frames when using FPS (default: 4).
+        max_frames: Maximum frames when using FPS (default: 768 or total_frames).
+
+    Returns:
+        Number of frames to extract, divisible by FRAME_FACTOR (2).
+
+    Raises:
+        ValueError: If both nframes and target_fps are specified, or if
+            calculated nframes is out of valid range [FRAME_FACTOR, total_frames].
+        TypeError: If inputs are not numeric.
+
+    Examples:
+        >>> smart_nframes(100, 30.0, target_fps=2.0)
+        6
+        >>> smart_nframes(100, 30.0, nframes=10)
+        10
+        >>> smart_nframes(200, 60.0, target_fps=3.0)
+        10
+    """
+    if not isinstance(total_frames, int):
+        raise TypeError(f"total_frames must be int, got {type(total_frames).__name__}")
+    if not isinstance(video_fps, (int, float)):
+        raise TypeError(f"video_fps must be numeric, got {type(video_fps).__name__}")
+
+    if total_frames <= 0:
+        raise ValueError(f"total_frames must be positive, got {total_frames}")
+    if video_fps <= 0:
+        raise ValueError(f"video_fps must be positive, got {video_fps}")
+
+    # Cannot specify both fps and nframes
+    if nframes is not None and target_fps is not None:
+        raise ValueError("Only accept either `target_fps` or `nframes`, not both")
+
+    if nframes is not None:
+        # Explicit frame count mode
+        result_nframes = round_by_factor(nframes, FRAME_FACTOR)
+    else:
+        # FPS-based calculation mode
+        fps = target_fps if target_fps is not None else FPS
+        min_f = ceil_by_factor(
+            min_frames if min_frames is not None else FPS_MIN_FRAMES, FRAME_FACTOR
+        )
+        max_f = floor_by_factor(
+            max_frames if max_frames is not None else min(FPS_MAX_FRAMES, total_frames),
+            FRAME_FACTOR,
+        )
+
+        # Calculate frames based on FPS ratio
+        calc_nframes = total_frames / video_fps * fps
+        # Clamp to min/max range
+        calc_nframes = min(max(calc_nframes, min_f), max_f)
+        result_nframes = round_by_factor(calc_nframes, FRAME_FACTOR)
+
+    # Validate result is in valid range
+    if not (FRAME_FACTOR <= result_nframes <= total_frames):
+        raise ValueError(
+            f"nframes should be in interval [{FRAME_FACTOR}, {total_frames}], "
+            f"but got {result_nframes}."
+        )
+
+    return result_nframes
