@@ -1,14 +1,14 @@
 """Pure functional programming utilities.
 
 This module contains functional programming helpers extracted from
-scripts/deforum_helpers/rendering/util/fun_utils.py and utils.py,
+scripts/deforum_helpers/rendering/util/fun_utils.py, utils.py, and generate.py,
 following functional programming principles with no side effects.
 """
 
 import collections.abc
 from functools import reduce
-from itertools import chain
-from typing import Callable, TypeVar, Any, Dict, List
+from itertools import chain, tee
+from typing import Callable, TypeVar, Any, Dict, List, Iterable
 from PIL import Image
 
 # ============================================================================
@@ -152,3 +152,36 @@ def generate_random_seed() -> int:
     """
     import random
     return random.randint(0, 2 ** 32 - 1)
+
+
+def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
+    """Return successive overlapping pairs from iterable.
+
+    This is a backport of itertools.pairwise() from Python 3.10+.
+    Uses itertools.tee to efficiently create pairs without consuming
+    the entire iterable in memory.
+
+    Args:
+        iterable: Any iterable to pair up
+
+    Returns:
+        Iterator of successive pairs (a, b), (b, c), (c, d), ...
+
+    Examples:
+        >>> list(pairwise([1, 2, 3, 4]))
+        [(1, 2), (2, 3), (3, 4)]
+        >>> list(pairwise('ABCD'))
+        [('A', 'B'), ('B', 'C'), ('C', 'D')]
+        >>> list(pairwise([1]))
+        []
+        >>> list(pairwise([]))
+        []
+
+    Note:
+        This function is equivalent to Python 3.10's itertools.pairwise().
+        Once Python 3.10+ is required, this can be replaced with the
+        standard library implementation.
+    """
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)

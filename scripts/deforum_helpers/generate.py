@@ -39,6 +39,10 @@ from .deforum_scripts_overrides import add_forge_script_to_deforum_run, initiali
 
 from .general_utils import debug_print
 
+# Import pure functions from refactored utils module
+from deforum.utils.validation_utils import is_valid_json as isJson
+from deforum.utils.functional_utils import pairwise as pairwise_repl
+
 def load_mask_latent(mask_input, shape):
     # mask_input (str or PIL Image.Image): Path to the mask image or a PIL Image object
     # shape (list-like len(4)): shape of the image to match, usually latent_image.shape
@@ -57,20 +61,6 @@ def load_mask_latent(mask_input, shape):
     mask = mask_image.resize(mask_w_h, resample=Image.LANCZOS)
     mask = mask.convert("L")
     return mask
-
-def isJson(myjson):
-    try:
-        json.loads(myjson)
-    except ValueError as e:
-        return False
-    return True
-
-# Add pairwise implementation here not to upgrade
-# the whole python to 3.10 just for one function
-def pairwise_repl(iterable):
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)
 
 def print_combined_table(args, anim_args, p, keys, frame_idx):
     from rich.table import Table

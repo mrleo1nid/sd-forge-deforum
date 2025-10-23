@@ -1,10 +1,11 @@
 """Pure functions for validation and image checking.
 
 This module contains validation-related pure functions extracted from
-scripts/deforum_helpers/load_images.py, following functional programming
-principles with no side effects.
+scripts/deforum_helpers/load_images.py and scripts/deforum_helpers/generate.py,
+following functional programming principles with no side effects.
 """
 
+import json
 from PIL import Image
 
 
@@ -50,3 +51,33 @@ def none_if_blank(mask: Image.Image) -> Image.Image | None:
         True
     """
     return None if mask.getextrema() == (0, 0) else mask
+
+
+def is_valid_json(json_string: str) -> bool:
+    """Check if string is valid JSON.
+
+    Args:
+        json_string: String to validate as JSON
+
+    Returns:
+        True if string is valid JSON, False otherwise
+
+    Examples:
+        >>> is_valid_json('{"key": "value"}')
+        True
+        >>> is_valid_json('[1, 2, 3]')
+        True
+        >>> is_valid_json('not json')
+        False
+        >>> is_valid_json('')
+        False
+        >>> is_valid_json('null')
+        True
+        >>> is_valid_json('123')
+        True
+    """
+    try:
+        json.loads(json_string)
+        return True
+    except (ValueError, TypeError):
+        return False

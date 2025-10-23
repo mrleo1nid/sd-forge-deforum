@@ -6,6 +6,7 @@ from PIL import Image
 from deforum.utils.validation_utils import (
     blank_if_none,
     none_if_blank,
+    is_valid_json,
 )
 
 
@@ -80,6 +81,69 @@ class TestNoneIfBlank:
         blank_l = blank_rgb.convert('L')
         result = none_if_blank(blank_l)
         assert result is None
+
+
+class TestIsValidJson:
+    """Test is_valid_json function."""
+
+    def test_valid_object(self):
+        """Should validate JSON objects."""
+        assert is_valid_json('{"key": "value"}')
+        assert is_valid_json('{"a": 1, "b": 2}')
+        assert is_valid_json('{}')
+
+    def test_valid_array(self):
+        """Should validate JSON arrays."""
+        assert is_valid_json('[1, 2, 3]')
+        assert is_valid_json('["a", "b", "c"]')
+        assert is_valid_json('[]')
+
+    def test_valid_primitives(self):
+        """Should validate JSON primitives."""
+        assert is_valid_json('null')
+        assert is_valid_json('true')
+        assert is_valid_json('false')
+        assert is_valid_json('123')
+        assert is_valid_json('123.456')
+        assert is_valid_json('"string"')
+
+    def test_invalid_json(self):
+        """Should reject invalid JSON."""
+        assert not is_valid_json('not json')
+        assert not is_valid_json('{invalid}')
+        assert not is_valid_json('[1, 2,]')  # Trailing comma
+        assert not is_valid_json("{'key': 'value'}")  # Single quotes
+
+    def test_empty_string(self):
+        """Should reject empty string."""
+        assert not is_valid_json('')
+
+    def test_nested_structures(self):
+        """Should validate nested JSON structures."""
+        assert is_valid_json('{"a": {"b": {"c": 1}}}')
+        assert is_valid_json('[[1, 2], [3, 4]]')
+        assert is_valid_json('{"arr": [1, 2, 3], "obj": {"key": "val"}}')
+
+    def test_special_characters(self):
+        """Should handle special characters in strings."""
+        assert is_valid_json('{"key": "value\\nwith\\nnewlines"}')
+        assert is_valid_json('{"unicode": "\\u0041"}')
+        assert is_valid_json('{"quote": "\\""}')
+
+    def test_numbers(self):
+        """Should validate various number formats."""
+        assert is_valid_json('0')
+        assert is_valid_json('-1')
+        assert is_valid_json('1.5')
+        assert is_valid_json('-3.14')
+        assert is_valid_json('1e10')
+        assert is_valid_json('1.5e-10')
+
+    def test_whitespace(self):
+        """Should handle whitespace."""
+        assert is_valid_json('  {"key": "value"}  ')
+        assert is_valid_json('\n[\n  1,\n  2\n]\n')
+        assert is_valid_json('\t\t{"a": 1}\t\t')
 
 
 class TestIntegration:

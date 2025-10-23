@@ -11,6 +11,7 @@ from deforum.utils.functional_utils import (
     call_or_use_on_cond,
     create_img,
     generate_random_seed,
+    pairwise,
 )
 
 
@@ -168,6 +169,65 @@ class TestGenerateRandomSeed:
         seeds = [generate_random_seed() for _ in range(10)]
         # Very unlikely all 10 seeds are identical
         assert len(set(seeds)) > 1
+
+
+class TestPairwise:
+    """Test pairwise iterator function."""
+
+    def test_pairwise_basic(self):
+        """Should create successive pairs."""
+        result = list(pairwise([1, 2, 3, 4]))
+        assert result == [(1, 2), (2, 3), (3, 4)]
+
+    def test_pairwise_strings(self):
+        """Should work with strings."""
+        result = list(pairwise('ABCD'))
+        assert result == [('A', 'B'), ('B', 'C'), ('C', 'D')]
+
+    def test_pairwise_single_element(self):
+        """Should return empty for single element."""
+        result = list(pairwise([1]))
+        assert result == []
+
+    def test_pairwise_empty(self):
+        """Should return empty for empty iterable."""
+        result = list(pairwise([]))
+        assert result == []
+
+    def test_pairwise_two_elements(self):
+        """Should return one pair for two elements."""
+        result = list(pairwise([1, 2]))
+        assert result == [(1, 2)]
+
+    def test_pairwise_preserves_types(self):
+        """Should preserve element types."""
+        result = list(pairwise([1.5, 2.5, 3.5]))
+        assert result == [(1.5, 2.5), (2.5, 3.5)]
+        assert all(isinstance(a, float) and isinstance(b, float) for a, b in result)
+
+    def test_pairwise_with_range(self):
+        """Should work with range objects."""
+        result = list(pairwise(range(5)))
+        assert result == [(0, 1), (1, 2), (2, 3), (3, 4)]
+
+    def test_pairwise_is_lazy(self):
+        """Should be lazy (iterator, not list)."""
+        result = pairwise([1, 2, 3])
+        # Should be an iterator, not a list
+        assert hasattr(result, '__iter__')
+        assert hasattr(result, '__next__')
+
+    def test_pairwise_with_tuples(self):
+        """Should work with iterable of tuples."""
+        result = list(pairwise([(1, 'a'), (2, 'b'), (3, 'c')]))
+        assert result == [((1, 'a'), (2, 'b')), ((2, 'b'), (3, 'c'))]
+
+    def test_pairwise_multiple_iteration(self):
+        """Should allow consuming pairs multiple times by recreating."""
+        data = [1, 2, 3, 4]
+        result1 = list(pairwise(data))
+        result2 = list(pairwise(data))
+        assert result1 == result2
 
 
 if __name__ == '__main__':
