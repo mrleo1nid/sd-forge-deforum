@@ -36,6 +36,7 @@ Modules:
     hash_utils: File hashing and checksum calculation utilities
     color_utils: Color conversion and ANSI formatting utilities
     image_geometry_utils: Image cropping, padding, and coordinate grid utilities
+    resolution_utils: Resolution and dimension calculation utilities
     depth_utils: Depth tensor normalization and equalization
     camera_analysis_utils: Camera movement analysis and description generation
     url_utils: URL and file extension parsing utilities
@@ -66,6 +67,7 @@ __all__ = [
     "hash_utils",
     "color_utils",
     "image_geometry_utils",
+    "resolution_utils",
     "depth_utils",
     "camera_analysis_utils",
     "url_utils",

@@ -22,6 +22,12 @@ from .video_audio_utilities import extract_number, get_quick_vid_info, get_ffmpe
 from .frame_interpolation import process_interp_vid_upload_logic, process_interp_pics_upload_logic, gradio_f_interp_get_fps_and_fcount
 from .vid2depth import process_depth_vid_upload_logic
 
+# Import pure functions from refactored utils module
+from deforum.utils.resolution_utils import (
+    calculate_upscaled_resolution,
+    calculate_upscaled_resolution_by_model,
+)
+
 f_models_path = ph.models_path + '/Deforum'
 
 def handle_change_functions(l_vars):
@@ -211,17 +217,23 @@ def vid_upscale_gradio_update_stats(vid_path, upscale_factor):
     return fps, fcount, in_res_str, out_res_str
 
 def update_upscale_out_res(in_res, upscale_factor):
+    """Calculate output resolution after upscaling (wrapper for UI).
+
+    Backward compatibility wrapper that extracts scale factor from string
+    and calls the pure function.
+    """
     if not in_res:
         return '---'
     factor = extract_number(upscale_factor)
-    w, h = [int(x) * factor for x in in_res.split('*')]
-    return f"{w}*{h}"
+    return calculate_upscaled_resolution(in_res, factor)
+
 
 def update_upscale_out_res_by_model_name(in_res, upscale_model_name):
-    if not upscale_model_name or in_res == '---':
-        return '---'
-    factor = 2 if upscale_model_name == 'realesr-animevideov3' else 4
-    return f"{int(in_res.split('*')[0]) * factor}*{int(in_res.split('*')[1]) * factor}"
+    """Calculate output resolution based on model (wrapper for UI).
+
+    Backward compatibility wrapper that calls the pure function.
+    """
+    return calculate_upscaled_resolution_by_model(in_res, upscale_model_name)
 
 def hide_optical_flow_cadence(cadence_value):
     return gr.update(visible=True) if cadence_value > 1 else gr.update(visible=False)
