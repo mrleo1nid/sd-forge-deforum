@@ -130,16 +130,16 @@ def get_flow_from_images_RAFT(i1, i2, raft_model):
     return flow
 
 
-def draw_flow_arrows(depth_image, flow, step=16, scale=2.0, arrow_color=(0, 255, 0), min_magnitude=0.5):
-    """Draw optical flow as green arrows on depth preview.
+def draw_flow_arrows(depth_image, flow, step=20, max_arrow_length=30, arrow_color=(0, 255, 0), min_magnitude=0.5):
+    """Draw optical flow as green arrows on depth preview with normalized lengths.
 
     Args:
         depth_image: Grayscale depth map (H, W) or (H, W, 1)
         flow: Optical flow array (H, W, 2)
-        step: Spacing between arrows in pixels
-        scale: Arrow length scaling factor
+        step: Spacing between arrows in pixels (default 20)
+        max_arrow_length: Maximum arrow length in pixels (default 30)
         arrow_color: BGR color tuple for arrows (default green)
-        min_magnitude: Minimum flow magnitude to draw (filters noise)
+        min_magnitude: Minimum flow magnitude to draw as fraction of max (default 0.5 = 50%)
 
     Returns:
         RGB image with flow arrows overlaid
@@ -154,21 +154,39 @@ def draw_flow_arrows(depth_image, flow, step=16, scale=2.0, arrow_color=(0, 255,
 
     h, w = vis.shape[:2]
 
+    # Calculate flow magnitudes for normalization
+    flow_mag = np.sqrt(flow[:, :, 0]**2 + flow[:, :, 1]**2)
+    max_mag = np.max(flow_mag)
+
+    # Avoid division by zero
+    if max_mag < 1e-6:
+        return vis
+
     # Draw arrows on subsampled grid
     for y in range(0, h, step):
         for x in range(0, w, step):
             if y < flow.shape[0] and x < flow.shape[1]:
                 fx, fy = flow[y, x]
-                # Only draw if flow magnitude > threshold
                 mag = np.sqrt(fx**2 + fy**2)
-                if mag > min_magnitude:
+
+                # Only draw if flow magnitude > threshold (as fraction of max)
+                if mag > max_mag * min_magnitude:
+                    # Normalize flow to max_arrow_length
+                    # Longest arrows will be max_arrow_length pixels
+                    scale = max_arrow_length / max_mag
+
                     # Calculate arrow endpoint
                     x_end = int(x + fx * scale)
                     y_end = int(y + fy * scale)
+
                     # Clamp to image bounds
                     x_end = max(0, min(w - 1, x_end))
                     y_end = max(0, min(h - 1, y_end))
+
+                    # Vary arrow thickness based on magnitude (1-2 pixels)
+                    thickness = 1 if mag < max_mag * 0.7 else 2
+
                     # Draw arrow
                     cv2.arrowedLine(vis, (x, y), (x_end, y_end),
-                                    arrow_color, 1, tipLength=0.3)
+                                    arrow_color, thickness, tipLength=0.3)
     return vis

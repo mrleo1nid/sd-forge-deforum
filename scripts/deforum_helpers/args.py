@@ -508,7 +508,7 @@ def DeforumAnimArgs():
             "label": "Optical flow cadence",
             "type": "dropdown",
             "choices": ['None', 'RAFT'],
-            "value": "RAFT",
+            "value": "None",
             "info": "use optical flow estimation for your in-between (cadence) frames"
         },
         "raft_model_size": {

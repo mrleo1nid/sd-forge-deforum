@@ -142,7 +142,7 @@
     "legacy_colormatch": false,
     "keyframe_distribution": "Keyframes Only",
     "diffusion_cadence": 10,
-    "optical_flow_cadence": "RAFT",
+    "optical_flow_cadence": "None",
     "raft_model_size": "Small",
     "raft_flow_iterations": 12,
     "show_flow_arrows": true,
