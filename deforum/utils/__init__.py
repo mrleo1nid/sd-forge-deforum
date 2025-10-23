@@ -33,6 +33,7 @@ Modules:
     schedule_utils: Schedule string parsing and interpolation
     depth_utils: Depth tensor normalization and equalization
     camera_analysis_utils: Camera movement analysis and description generation
+    url_utils: URL and file extension parsing utilities
 """
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "schedule_utils",
     "depth_utils",
     "camera_analysis_utils",
+    "url_utils",
 ]
