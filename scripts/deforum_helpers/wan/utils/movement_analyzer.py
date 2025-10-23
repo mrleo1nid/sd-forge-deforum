@@ -15,6 +15,9 @@ from deforum.utils.schedule_utils import (
     parse_schedule_string,
     interpolate_schedule_values as interpolate_schedule,
 )
+from deforum.utils.schedule_manipulation_utils import (
+    apply_shakify_to_schedule,
+)
 
 # Try to import Camera Shakify components for integration
 try:
@@ -115,39 +118,7 @@ def create_shakify_data(shake_name: str, shake_intensity: float, shake_speed: fl
     return result
 
 
-def apply_shakify_to_schedule(base_schedule: str, shake_values: List[float], max_frames: int) -> str:
-    """
-    Apply Camera Shakify values to a base movement schedule to create combined schedule
-    This mimics the _maybe_shake function from the experimental render core
-    """
-    if not shake_values or len(shake_values) == 0:
-        return base_schedule
-    
-    # Parse base schedule
-    base_keyframes = parse_schedule_string(base_schedule, max_frames)
-    base_values = interpolate_schedule(base_keyframes, max_frames)
-    
-    # Apply shake to base values (additive)
-    combined_values = []
-    for frame in range(min(len(base_values), len(shake_values))):
-        combined_value = base_values[frame] + shake_values[frame]
-        combined_values.append(combined_value)
-    
-    # Create new schedule string from combined values
-    # Sample every few frames to keep schedule reasonable
-    sample_interval = max(1, max_frames // 20)  # Max 20 keyframes
-    keyframes = []
-    
-    for frame in range(0, len(combined_values), sample_interval):
-        value = combined_values[frame]
-        keyframes.append(f"{frame}:({value:.6f})")
-    
-    # Always include the last frame
-    if (len(combined_values) - 1) % sample_interval != 0:
-        last_value = combined_values[-1]
-        keyframes.append(f"{len(combined_values)-1}:({last_value:.6f})")
-    
-    return ", ".join(keyframes)
+# apply_shakify_to_schedule imported from deforum.utils.schedule_manipulation_utils
 
 
 class MovementAnalyzer:

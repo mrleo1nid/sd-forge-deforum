@@ -31,6 +31,7 @@ Modules:
     video_path_utils: Video and image path generation
     conversion_utils: Type conversion and random name generation
     schedule_utils: Schedule string parsing and interpolation
+    schedule_manipulation_utils: Schedule combination and manipulation
     depth_utils: Depth tensor normalization and equalization
     camera_analysis_utils: Camera movement analysis and description generation
     url_utils: URL and file extension parsing utilities
@@ -56,6 +57,7 @@ __all__ = [
     "video_path_utils",
     "conversion_utils",
     "schedule_utils",
+    "schedule_manipulation_utils",
     "depth_utils",
     "camera_analysis_utils",
     "url_utils",
