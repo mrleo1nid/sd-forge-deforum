@@ -130,14 +130,23 @@ def on_ui_tabs():
         min-height: 200px !important;
     }
 
-    /* Style both preview images consistently */
+    /* Style both preview images consistently with rounded corners */
     #deforum_live_preview, #deforum_depth_preview {
         max-height: 200px !important;
         border-radius: 8px !important;
+        overflow: hidden !important;
     }
 
-    #deforum_live_preview img, #deforum_depth_preview img {
+    #deforum_live_preview .image-container,
+    #deforum_depth_preview .image-container {
         border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+
+    #deforum_live_preview img,
+    #deforum_depth_preview img {
+        border-radius: 8px !important;
+        display: block !important;
     }
     """
 

@@ -596,6 +596,9 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         gr.Markdown("""
         **Optical flow** estimates motion between frames for smooth in-between (cadence) frames.
         Enable RAFT to generate only keyframes and use motion estimation for tweens (10x speedup).
+
+        ⚠️ **WARNING:** Can produce "smear-core" artifacts with many cadence frames.
+        Works best with low cadence (2-3 frames). Experimental feature - disabled by default.
         """)
         with FormRow(visible=is_visible) as optical_flow_cadence_row:
             with FormColumn(min_width=220):

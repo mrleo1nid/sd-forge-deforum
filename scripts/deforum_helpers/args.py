@@ -509,7 +509,7 @@ def DeforumAnimArgs():
             "type": "dropdown",
             "choices": ['None', 'RAFT'],
             "value": "None",
-            "info": "use optical flow estimation for your in-between (cadence) frames"
+            "info": "Use optical flow estimation for in-between (cadence) frames. ⚠️ WARNING: Can produce 'smear-core' artifacts with many cadence frames. Works best with low cadence (2-3 frames). Experimental feature - use with caution."
         },
         "raft_model_size": {
             "label": "RAFT model size",
