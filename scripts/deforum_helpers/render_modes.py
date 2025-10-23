@@ -17,8 +17,6 @@
 import os
 import time
 import pathlib
-import re
-import numexpr
 from modules.shared import opts, state
 from .render import render_animation
 from .rendering.util.log_utils import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
@@ -30,6 +28,9 @@ from .animation_key_frames import DeformAnimKeys
 from .parseq_adapter import ParseqAdapter
 from .save_images import save_image
 from .settings import save_settings_from_animation_run
+
+# Import pure functions from refactored utils module
+from deforum.utils.expression_utils import parse_frame_expression
 
 def render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
     # create a folder for the video input frames to live in
@@ -83,16 +84,12 @@ def render_animation_with_video_mask(args, anim_args, video_args, parseq_args, l
 
     render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
 
+# get_parsed_value imported from deforum.utils.expression_utils as parse_frame_expression
+
+
 def get_parsed_value(value, frame_idx, max_f):
-    pattern = r'`.*?`'
-    regex = re.compile(pattern)
-    parsed_value = value
-    for match in regex.finditer(parsed_value):
-        matched_string = match.group(0)
-        parsed_string = matched_string.replace('t', f'{frame_idx}').replace("max_f" , f"{max_f}").replace('`','')
-        value = numexpr.evaluate(parsed_string)
-        parsed_value = parsed_value.replace(matched_string, str(value))
-    return parsed_value
+    """Parse frame expressions in value string (wrapper for backward compatibility)."""
+    return parse_frame_expression(value, frame_idx, max_f)
 
 def render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
 
