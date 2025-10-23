@@ -33,7 +33,24 @@ def save_cadence_frame_and_depth_map_if_active(data: RenderData, frame, image):
     save_cadence_frame(data, frame.i, image)
     if data.args.anim_args.save_depth_maps:
         dm_save_path = os.path.join(data.output_directory, filename_utils.frame_filename(data, frame.i, True))
+        # Save the depth map first
         data.depth_model.save(dm_save_path, frame.depth)
+
+        # Check if we should add flow arrows to depth preview
+        show_flow_arrows = getattr(data.args.anim_args, 'show_flow_arrows', False)
+        if show_flow_arrows and hasattr(frame, 'cadence_flow') and frame.cadence_flow is not None:
+            # Import here to avoid circular dependency
+            from ...optical_flow_utils import draw_flow_arrows
+            import cv2
+
+            # Load the just-saved depth map
+            depth_image = cv2.imread(dm_save_path, cv2.IMREAD_UNCHANGED)
+            if depth_image is not None:
+                # Draw flow arrows on depth map
+                depth_with_flow = draw_flow_arrows(depth_image, frame.cadence_flow)
+                # Save with flow visualization
+                flow_save_path = dm_save_path.replace('.png', '_flow.png')
+                cv2.imwrite(flow_save_path, depth_with_flow)
 
 
 def load_image(image_path):

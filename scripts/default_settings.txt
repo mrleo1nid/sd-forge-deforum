@@ -145,6 +145,7 @@
     "optical_flow_cadence": "None",
     "raft_model_size": "Large",
     "raft_flow_iterations": 12,
+    "show_flow_arrows": false,
     "cadence_flow_factor_schedule": "0: (1)",
     "optical_flow_redo_generation": "None",
     "redo_flow_factor_schedule": "0: (1)",

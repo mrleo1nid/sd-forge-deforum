@@ -527,6 +527,12 @@ def DeforumAnimArgs():
             "value": 12,
             "info": "Number of flow refinement iterations - Higher values are more accurate but slower (12 is default, 20-30 for best quality)"
         },
+        "show_flow_arrows": {
+            "label": "Show flow arrows on depth preview",
+            "type": "checkbox",
+            "value": False,
+            "info": "Draw green arrows on depth maps showing optical flow motion vectors (helps visualize tween movement)"
+        },
         "cadence_flow_factor_schedule": {
             "label": "Cadence flow factor schedule",
             "type": "textbox",

@@ -597,16 +597,21 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         **Optical flow** estimates motion between frames for smooth in-between (cadence) frames.
         Enable RAFT to generate only keyframes and use motion estimation for tweens (10x speedup).
         """)
-        with FormRow(visible=is_visible) as optical_flow_row_1:
-            optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
-            optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
+        with FormRow(visible=is_visible) as optical_flow_cadence_row:
+            with FormColumn(min_width=220):
+                optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
+            with FormColumn(min_width=220):
+                optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
         with FormRow(visible=is_visible) as optical_flow_row_2:
             raft_model_size = create_gr_elem(da.raft_model_size)
             raft_flow_iterations = create_gr_elem(da.raft_flow_iterations)
+            show_flow_arrows = create_gr_elem(da.show_flow_arrows)
         with FormRow(visible=is_visible) as optical_flow_row_3:
-            cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
+            with FormColumn(min_width=220, visible=False) as cadence_flow_factor_schedule_column:
+                cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
         with FormRow(visible=is_visible) as optical_flow_row_4:
-            redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
+            with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
+                redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
 
     with gr.Accordion("⚙️ FOV & Advanced Settings", open=False):
         with FormRow(visible=is_visible) as depth_warp_row_3:
