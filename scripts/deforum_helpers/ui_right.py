@@ -28,7 +28,7 @@ from scripts.deforum_extend_paths import deforum_sys_extend
 import gradio as gr
 
 def get_latest_frames():
-    """Poll for latest frame and depth map during generation"""
+    """Poll for latest frame and depth map preview files during generation"""
     import glob
     from pathlib import Path
 
@@ -41,17 +41,13 @@ def get_latest_frames():
 
     latest_dir = max(subdirs, key=os.path.getmtime)
 
-    # Get latest frame (any image file in main directory)
-    frame_pattern = os.path.join(latest_dir, "*.png")
-    frame_files = [f for f in glob.glob(frame_pattern) if not f.endswith('_depth.png')]
-    latest_frame = max(frame_files, key=os.path.getmtime) if frame_files else None
+    # Look for fixed preview filenames instead of scanning all files
+    frame_preview = os.path.join(latest_dir, "frame-preview.png")
+    depth_preview = os.path.join(latest_dir, "depth-raft-preview.png")
 
-    # Get latest depth map
-    depth_dir = os.path.join(latest_dir, "depth-maps")
-    latest_depth = None
-    if os.path.exists(depth_dir):
-        depth_files = glob.glob(os.path.join(depth_dir, "*_depth.png"))
-        latest_depth = max(depth_files, key=os.path.getmtime) if depth_files else None
+    # Return paths if files exist, otherwise None
+    latest_frame = frame_preview if os.path.exists(frame_preview) else None
+    latest_depth = depth_preview if os.path.exists(depth_preview) else None
 
     return latest_frame, latest_depth
 
