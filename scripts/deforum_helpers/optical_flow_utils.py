@@ -77,6 +77,18 @@ def image_transform_optical_flow(img, flow, flow_factor):
     return remap(img, flow)
 
 
+def abs_flow_to_rel_flow(flow, width, height):
+    """Convert absolute flow to relative flow."""
+    fx, fy = flow[:,:,0], flow[:,:,1]
+    max_flow_x = np.max(np.abs(fx))
+    max_flow_y = np.max(np.abs(fy))
+    max_flow = max(max_flow_x, max_flow_y)
+
+    rel_fx = fx / (max_flow * width)
+    rel_fy = fy / (max_flow * height)
+    return np.dstack((rel_fx, rel_fy))
+
+
 def rel_flow_to_abs_flow(rel_flow, width, height):
     """Convert relative flow to absolute flow."""
     rel_fx, rel_fy = rel_flow[:,:,0], rel_flow[:,:,1]
