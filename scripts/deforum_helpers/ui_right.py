@@ -130,9 +130,14 @@ def on_ui_tabs():
         min-height: 200px !important;
     }
 
-    /* Ensure depth gallery stays compact */
-    #deforum_depth_preview_image {
+    /* Style both preview images consistently */
+    #deforum_live_preview, #deforum_depth_preview {
         max-height: 200px !important;
+        border-radius: 8px !important;
+    }
+
+    #deforum_live_preview img, #deforum_depth_preview img {
+        border-radius: 8px !important;
     }
     """
 
@@ -161,12 +166,13 @@ def on_ui_tabs():
 
                 # Live preview - show latest frame during generation
                 live_preview_image = gr.Image(
-                    label="Latest Frame",
+                    label="Frame Preview",
                     show_label=True,
                     elem_id="deforum_live_preview",
                     type="filepath",
                     interactive=False,
-                    visible=True
+                    visible=True,
+                    height=200
                 )
 
                 # Buttons and Depth Preview side by side
@@ -199,7 +205,7 @@ def on_ui_tabs():
                     # Right: Depth preview (compact, beside buttons)
                     with gr.Column(scale=2):
                         depth_preview_image = gr.Image(
-                            label="Latest Depth Map",
+                            label="Depth & Flow Preview",
                             show_label=True,
                             elem_id="deforum_depth_preview",
                             type="filepath",
