@@ -9,10 +9,11 @@ def advance_optical_flow_cadence_before_animation_warping(data, last_frame, twee
     if is_with_flow and _is_do_flow(data, tween_frame, last_frame.i, prev_image, image):
         method = data.args.anim_args.optical_flow_cadence  # string containing the flow method (e.g. "RAFT").
         flow = get_flow_from_images(prev_image, image, method, data.animation_mode.raft_model)
+        # Store per-tween flow for this tween's interpolation position
         tween_frame.cadence_flow = flow / len(last_frame.tweens)
+        # Apply flow only ONCE (removed double application bug)
         advanced_image = _advance_optical_flow(tween_frame, image)
-        flow_factor = 1.0
-        return image_transform_optical_flow(advanced_image, -tween_frame.cadence_flow, flow_factor)
+        return advanced_image
     return image
 
 
@@ -25,15 +26,8 @@ def advance(data, i, image, depth):
 
 
 def do_optical_flow_cadence_after_animation_warping(data, tween_frame, prev_image, image):
-    if not data.animation_mode.is_raft_active():
-        return image
-    if tween_frame.cadence_flow is not None:
-        new_flow, _ = call_anim_frame_warp(data, tween_frame.i, image, tween_frame.depth)
-        tween_frame.cadence_flow = new_flow
-        abs_flow = rel_flow_to_abs_flow(tween_frame.cadence_flow, data.width(), data.height())
-        tween_frame.cadence_flow_inc = abs_flow * tween_frame.value
-        image = _advance_cadence_flow(data, tween_frame, image)
-
+    # After 3D warping is applied, optionally blend with previous frame
+    # based on tween interpolation value (0.0 = prev, 1.0 = current)
     if prev_image is not None and tween_frame.value < 1.0:
         return prev_image * (1.0 - tween_frame.value) + image * tween_frame.value
     return image
@@ -41,14 +35,6 @@ def do_optical_flow_cadence_after_animation_warping(data, tween_frame, prev_imag
 
 def _advance_optical_flow(tween_step, image, flow_factor: int = 1):
     flow = tween_step.cadence_flow * -1
-    return image_transform_optical_flow(image, flow, flow_factor)
-
-
-def _advance_cadence_flow(data, tween_frame, image):
-    ff_string = data.args.anim_args.cadence_flow_factor_schedule
-    flow_factor = float(ff_string.split(": ")[1][1:-1])
-    i = tween_frame.i
-    flow = tween_frame.cadence_flow_inc
     return image_transform_optical_flow(image, flow, flow_factor)
 
 
