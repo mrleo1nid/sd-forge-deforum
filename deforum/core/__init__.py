@@ -13,12 +13,13 @@ stateful behavior, but follow clean architecture principles:
 Modules:
     keyframes: Keyframe scheduling and interpolation
     seeds: Seed generation and iteration
+    prompts: Prompt scheduling and composition
     schedules: Schedule parsing and evaluation (future)
-    prompts: Prompt parsing and composition (future)
     motion: Motion calculation logic (future)
 """
 
 __all__ = [
     "keyframes",
     "seeds",
+    "prompts",
 ]
