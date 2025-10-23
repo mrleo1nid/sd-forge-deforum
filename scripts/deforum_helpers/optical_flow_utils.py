@@ -92,21 +92,24 @@ def rel_flow_to_abs_flow(rel_flow, width, height):
 
 def get_flow_from_images(i1, i2, method, raft_model, prev_flow=None):
     """
-    Get optical flow between two images using specified method.
-    Supports: RAFT, DIS (Medium/Fine), Farneback.
+    Get optical flow between two images using RAFT method.
+
+    Args:
+        i1: First image (PIL or numpy)
+        i2: Second image (PIL or numpy)
+        method: Flow method (only 'RAFT' supported)
+        raft_model: RAFT model instance
+        prev_flow: Unused (kept for backwards compatibility)
+
+    Returns:
+        Flow array with shape (H, W, 2)
     """
     if method == "RAFT":
         if raft_model is None:
             raise Exception("RAFT Model not provided to get_flow_from_images function, cannot continue.")
         return get_flow_from_images_RAFT(i1, i2, raft_model)
-    elif method == "DIS Medium":
-        return get_flow_from_images_DIS(i1, i2, 'medium', prev_flow)
-    elif method == "DIS Fine":
-        return get_flow_from_images_DIS(i1, i2, 'fine', prev_flow)
-    elif method == "Farneback":
-        return get_flow_from_images_Farneback(i1, i2, last_flow=prev_flow)
-    # if we reached this point, something went wrong. raise an error:
-    raise RuntimeError(f"Invalid flow method name: '{method}'")
+    # Only RAFT is supported
+    raise RuntimeError(f"Invalid flow method name: '{method}'. Only 'RAFT' is supported.")
 
 
 def get_flow_from_images_RAFT(i1, i2, raft_model):
@@ -115,61 +118,45 @@ def get_flow_from_images_RAFT(i1, i2, raft_model):
     return flow
 
 
-def get_flow_from_images_DIS(i1, i2, preset, prev_flow):
-    """Get optical flow using DIS (Dense Inverse Search) method."""
-    # DIS PRESETS CHART KEY: finest scale, grad desc its, patch size
-    # DIS_MEDIUM: 1, 25, 8 | DIS_FAST: 2, 16, 8 | DIS_ULTRAFAST: 2, 12, 8
-    if preset == 'medium':
-        preset_code = cv2.DISOPTICAL_FLOW_PRESET_MEDIUM
-    elif preset == 'fast':
-        preset_code = cv2.DISOPTICAL_FLOW_PRESET_FAST
-    elif preset == 'ultrafast':
-        preset_code = cv2.DISOPTICAL_FLOW_PRESET_ULTRAFAST
-    elif preset in ['slow','fine']:
-        preset_code = None
+def draw_flow_arrows(depth_image, flow, step=16, scale=2.0, arrow_color=(0, 255, 0), min_magnitude=0.5):
+    """Draw optical flow as green arrows on depth preview.
 
-    i1 = cv2.cvtColor(i1, cv2.COLOR_BGR2GRAY)
-    i2 = cv2.cvtColor(i2, cv2.COLOR_BGR2GRAY)
-    dis = cv2.DISOpticalFlow_create(preset_code)
+    Args:
+        depth_image: Grayscale depth map (H, W) or (H, W, 1)
+        flow: Optical flow array (H, W, 2)
+        step: Spacing between arrows in pixels
+        scale: Arrow length scaling factor
+        arrow_color: BGR color tuple for arrows (default green)
+        min_magnitude: Minimum flow magnitude to draw (filters noise)
 
-    # custom presets
-    if preset == 'slow':
-        dis.setGradientDescentIterations(192)
-        dis.setFinestScale(1)
-        dis.setPatchSize(8)
-        dis.setPatchStride(4)
-    if preset == 'fine':
-        dis.setGradientDescentIterations(192)
-        dis.setFinestScale(0)
-        dis.setPatchSize(8)
-        dis.setPatchStride(4)
+    Returns:
+        RGB image with flow arrows overlaid
+    """
+    # Convert grayscale depth to RGB for colored arrows
+    if len(depth_image.shape) == 2:
+        vis = cv2.cvtColor(depth_image, cv2.COLOR_GRAY2BGR)
+    elif depth_image.shape[2] == 1:
+        vis = cv2.cvtColor(depth_image, cv2.COLOR_GRAY2BGR)
+    else:
+        vis = depth_image.copy()
 
-    return dis.calc(i1, i2, prev_flow)
+    h, w = vis.shape[:2]
 
-
-def get_flow_from_images_Farneback(i1, i2, preset="normal", last_flow=None,
-                                    pyr_scale=0.5, levels=3, winsize=15,
-                                    iterations=3, poly_n=5, poly_sigma=1.2, flags=0):
-    """Get optical flow using Farneback method."""
-    flags = cv2.OPTFLOW_FARNEBACK_GAUSSIAN  # Specify the operation flags
-    pyr_scale = 0.5  # The image scale (<1) to build pyramids for each image
-
-    if preset == "fine":
-        levels = 13       # The number of pyramid layers
-        winsize = 77      # The averaging window size
-        iterations = 13   # The number of iterations at each pyramid level
-        poly_n = 15       # The size of the pixel neighborhood
-        poly_sigma = 0.8  # The standard deviation of the Gaussian
-    else:  # "normal"
-        levels = 5
-        winsize = 21
-        iterations = 5
-        poly_n = 7
-        poly_sigma = 1.2
-
-    i1 = cv2.cvtColor(i1, cv2.COLOR_BGR2GRAY)
-    i2 = cv2.cvtColor(i2, cv2.COLOR_BGR2GRAY)
-    flags = 0  # flags = cv2.OPTFLOW_USE_INITIAL_FLOW
-    flow = cv2.calcOpticalFlowFarneback(i1, i2, last_flow, pyr_scale, levels,
-                                        winsize, iterations, poly_n, poly_sigma, flags)
-    return flow
+    # Draw arrows on subsampled grid
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            if y < flow.shape[0] and x < flow.shape[1]:
+                fx, fy = flow[y, x]
+                # Only draw if flow magnitude > threshold
+                mag = np.sqrt(fx**2 + fy**2)
+                if mag > min_magnitude:
+                    # Calculate arrow endpoint
+                    x_end = int(x + fx * scale)
+                    y_end = int(y + fy * scale)
+                    # Clamp to image bounds
+                    x_end = max(0, min(w - 1, x_end))
+                    y_end = max(0, min(h - 1, y_end))
+                    # Draw arrow
+                    cv2.arrowedLine(vis, (x, y), (x_end, y_end),
+                                    arrow_color, 1, tipLength=0.3)
+    return vis

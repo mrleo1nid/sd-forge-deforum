@@ -232,16 +232,7 @@ def get_tab_keyframes(d, da, dloopArgs):
                     color_coherence_image_path = create_gr_elem(da.color_coherence_image_path)
                 with FormRow(visible=False) as color_coherence_video_every_N_frames_row:
                     color_coherence_video_every_N_frames = create_gr_elem(da.color_coherence_video_every_N_frames)
-                with FormRow() as optical_flow_cadence_row:
-                    with FormColumn(min_width=220) as optical_flow_cadence_column:
-                        optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
-                    with FormColumn(min_width=220, visible=False) as cadence_flow_factor_schedule_column:
-                        cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
-                with FormRow():
-                    with FormColumn(min_width=220):
-                        optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
-                    with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
-                        redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
+                # NOTE: Optical flow settings moved to 3D Depth tab
                 with FormRow():
                     contrast_schedule = gr.Textbox(
                         label="Contrast schedule", lines=1, value=da.contrast_schedule, interactive=True,
@@ -600,6 +591,22 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         with FormRow(visible=is_visible) as depth_warp_row_2:
             padding_mode = create_gr_elem(da.padding_mode)
             sampling_mode = create_gr_elem(da.sampling_mode)
+
+    with gr.Accordion("🌊 Optical Flow / Cadence", open=False):
+        gr.Markdown("""
+        **Optical flow** estimates motion between frames for smooth in-between (cadence) frames.
+        Enable RAFT to generate only keyframes and use motion estimation for tweens (10x speedup).
+        """)
+        with FormRow(visible=is_visible) as optical_flow_row_1:
+            optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
+            optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
+        with FormRow(visible=is_visible) as optical_flow_row_2:
+            raft_model_size = create_gr_elem(da.raft_model_size)
+            raft_flow_iterations = create_gr_elem(da.raft_flow_iterations)
+        with FormRow(visible=is_visible) as optical_flow_row_3:
+            cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
+        with FormRow(visible=is_visible) as optical_flow_row_4:
+            redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
 
     with gr.Accordion("⚙️ FOV & Advanced Settings", open=False):
         with FormRow(visible=is_visible) as depth_warp_row_3:
