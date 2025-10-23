@@ -508,14 +508,14 @@ def DeforumAnimArgs():
             "label": "Optical flow cadence",
             "type": "dropdown",
             "choices": ['None', 'RAFT'],
-            "value": "None",
+            "value": "RAFT",
             "info": "use optical flow estimation for your in-between (cadence) frames"
         },
         "raft_model_size": {
             "label": "RAFT model size",
             "type": "dropdown",
             "choices": ['Large', 'Small'],
-            "value": "Large",
+            "value": "Small",
             "info": "RAFT model size - Large (best quality, slower) or Small (faster, good quality)"
         },
         "raft_flow_iterations": {
@@ -530,7 +530,7 @@ def DeforumAnimArgs():
         "show_flow_arrows": {
             "label": "Show flow arrows on depth preview",
             "type": "checkbox",
-            "value": False,
+            "value": True,
             "info": "Draw green arrows on depth maps showing optical flow motion vectors (helps visualize tween movement)"
         },
         "cadence_flow_factor_schedule": {

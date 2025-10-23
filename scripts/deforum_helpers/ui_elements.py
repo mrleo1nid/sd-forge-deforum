@@ -576,7 +576,7 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         depth_warp_msg_html = gr.HTML(
             value='Please switch to 3D animation mode to view this section.',
             elem_id='depth_warp_msg_html',
-            visible=is_info_visible
+            visible=False
         )
         with FormRow(visible=is_visible) as depth_warp_row_1:
             use_depth_warping = create_gr_elem(da.use_depth_warping)
