@@ -46,8 +46,10 @@ class AnimationMode:
         is_raft_redo = anim_args.optical_flow_redo_generation == "RAFT"
         is_load_raft = (is_cadenced_raft or is_raft_redo) and not args.motion_preview_mode
         if is_load_raft:
-            print("Loading RAFT model...")
-        return RAFT() if is_load_raft else None
+            model_size = getattr(anim_args, 'raft_model_size', 'Large').lower()
+            flow_iterations = getattr(anim_args, 'raft_flow_iterations', 12)
+            return RAFT(model_size=model_size, num_flow_updates=flow_iterations)
+        return None
 
     @staticmethod
     def load_depth_model_if_active(args, anim_args):

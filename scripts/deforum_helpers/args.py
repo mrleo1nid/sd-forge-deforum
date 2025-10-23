@@ -507,9 +507,31 @@ def DeforumAnimArgs():
         "optical_flow_cadence": {
             "label": "Optical flow cadence",
             "type": "dropdown",
-            "choices": ['None', 'RAFT', 'DIS Medium', 'DIS Fine', 'Farneback'],
+            "choices": ['None', 'RAFT'],
             "value": "None",
-            "info": "use optical flow estimation for your in-between (cadence) frames"
+            "info": "Use optical flow estimation for in-between (cadence) frames. ⚠️ WARNING: Can produce 'smear-core' artifacts with many cadence frames. Works best with low cadence (2-3 frames). Experimental feature - use with caution."
+        },
+        "raft_model_size": {
+            "label": "RAFT model size",
+            "type": "dropdown",
+            "choices": ['Large', 'Small'],
+            "value": "Small",
+            "info": "RAFT model size - Large (best quality, slower) or Small (faster, good quality)"
+        },
+        "raft_flow_iterations": {
+            "label": "RAFT flow iterations",
+            "type": "slider",
+            "minimum": 6,
+            "maximum": 50,
+            "step": 1,
+            "value": 12,
+            "info": "Number of flow refinement iterations - Higher values are more accurate but slower (12 is default, 20-30 for best quality)"
+        },
+        "show_flow_arrows": {
+            "label": "Show flow arrows on depth preview",
+            "type": "checkbox",
+            "value": True,
+            "info": "Draw green arrows on depth maps showing optical flow motion vectors (helps visualize tween movement)"
         },
         "cadence_flow_factor_schedule": {
             "label": "Cadence flow factor schedule",
@@ -520,7 +542,7 @@ def DeforumAnimArgs():
         "optical_flow_redo_generation": {
             "label": "Optical flow generation",
             "type": "dropdown",
-            "choices": ['None', 'RAFT', 'DIS Medium', 'DIS Fine', 'Farneback'],
+            "choices": ['None', 'RAFT'],
             "value": "None",
             "info": "this option takes twice as long because it generates twice in order to capture the optical flow from the previous image to the first generation, then warps the previous image and redoes the generation"
         },
