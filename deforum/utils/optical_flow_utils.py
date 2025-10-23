@@ -105,3 +105,41 @@ def make_consistency(
     )
 
     return reliable_flow
+
+
+def convert_relative_flow_to_absolute(
+    relative_flow: np.ndarray, width: int, height: int
+) -> np.ndarray:
+    """Convert relative optical flow to absolute flow coordinates.
+
+    Scales relative flow values (normalized by image dimensions) to absolute
+    pixel displacements based on the maximum flow magnitude.
+
+    Args:
+        relative_flow: Relative flow array (H x W x 2) with (fx, fy) channels
+        width: Image width
+        height: Image height
+
+    Returns:
+        Absolute flow array with same shape as input
+
+    Examples:
+        >>> import numpy as np
+        >>> rel_flow = np.random.rand(100, 100, 2) * 0.1  # Small relative flow
+        >>> abs_flow = convert_relative_flow_to_absolute(rel_flow, 640, 480)
+        >>> abs_flow.shape
+        (100, 100, 2)
+    """
+    rel_fx = relative_flow[:, :, 0]
+    rel_fy = relative_flow[:, :, 1]
+
+    # Find maximum absolute flow magnitude
+    max_flow_x = np.max(np.abs(rel_fx * width))
+    max_flow_y = np.max(np.abs(rel_fy * height))
+    max_flow = max(max_flow_x, max_flow_y)
+
+    # Scale relative flow to absolute coordinates
+    fx = rel_fx * (max_flow * width)
+    fy = rel_fy * (max_flow * height)
+
+    return np.dstack((fx, fy))

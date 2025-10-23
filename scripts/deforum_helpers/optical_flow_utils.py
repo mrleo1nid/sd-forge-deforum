@@ -22,6 +22,10 @@ These are used by optical flow cadence (non-hybrid feature).
 import cv2
 import numpy as np
 
+# Import pure functions from refactored utils modules
+from deforum.utils.image_geometry_utils import center_crop, extend_with_grid
+from deforum.utils.optical_flow_utils import convert_relative_flow_to_absolute
+
 
 def remap(img, flow):
     """Remap image using flow field with border handling."""
@@ -37,31 +41,19 @@ def remap(img, flow):
 
 
 def center_crop_image(img, w, h):
-    """Crop image to specified width and height from center."""
-    y, x, _ = img.shape
-    width_indent = int((x - w) / 2)
-    height_indent = int((y - h) / 2)
-    cropped_img = img[height_indent:y-height_indent, width_indent:x-width_indent]
-    return cropped_img
+    """Crop image to specified width and height from center.
+
+    Backward compatibility wrapper for center_crop from utils.
+    """
+    return center_crop(img, w, h)
 
 
 def extend_flow(flow, w, h):
-    """Extend flow field to specified dimensions."""
-    # Get the shape of the original flow image
-    flow_h, flow_w = flow.shape[:2]
-    # Calculate the position of the image in the new image
-    x_offset = int((w - flow_w) / 2)
-    y_offset = int((h - flow_h) / 2)
-    # Generate the X and Y grids
-    x_grid, y_grid = np.meshgrid(np.arange(w), np.arange(h))
-    # Create the new flow image and set it to the X and Y grids
-    new_flow = np.dstack((x_grid, y_grid)).astype(np.float32)
-    # Shift the values of the original flow by the size of the border
-    flow[:,:,0] += x_offset
-    flow[:,:,1] += y_offset
-    # Insert the original flow into the new flow
-    new_flow[y_offset:y_offset+flow_h, x_offset:x_offset+flow_w] = flow
-    return new_flow
+    """Extend flow field to specified dimensions.
+
+    Backward compatibility wrapper for extend_with_grid from utils.
+    """
+    return extend_with_grid(flow, w, h)
 
 
 def image_transform_optical_flow(img, flow, flow_factor):
@@ -78,16 +70,11 @@ def image_transform_optical_flow(img, flow, flow_factor):
 
 
 def rel_flow_to_abs_flow(rel_flow, width, height):
-    """Convert relative flow to absolute flow."""
-    rel_fx, rel_fy = rel_flow[:,:,0], rel_flow[:,:,1]
+    """Convert relative flow to absolute flow.
 
-    max_flow_x = np.max(np.abs(rel_fx * width))
-    max_flow_y = np.max(np.abs(rel_fy * height))
-    max_flow = max(max_flow_x, max_flow_y)
-
-    fx = rel_fx * (max_flow * width)
-    fy = rel_fy * (max_flow * height)
-    return np.dstack((fx, fy))
+    Backward compatibility wrapper for convert_relative_flow_to_absolute from utils.
+    """
+    return convert_relative_flow_to_absolute(rel_flow, width, height)
 
 
 def get_flow_from_images(i1, i2, method, raft_model, prev_flow=None):
