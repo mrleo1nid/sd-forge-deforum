@@ -70,6 +70,11 @@ def do_optical_flow_cadence_after_animation_warping(data, tween_frame, prev_imag
 
 def _is_do_flow(data, tween_frame, start_i, prev_image, image):
     """Check if optical flow should be calculated for this tween."""
+    # Bounds check - don't try to access schedule beyond max_frames
+    max_frames = data.args.anim_args.max_frames
+    if start_i >= max_frames:
+        return False
+
     has_tween_schedule = data.animation_keys.deform_keys.strength_schedule_series[start_i] > 0
     has_images = prev_image is not None and image is not None
     has_step_and_images = tween_frame.cadence_flow is None and has_images
