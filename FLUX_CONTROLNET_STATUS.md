@@ -1,6 +1,13 @@
 # Flux ControlNet Integration Status
 
-⚠️ **STATUS: FOUNDATION COMPLETE, NEEDS V2 REFACTOR (NOT READY FOR USE)**
+⚠️ **STATUS: V2 IN PROGRESS (~80% COMPLETE, NOT READY FOR USE)**
+
+**Current State:** Phase 2 nearly complete
+- ✅ V2 manager loads ControlNet model only (~3.6GB)
+- ✅ Runtime patches applied to Forge's Flux transformer
+- ✅ Control samples computed successfully
+- ⚠️ Falls back to v1 pipeline for actual generation
+- ⏳ Need final wiring to pass control through Forge processing
 
 ## Current State (v1 - NOT VIABLE - Double VRAM usage)
 
@@ -130,14 +137,14 @@ We need to inject control samples into Forge's Flux without duplicating the base
 - Applied automatically at extension init via `apply_all_patches()`
 - ✅ No Forge source file modifications needed!
 
-**4. Wire Control into Generation Pipeline** ⏳ TODO
-- Need to connect V2 manager to Deforum's generation flow
-- Compute control samples in `generate_with_flux_controlnet()`
-- Pass `controlnet_block_samples` and `controlnet_single_block_samples` to Forge
-- Options for passing control:
-  - Via `model_options` with custom conditioning modifier
-  - Via `**extra_conds` in k_model.py apply_model()
-  - Via Forge's processing pipeline hooks
+**4. Wire Control into Generation Pipeline** 🟡 PARTIAL
+- ✅ V2 manager connected to `generate_with_flux_controlnet()`
+- ✅ Control samples computed successfully with dummy hidden_states
+- ✅ Added `patch_forge_kmodel_for_controlnet()` to pass control via kwargs
+- ⚠️ Currently falls back to v1 for actual generation (temporary)
+- ⏳ TODO: Pass control samples through Forge's StableDiffusionProcessing
+- ⏳ TODO: Hook into transformer_options properly
+- ⏳ TODO: Remove v1 fallback once fully working
 
 ### Phase 3: Testing & Refinement
 
