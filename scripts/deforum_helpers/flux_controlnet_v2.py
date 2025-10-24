@@ -10,7 +10,7 @@ import torch
 import numpy as np
 from PIL import Image
 from typing import Optional, Union, Tuple
-from diffusers import FluxControlNetModel
+from diffusers import FluxControlNetModel, AutoencoderKL
 
 from .flux_controlnet_models import (
     load_flux_controlnet_model,
@@ -75,13 +75,14 @@ class FluxControlNetV2Manager:
         self.device = device
 
         self.controlnet = None
+        self.vae = None
         self.is_loaded = False
 
         print(f"🌐 Initialized Flux {control_type.title()} ControlNet V2 (Forge-native)")
         print(f"   Model: {get_model_info(control_type, model_name)}")
 
     def load_model(self):
-        """Load ONLY the ControlNet model (not pipeline)."""
+        """Load ControlNet model and Flux VAE."""
         if self.is_loaded:
             print("   ControlNet model already loaded")
             return
@@ -97,6 +98,22 @@ class FluxControlNetV2Manager:
         )
 
         self.controlnet = self.controlnet.to(self.device)
+
+        # Load Flux VAE for control image encoding
+        print("🌐 Loading Flux VAE for control image encoding...")
+        try:
+            self.vae = AutoencoderKL.from_pretrained(
+                "black-forest-labs/FLUX.1-dev",
+                subfolder="vae",
+                torch_dtype=torch.float32  # VAE needs float32
+            )
+            self.vae = self.vae.to(self.device)
+            print("✓ Flux VAE loaded")
+        except Exception as e:
+            print(f"⚠️ Could not load Flux VAE: {e}")
+            print("   Will try to use Forge's VAE (may not work correctly)")
+            self.vae = None
+
         self.is_loaded = True
 
         print(f"✓ Flux ControlNet model loaded ({self.control_type}, ~3.6GB)")
@@ -161,38 +178,51 @@ class FluxControlNetV2Manager:
             control_image = numpy_to_pil(control_image)
 
         # Convert PIL to tensor
-        # Format: (batch, channels, height, width) in range [-1, 1]
-        control_rgb = torch.from_numpy(np.array(control_image)).float() / 127.5 - 1.0
+        # Format: (batch, channels, height, width) in range [0, 1]
+        # NOTE: Forge's VAE expects [0, 1] and does its own [-1, 1] normalization internally
+        control_rgb = torch.from_numpy(np.array(control_image)).float() / 255.0
         control_rgb = control_rgb.permute(2, 0, 1).unsqueeze(0)  # (B, C, H, W)
         control_rgb = control_rgb.to(device=self.device, dtype=torch.float32)  # VAE needs float32
 
         print(f"🌐 Computing ControlNet control samples...")
         print(f"   Control RGB shape: {control_rgb.shape}")
+        print(f"   Control RGB range: [{control_rgb.min():.3f}, {control_rgb.max():.3f}]")
 
         # VAE encode and patchify control image to match hidden_states format
-        if vae is not None:
-            print(f"   VAE encoding control image...")
-            with torch.inference_mode():
-                # Encode to latent space
-                control_latent = vae.encode(control_rgb).latent_dist.sample()
+        if self.vae is not None:
+            print(f"   VAE encoding control image with Flux VAE...")
+            try:
+                with torch.inference_mode():
+                    # Use Flux's diffusers VAE
+                    control_latent = self.vae.encode(control_rgb).latent_dist.sample()
 
-                # Apply VAE scaling (Flux VAE config)
-                # shift_factor and scaling_factor from Flux VAE
-                shift_factor = 0.1159  # Flux VAE default
-                scaling_factor = 0.3611  # Flux VAE default
-                control_latent = (control_latent - shift_factor) * scaling_factor
+                    # Apply VAE scaling (Flux VAE config)
+                    # shift_factor and scaling_factor from Flux VAE
+                    shift_factor = 0.1159  # Flux VAE default
+                    scaling_factor = 0.3611  # Flux VAE default
+                    control_latent = (control_latent - shift_factor) * scaling_factor
 
-                print(f"   Control latent shape: {control_latent.shape}")
+                    print(f"   Control latent shape: {control_latent.shape}")
 
-                # Patchify latent to match transformer input
-                batch_size, num_channels, latent_h, latent_w = control_latent.shape
-                control_tensor = _pack_latents(control_latent, batch_size, num_channels, latent_h, latent_w)
-                control_tensor = control_tensor.to(dtype=self.torch_dtype)
+                    # Patchify latent to match transformer input
+                    batch_size, num_channels, latent_h, latent_w = control_latent.shape
+                    control_tensor = _pack_latents(control_latent, batch_size, num_channels, latent_h, latent_w)
+                    control_tensor = control_tensor.to(dtype=self.torch_dtype)
 
-                print(f"   Control patchified shape: {control_tensor.shape}")
+                    print(f"   Control patchified shape: {control_tensor.shape}")
+            except Exception as e:
+                print(f"   ⚠️ VAE encoding failed: {e}")
+                import traceback
+                traceback.print_exc()
+                print(f"   Falling back to RGB image (may not work)")
+                control_tensor = control_rgb.to(dtype=self.torch_dtype)
+        elif vae is not None:
+            # Try using provided Forge VAE (fallback)
+            print(f"   ⚠️ Using provided VAE (may not work correctly for Flux)")
+            control_tensor = control_rgb.to(dtype=self.torch_dtype)
         else:
             # Fallback: Use RGB image directly (will likely fail)
-            print(f"   ⚠️ No VAE provided - using RGB image (may not work correctly)")
+            print(f"   ⚠️ No VAE available - using RGB image (may not work correctly)")
             control_tensor = control_rgb.to(dtype=self.torch_dtype)
 
         print(f"   Hidden states shape: {hidden_states.shape if hidden_states is not None else 'None'}")
@@ -224,11 +254,12 @@ class FluxControlNetV2Manager:
         return controlnet_block_samples, controlnet_single_block_samples
 
     def unload(self):
-        """Unload model to free VRAM."""
+        """Unload models to free VRAM."""
         self.controlnet = None
+        self.vae = None
         self.is_loaded = False
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-        print("🌐 Flux ControlNet V2 model unloaded")
+        print("🌐 Flux ControlNet V2 models unloaded")
