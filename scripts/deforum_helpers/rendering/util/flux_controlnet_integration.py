@@ -198,9 +198,10 @@ def prepare_flux_controlnet_for_frame(
         return
 
     print(f"   Control image shape: {control_image.shape}")
+    print(f"   Control image dtype: {control_image.dtype}, range: [{control_image.min():.3f}, {control_image.max():.3f}]")
 
     # Save canny edge visualization if canny mode
-    if control_type == "canny" and hasattr(data, 'depth_model'):
+    if control_type == "canny":
         try:
             # Compute canny edges for visualization
             canny_edges = canny_edge_detection(control_image, canny_low, canny_high)
@@ -217,6 +218,8 @@ def prepare_flux_controlnet_for_frame(
             print(f"   💡 Saved canny edge visualization: {overlay_path}")
         except Exception as e:
             print(f"   ⚠️ Could not save canny visualization: {e}")
+            import traceback
+            traceback.print_exc()
 
     # Initialize V2 ControlNet manager
     manager = FluxControlNetV2Manager(
@@ -268,6 +271,16 @@ def prepare_flux_controlnet_for_frame(
             canny_low=canny_low,
             canny_high=canny_high
         )
+
+        # Debug: Check control sample values
+        print(f"   DEBUG: block_samples[0] shape: {controlnet_block_samples[0].shape}, "
+              f"dtype: {controlnet_block_samples[0].dtype}, "
+              f"range: [{controlnet_block_samples[0].min():.6f}, {controlnet_block_samples[0].max():.6f}], "
+              f"mean: {controlnet_block_samples[0].mean():.6f}")
+        print(f"   DEBUG: single_block_samples[0] shape: {controlnet_single_block_samples[0].shape}, "
+              f"dtype: {controlnet_single_block_samples[0].dtype}, "
+              f"range: [{controlnet_single_block_samples[0].min():.6f}, {controlnet_single_block_samples[0].max():.6f}], "
+              f"mean: {controlnet_single_block_samples[0].mean():.6f}")
 
         # Store control samples for Forge to pick up
         store_control_samples(controlnet_block_samples, controlnet_single_block_samples)

@@ -279,7 +279,11 @@ def patch_forge_flux_controlnet():
                 if controlnet_block_samples is not None and index_block < len(controlnet_block_samples):
                     # Add control sample to image hidden states
                     # This matches diffusers' FluxTransformer2DModel implementation
-                    img = img + controlnet_block_samples[index_block]
+                    control_sample = controlnet_block_samples[index_block]
+                    if index_block == 0:
+                        print(f"      [Flux Block {index_block}] img: {img.shape} [{img.min():.4f}, {img.max():.4f}], "
+                              f"control: {control_sample.shape} [{control_sample.min():.4f}, {control_sample.max():.4f}]")
+                    img = img + control_sample
 
             img = torch.cat((txt, img), 1)
 
