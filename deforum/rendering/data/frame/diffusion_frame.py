@@ -26,7 +26,7 @@ from deforum.rendering.calls.images import call_add_noise
 from deforum.rendering.calls.mask import call_compose_mask_with_check, call_unsharp_mask
 from deforum.rendering.calls.subtitle import call_write_subtitle_from_to
 from deforum.rendering.calls.video_and_audio import call_render_preview
-from deforum.core.colors import maintain_colors
+from deforum.utils.image_utils import maintain_colors
 from deforum.media.save_images import save_image
 from deforum.core.seed import generate_next_seed
 
