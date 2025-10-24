@@ -262,6 +262,14 @@ def prepare_flux_controlnet_for_frame(
     print(f"   Latent dimensions: {latent_h}x{latent_w} → padded: {padded_h}x{padded_w}")
     print(f"   Patches: {h_patches}x{w_patches} = {seq_len} patches, {channels} channels per patch")
 
+    # Access Forge's VAE for control image encoding
+    vae = None
+    try:
+        vae = data.sd_model.forge_objects.vae
+        print(f"   ✓ Accessed Forge's VAE for control image encoding")
+    except Exception as e:
+        print(f"   ⚠️ Could not access VAE: {e}, control may not work correctly")
+
     try:
         controlnet_block_samples, controlnet_single_block_samples = manager.compute_control_samples(
             hidden_states=dummy_hidden_states,
@@ -269,7 +277,8 @@ def prepare_flux_controlnet_for_frame(
             conditioning_scale=strength,
             preprocess_control=True,
             canny_low=canny_low,
-            canny_high=canny_high
+            canny_high=canny_high,
+            vae=vae
         )
 
         # Debug: Check control sample values

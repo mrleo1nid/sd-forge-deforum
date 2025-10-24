@@ -165,8 +165,8 @@ def overlay_canny_edges(
     for c in range(3):
         overlay[:, :, c] = np.where(
             edge_mask > 127,  # Edge pixels (white)
-            int(edge_color[c] * alpha + base_image[:, :, c] * (1 - alpha)),
+            edge_color[c] * alpha + base_image[:, :, c] * (1 - alpha),
             base_image[:, :, c]
-        )
+        ).astype(np.uint8)
 
     return overlay

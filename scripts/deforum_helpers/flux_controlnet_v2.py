@@ -23,6 +23,27 @@ from .flux_controlnet_preprocessors import (
 )
 
 
+def _pack_latents(latents: torch.Tensor, batch_size: int, num_channels: int, height: int, width: int) -> torch.Tensor:
+    """Patchify latents into 2x2 patches for Flux transformer.
+
+    Converts (B, C, H, W) → (B, (H//2)*(W//2), C*4)
+
+    Args:
+        latents: Latent tensor from VAE encoding
+        batch_size: Batch size
+        num_channels: Number of latent channels (16 for Flux)
+        height: Latent height (image_height // 16)
+        width: Latent width (image_width // 16)
+
+    Returns:
+        Patchified latents ready for Flux transformer
+    """
+    latents = latents.view(batch_size, num_channels, height // 2, 2, width // 2, 2)
+    latents = latents.permute(0, 2, 4, 1, 3, 5)
+    latents = latents.reshape(batch_size, (height // 2) * (width // 2), num_channels * 4)
+    return latents
+
+
 class FluxControlNetV2Manager:
     """V2 Manager for Flux ControlNet - Forge-native integration.
 
@@ -95,6 +116,7 @@ class FluxControlNetV2Manager:
         preprocess_control: bool = True,
         canny_low: int = 100,
         canny_high: int = 200,
+        vae: Optional[torch.nn.Module] = None,
     ) -> Tuple[Tuple[torch.Tensor, ...], Tuple[torch.Tensor, ...]]:
         """Compute control samples from preprocessed control image.
 
@@ -138,14 +160,41 @@ class FluxControlNetV2Manager:
         if isinstance(control_image, np.ndarray):
             control_image = numpy_to_pil(control_image)
 
-        # Convert PIL to tensor for ControlNet model
-        # Expected format: (batch, channels, height, width) in range [-1, 1]
-        control_tensor = torch.from_numpy(np.array(control_image)).float() / 127.5 - 1.0
-        control_tensor = control_tensor.permute(2, 0, 1).unsqueeze(0)  # (B, C, H, W)
-        control_tensor = control_tensor.to(device=self.device, dtype=self.torch_dtype)
+        # Convert PIL to tensor
+        # Format: (batch, channels, height, width) in range [-1, 1]
+        control_rgb = torch.from_numpy(np.array(control_image)).float() / 127.5 - 1.0
+        control_rgb = control_rgb.permute(2, 0, 1).unsqueeze(0)  # (B, C, H, W)
+        control_rgb = control_rgb.to(device=self.device, dtype=torch.float32)  # VAE needs float32
 
         print(f"🌐 Computing ControlNet control samples...")
-        print(f"   Control image shape: {control_tensor.shape}")
+        print(f"   Control RGB shape: {control_rgb.shape}")
+
+        # VAE encode and patchify control image to match hidden_states format
+        if vae is not None:
+            print(f"   VAE encoding control image...")
+            with torch.inference_mode():
+                # Encode to latent space
+                control_latent = vae.encode(control_rgb).latent_dist.sample()
+
+                # Apply VAE scaling (Flux VAE config)
+                # shift_factor and scaling_factor from Flux VAE
+                shift_factor = 0.1159  # Flux VAE default
+                scaling_factor = 0.3611  # Flux VAE default
+                control_latent = (control_latent - shift_factor) * scaling_factor
+
+                print(f"   Control latent shape: {control_latent.shape}")
+
+                # Patchify latent to match transformer input
+                batch_size, num_channels, latent_h, latent_w = control_latent.shape
+                control_tensor = _pack_latents(control_latent, batch_size, num_channels, latent_h, latent_w)
+                control_tensor = control_tensor.to(dtype=self.torch_dtype)
+
+                print(f"   Control patchified shape: {control_tensor.shape}")
+        else:
+            # Fallback: Use RGB image directly (will likely fail)
+            print(f"   ⚠️ No VAE provided - using RGB image (may not work correctly)")
+            control_tensor = control_rgb.to(dtype=self.torch_dtype)
+
         print(f"   Hidden states shape: {hidden_states.shape if hidden_states is not None else 'None'}")
         print(f"   Conditioning scale: {conditioning_scale}")
 
