@@ -375,7 +375,6 @@ Core dependencies (from `requirements.txt`):
 Known compatibility issues:
 - **Kohya HR Fix** - May need to be disabled
 - **FreeU** - May need to be disabled
-- **ControlNet** - Currently not working
 - **Flux Schnell** - Limited precision with only 4 steps
 
 **Removed Features:**
@@ -384,6 +383,7 @@ Known compatibility issues:
 - **Wan Only Mode** - Removed (superseded by Flux/Wan mode)
 - **Hybrid Video Mode** - Removed completely
 - **Legacy Depth Models** - MiDaS, AdaBins, LeReS, ZoeDepth removed (Depth-Anything V2 only)
+- **Legacy ControlNet** - Removed (use Flux ControlNet V2 instead, available in 3D Depth tab)
 
 ## Troubleshooting
 

@@ -32,7 +32,7 @@ from deforum.media.video_audio_utilities import ffmpeg_stitch_video, make_gifski
 from pathlib import Path
 from deforum.utils.logging.log import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
 from deforum.config.settings import save_settings_from_animation_run
-from deforum.integrations.controlnet.legacy_controlnet import num_of_models
+from deforum.integrations.controlnet.legacy_controlnet_stubs import num_of_models
 
 from scripts.deforum_api import JobStatusTracker
 from scripts.deforum_api_models import DeforumJobPhase

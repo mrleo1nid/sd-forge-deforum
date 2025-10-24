@@ -28,7 +28,7 @@ from modules.processing import get_fixed_seed
 
 from .defaults import (get_guided_imgs_default_json, get_camera_shake_list, get_keyframe_distribution_list,
                        get_samplers_list, get_schedulers_list)
-from deforum.integrations.controlnet.legacy_controlnet import controlnet_component_names
+from deforum.integrations.controlnet.legacy_controlnet_stubs import controlnet_component_names
 from deforum.utils.general_utils import get_os, substitute_placeholders
 
 
