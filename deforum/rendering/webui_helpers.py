@@ -1,8 +1,6 @@
 import time
 
-# noinspection PyUnresolvedReferences
-from deforum_api import JobStatusTracker
-# noinspection PyUnresolvedReferences
+from deforum.api.api import JobStatusTracker
 from modules.shared import state
 
 WEB_UI_SLEEP_DELAY = 0.1

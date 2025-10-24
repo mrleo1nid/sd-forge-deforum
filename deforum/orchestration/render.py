@@ -49,8 +49,7 @@ from modules import lowvram, devices, sd_hijack
 from deforum.rendering import experimental_core
 from deforum.utils.logging import log
 from deforum.integrations.raft import RAFT
-
-from deforum_api import JobStatusTracker
+from deforum.api.api import JobStatusTracker
 
 
 def render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
