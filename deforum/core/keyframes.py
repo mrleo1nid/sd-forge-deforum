@@ -28,7 +28,7 @@ from deforum.utils.string_utils import sanitize_keyframe_value
 
 # Optional imports with fallback for testing
 try:
-    from scripts.deforum_helpers.prompt import check_is_number
+    from deforum.utils.prompt_utils import check_is_number
 except ImportError:
     # Fallback for unit tests
     def check_is_number(x: str) -> bool:

@@ -20,11 +20,11 @@ import pathlib
 from modules.shared import opts, state
 from deforum.orchestration.render import render_animation
 from deforum.utils.logging.log import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
-from scripts.deforum_helpers.seed import next_seed
+from deforum.core.seeds import next_seed
 from deforum.media.video_audio_utilities import vid2frames, render_preview
-from scripts.deforum_helpers.prompt import interpolate_prompts
+from deforum.utils.prompt_utils import interpolate_prompts
 from deforum.orchestration.generate import generate
-from scripts.deforum_helpers.animation_key_frames import DeformAnimKeys
+from deforum.core.keyframes import DeformAnimKeys
 from deforum.integrations.parseq import ParseqAdapter
 from deforum.media.save_images import save_image
 from deforum.config.settings import save_settings_from_animation_run

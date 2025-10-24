@@ -25,15 +25,15 @@ import PIL
 import time
 from PIL import Image, ImageOps
 from deforum.orchestration.generate import generate, isJson
-from scripts.deforum_helpers.noise import add_noise
+from deforum.rendering.noise import add_noise
 from deforum.animation.animation import anim_frame_warp
-from scripts.deforum_helpers.animation_key_frames import DeformAnimKeys, LooperAnimKeys
+from deforum.core.keyframes import DeformAnimKeys, LooperAnimKeys
 from deforum.media.video_audio_utilities import get_frame_name, get_next_frame, render_preview
 from deforum.depth import DepthModel
-from scripts.deforum_helpers.colors import maintain_colors
+from deforum.utils.image_utils import maintain_colors
 from deforum.integrations.parseq import ParseqAdapter
-from scripts.deforum_helpers.seed import next_seed
-from scripts.deforum_helpers.image_sharpening import unsharp_mask
+from deforum.core.seeds import next_seed
+from deforum.utils.image_utils import unsharp_mask
 from deforum.media.load_images import get_mask, load_img, load_image, get_mask_from_file
 # Hybrid video removed - was: from .hybrid_video import (...)
 from deforum.media.save_images import save_image
@@ -43,7 +43,7 @@ from deforum.integrations.controlnet.legacy_controlnet_stubs import unpack_contr
 from deforum.media.subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
 from deforum.pipeline.resume import get_resume_vars
 from deforum.core.masking.masks import do_overlay_mask
-from scripts.deforum_helpers.prompt import prepare_prompt
+from deforum.core.prompts import prepare_prompt
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
 from deforum.rendering import experimental_core

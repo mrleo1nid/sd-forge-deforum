@@ -1,5 +1,5 @@
 from deforum.media.load_images import get_mask_from_file
-from deforum_helpers.noise import add_noise
+from deforum.rendering.noise import add_noise
 from deforum.media.video_audio_utilities import get_next_frame
 
 

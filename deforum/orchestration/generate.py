@@ -24,12 +24,12 @@ import numexpr
 from modules import processing, sd_models
 from modules.shared import sd_model, state, cmd_opts
 from deforum.integrations.controlnet.legacy_controlnet_stubs import is_controlnet_enabled, get_controlnet_script_args
-from scripts.deforum_helpers.prompt import split_weighted_subprompts
+from deforum.utils.prompt_utils import split_weighted_subprompts
 from deforum.media.load_images import load_img, prepare_mask, check_mask_for_errors
 from deforum.pipeline.webui_sd_pipeline import get_webui_sd_pipeline
 from deforum.utils.rich import console
 from deforum.config.defaults import get_samplers_list, get_schedulers_list
-from scripts.deforum_helpers.prompt import check_is_number
+from deforum.utils.prompt_utils import check_is_number
 from deforum.utils.opts_overrider import A1111OptionsOverrider
 import cv2
 import numpy as np
