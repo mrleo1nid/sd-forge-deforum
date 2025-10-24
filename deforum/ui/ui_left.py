@@ -109,6 +109,23 @@ Error: {str(e)}
 
 def setup_deforum_left_side_ui():
     d, da, dp, dv, dr, dw, dloopArgs = set_arg_lists()
+
+    # FLUX AVAILABILITY CHECK - All Deforum modes require Flux
+    from deforum.utils.system.flux_check import should_show_flux_blocker, get_flux_setup_message
+
+    if should_show_flux_blocker():
+        # Show blocker message and minimal UI
+        with gr.Row(variant='compact'):
+            show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True, visible=False)
+
+        gr.HTML(value=get_flux_setup_message())
+
+        # Return minimal component set for compatibility
+        return {
+            'show_info_on_ui': show_info_on_ui,
+        }
+
+    # Normal UI setup continues if Flux is available
     # show button to hide/ show gradio's info texts for each element in the UI
     with gr.Row(variant='compact'):
         show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True)
