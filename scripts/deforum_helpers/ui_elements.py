@@ -616,6 +616,28 @@ def get_tab_depth_warping(da, skip_tabitem=False):
             with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
                 redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
 
+    with gr.Accordion("🌐 Flux ControlNet", open=False):
+        gr.Markdown("""
+        **Flux ControlNet** adds structural control to keyframe generation using:
+        - **Canny edges** from previous frame (preserves shapes and lines)
+        - **Depth maps** from Depth-Anything V2 (preserves 3D structure)
+
+        ⚠️ **Only applies to keyframes** (not tween frames). Requires Flux model.
+        """)
+        with FormRow(visible=is_visible) as flux_controlnet_row_1:
+            enable_flux_controlnet = create_gr_elem(da.enable_flux_controlnet)
+            flux_controlnet_type = create_gr_elem(da.flux_controlnet_type)
+        with FormRow(visible=is_visible) as flux_controlnet_row_2:
+            flux_controlnet_model = create_gr_elem(da.flux_controlnet_model)
+            flux_controlnet_strength = create_gr_elem(da.flux_controlnet_strength)
+        with FormRow(visible=is_visible) as flux_controlnet_row_3:
+            flux_controlnet_canny_low = create_gr_elem(da.flux_controlnet_canny_low)
+            flux_controlnet_canny_high = create_gr_elem(da.flux_controlnet_canny_high)
+        with FormRow(visible=is_visible) as flux_controlnet_row_4:
+            flux_guidance_scale = create_gr_elem(da.flux_guidance_scale)
+        with FormRow(visible=is_visible) as flux_controlnet_row_5:
+            flux_base_model = create_gr_elem(da.flux_base_model)
+
     with gr.Accordion("⚙️ FOV & Advanced Settings", open=False):
         with FormRow(visible=is_visible) as depth_warp_row_3:
             aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)

@@ -635,6 +635,68 @@ def DeforumAnimArgs():
             "value": False,
             "info": "save animation's depth maps as extra files"
         },
+        "enable_flux_controlnet": {
+            "label": "Enable Flux ControlNet",
+            "type": "checkbox",
+            "value": False,
+            "info": "Use Flux ControlNet for keyframe generation (Canny or Depth control)"
+        },
+        "flux_controlnet_type": {
+            "label": "ControlNet Type",
+            "type": "dropdown",
+            "choices": ['canny', 'depth'],
+            "value": "canny",
+            "info": "Canny: edge detection from previous frame, Depth: use Depth-Anything V2 depth maps"
+        },
+        "flux_controlnet_model": {
+            "label": "ControlNet Model",
+            "type": "dropdown",
+            "choices": ['instantx', 'xlabs', 'bfl', 'shakker'],
+            "value": "instantx",
+            "info": "Model provider: InstantX (default), XLabs-AI, BFL (official), Shakker Labs (Depth recommended)"
+        },
+        "flux_controlnet_strength": {
+            "label": "ControlNet Strength",
+            "type": "slider",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "step": 0.05,
+            "value": 0.7,
+            "info": "How strongly ControlNet influences generation (0.0 = no influence, 1.0 = full control)"
+        },
+        "flux_controlnet_canny_low": {
+            "label": "Canny Low Threshold",
+            "type": "slider",
+            "minimum": 0,
+            "maximum": 255,
+            "step": 5,
+            "value": 100,
+            "info": "Canny edge detection low threshold (lower = more edges)"
+        },
+        "flux_controlnet_canny_high": {
+            "label": "Canny High Threshold",
+            "type": "slider",
+            "minimum": 0,
+            "maximum": 255,
+            "step": 5,
+            "value": 200,
+            "info": "Canny edge detection high threshold (higher = fewer edges)"
+        },
+        "flux_guidance_scale": {
+            "label": "Flux Guidance Scale",
+            "type": "slider",
+            "minimum": 1.0,
+            "maximum": 10.0,
+            "step": 0.5,
+            "value": 3.5,
+            "info": "Guidance scale for Flux generation (3.5 recommended)"
+        },
+        "flux_base_model": {
+            "label": "Flux Base Model",
+            "type": "textbox",
+            "value": "black-forest-labs/FLUX.1-dev",
+            "info": "HuggingFace model ID for Flux base - requires 'huggingface-cli login' and accepting FLUX.1-dev license at https://huggingface.co/black-forest-labs/FLUX.1-dev (TEMP: Will integrate with Forge's loaded model in future)"
+        },
         "video_init_path": {
             "label": "Video init path/ URL",
             "type": "textbox",
