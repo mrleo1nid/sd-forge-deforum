@@ -6,8 +6,11 @@ from PIL import Image
 
 from ...data.render_data import RenderData
 from ... import img_2_img_tubes
-from ...util import image_utils, log_utils, turbo_utils, web_ui_utils
-from ...util.call.subtitle import call_write_subtitle_from_to
+from deforum.rendering import image_helpers as image_utils
+from deforum.utils.logging import log as log_utils
+from deforum.rendering import turbo_helpers as turbo_utils
+from deforum.rendering import webui_helpers as web_ui_utils
+from deforum.rendering.calls.subtitle import call_write_subtitle_from_to
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)

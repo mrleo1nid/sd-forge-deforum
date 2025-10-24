@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ...util import opt_utils
+from deforum.rendering import options as opt_utils
 from deforum.integrations.raft import RAFT
 
 

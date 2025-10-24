@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass
 from decimal import Decimal
 
-from ...util import opt_utils
+from deforum.rendering import options as opt_utils
 from deforum.media.subtitle_handler import init_srt_file
 
 

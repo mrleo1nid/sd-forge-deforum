@@ -16,16 +16,19 @@ from .tween_frame import Tween
 from .. import RenderData, Schedule
 from ..taqaddumat import Taqaddumat
 from ... import img_2_img_tubes
-from ...util import depth_utils, filename_utils, log_utils, utils
-from ...util.call.anim import call_anim_frame_warp
-from ...util.call.gen import call_generate
-from ...util.call.images import call_add_noise
-from ...util.call.mask import call_compose_mask_with_check, call_unsharp_mask
-from ...util.call.subtitle import call_write_subtitle_from_to
-from ...util.call.video_and_audio import call_render_preview
-from ....colors import maintain_colors
+from deforum.rendering import depth_helpers as depth_utils
+from deforum.rendering import filename_helpers as filename_utils
+from deforum.utils.logging import log as log_utils
+from deforum.utils import functional_utils as utils
+from deforum.rendering.calls.anim import call_anim_frame_warp
+from deforum.rendering.calls.gen import call_generate
+from deforum.rendering.calls.images import call_add_noise
+from deforum.rendering.calls.mask import call_compose_mask_with_check, call_unsharp_mask
+from deforum.rendering.calls.subtitle import call_write_subtitle_from_to
+from deforum.rendering.calls.video_and_audio import call_render_preview
+from deforum.core.colors import maintain_colors
 from deforum.media.save_images import save_image
-from ....seed import generate_next_seed
+from deforum.core.seed import generate_next_seed
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)

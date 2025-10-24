@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List
 
-from ...util import log_utils
+from deforum.utils.logging import log as log_utils
 
 
 class KeyFrameDistribution(Enum):
