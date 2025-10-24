@@ -130,11 +130,15 @@ def generate_with_flux_controlnet(
     canny_high = getattr(anim_args, 'flux_controlnet_canny_high', 200)
 
     # Get control image
+    print(f"  ControlNet type: {control_type}, Model: {model_name}, Strength: {strength}")
     control_image = get_control_image_for_frame(data, frame, control_type)
     if control_image is None:
         raise ValueError(f"Could not get {control_type} control image for frame {frame.i}")
 
+    print(f"  Control image shape: {control_image.shape}")
+
     # Initialize ControlNet manager (lazy loads models)
+    print(f"  Loading Flux ControlNet model...")
     manager = FluxControlNetManager(
         control_type=control_type,
         model_name=model_name,

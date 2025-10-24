@@ -6,6 +6,7 @@ def call_generate(data, frame: 'DiffusionFrame', redo_seed: int = None):
     # Check if we should use Flux ControlNet for this frame
     if should_use_flux_controlnet_for_frame(data, frame):
         # Use Flux ControlNet generation
+        print(f"🌐 Using Flux ControlNet for keyframe {frame.i}")
         return generate_with_flux_controlnet(data, frame)
 
     # Standard Forge generation path

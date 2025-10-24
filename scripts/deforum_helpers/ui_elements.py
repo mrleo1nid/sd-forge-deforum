@@ -616,7 +616,7 @@ def get_tab_depth_warping(da, skip_tabitem=False):
             with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
                 redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
 
-    with gr.Accordion("🎨 Flux ControlNet", open=False):
+    with gr.Accordion("🌐 Flux ControlNet", open=False):
         gr.Markdown("""
         **Flux ControlNet** adds structural control to keyframe generation using:
         - **Canny edges** from previous frame (preserves shapes and lines)
