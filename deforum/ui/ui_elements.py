@@ -580,12 +580,6 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         )
         with FormRow(visible=is_visible) as depth_warp_row_1:
             use_depth_warping = create_gr_elem(da.use_depth_warping)
-            # *the following html only shows when LeReS depth is selected*
-            leres_license_msg = gr.HTML(
-                value=get_gradio_html('leres'),
-                visible=False,
-                elem_id='leres_license_msg'
-            )
             depth_algorithm = create_gr_elem(da.depth_algorithm)
             midas_weight = create_gr_elem(da.midas_weight)
         with FormRow(visible=is_visible) as depth_warp_row_2:
@@ -2423,10 +2417,10 @@ def get_tab_output(da, dv):
                 invert = gr.Checkbox(label='Closer is brighter', value=True, elem_id="invert")
             with FormRow():
                 end_blur = gr.Slider(label="End blur width", value=0, minimum=0, maximum=255, step=1)
-                midas_weight_vid2depth = gr.Slider(
-                    label="MiDaS weight (vid2depth)", value=da.midas_weight, minimum=0,
+                depth_weight_vid2depth = gr.Slider(
+                    label="Depth weight (vid2depth - legacy)", value=da.midas_weight, minimum=0,
                     maximum=1, step=0.05, interactive=True,
-                    info="sets a midpoint at which a depth-map is to be drawn: range [-1 to +1]")
+                    info="Legacy parameter, no longer used with Depth-Anything V2")
                 depth_keep_imgs = gr.Checkbox(label='Keep Imgs', value=True, elem_id="depth_keep_imgs")
 
             # This is the actual button that's pressed to initiate the Upscaling:
@@ -2437,7 +2431,7 @@ def get_tab_output(da, dv):
             # make the function call when the UPSCALE button is clicked
             depth_btn.click(fn=upload_vid_to_depth,
                             inputs=[vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max,
-                                    adapt_block_size, adapt_c, invert, end_blur, midas_weight_vid2depth,
+                                    adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth,
                                     depth_keep_imgs])
         # STITCH FRAMES TO VID TAB
         with gr.TabItem(f"{emoji_utils.frames()} Frames to Video") as stitch_imgs_to_vid_row:

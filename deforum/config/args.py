@@ -608,11 +608,11 @@ def DeforumAnimArgs():
             "info": "Depth Anything V2 model size - Small (fastest), Base (balanced), Large (best quality)"
         },
         "midas_weight": {
-            "label": "MiDaS/Zoe weight",
+            "label": "Depth weight (legacy, not used)",
             "type": "number",
             "precision": None,
             "value": 0.2,
-            "info": "sets a midpoint at which a depth-map is to be drawn: range [-1 to +1]",
+            "info": "Legacy parameter from old depth models (MiDaS/Zoe), no longer used with Depth-Anything V2",
             "visible": False
         },
         "padding_mode": {

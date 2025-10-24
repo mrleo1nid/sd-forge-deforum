@@ -65,8 +65,6 @@ def handle_change_functions(l_vars):
     l_vars['color_coherence'].change(fn=change_color_coherence_image_path_visibility, inputs=l_vars['color_coherence'], outputs=l_vars['color_coherence_image_path_row'])
     l_vars['noise_type'].change(fn=change_perlin_visibility, inputs=l_vars['noise_type'], outputs=l_vars['perlin_row'])
     l_vars['diffusion_cadence'].change(fn=hide_optical_flow_cadence, inputs=l_vars['diffusion_cadence'], outputs=l_vars['optical_flow_cadence_row'])
-    l_vars['depth_algorithm'].change(fn=legacy_3d_mode, inputs=l_vars['depth_algorithm'], outputs=l_vars['midas_weight'])
-    l_vars['depth_algorithm'].change(fn=show_leres_html_msg, inputs=l_vars['depth_algorithm'], outputs=l_vars['leres_license_msg'])
     l_vars['fps'].change(fn=change_gif_button_visibility, inputs=l_vars['fps'], outputs=l_vars['make_gif'])
     l_vars['r_upscale_model'].change(fn=update_r_upscale_factor, inputs=l_vars['r_upscale_model'], outputs=l_vars['r_upscale_factor'])
     l_vars['ncnn_upscale_model'].change(fn=update_r_upscale_factor, inputs=l_vars['ncnn_upscale_model'], outputs=l_vars['ncnn_upscale_factor'])
@@ -127,13 +125,13 @@ def ncnn_upload_vid_to_upscale(vid_path, in_vid_fps, in_vid_res, out_vid_res, up
     current_user = get_os()
     process_ncnn_upscale_vid_upload_logic(vid_path, in_vid_fps, in_vid_res, out_vid_res, f_models_path, upscale_model, upscale_factor, keep_imgs, f_location, f_crf, f_preset, current_user)
 
-def upload_vid_to_depth(vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, midas_weight_vid2depth, depth_keep_imgs):
+def upload_vid_to_depth(vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth, depth_keep_imgs):
     # print msg and do nothing if vid not uploaded
     if not vid_to_depth_chosen_file:
         return print("Please upload a video :()")
     f_location, f_crf, f_preset = get_ffmpeg_params()
 
-    process_depth_vid_upload_logic(vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, midas_weight_vid2depth,
+    process_depth_vid_upload_logic(vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth,
                                    vid_to_depth_chosen_file.name, depth_keep_imgs, f_location, f_crf, f_preset, f_models_path)
 
 # END gradio-to-frame-interoplation/ upscaling functions
@@ -146,9 +144,6 @@ def update_r_upscale_factor(choice):
 
 def change_perlin_visibility(choice):
     return gr.update(visible=choice == "perlin")
-
-def legacy_3d_mode(choice):
-    return gr.update(visible=choice.lower() in ["midas+adabins (old)", 'zoe+adabins (old)'])
 
 def change_color_coherence_image_path_visibility(choice):
     return gr.update(visible=choice == "Image")
@@ -250,10 +245,6 @@ def change_interp_x_max_limit(engine_name, current_value):
 
 def hide_interp_stats(choice):
     return gr.update(visible=True) if choice is not None else gr.update(visible=False)
-
-
-def show_leres_html_msg(choice):
-    return gr.update(visible=True) if choice.lower() == 'leres' else gr.update(visible=False)
 
 def show_when_ddim(sampler_name):
     return gr.update(visible=True) if sampler_name.lower() == 'ddim' else gr.update(visible=False)

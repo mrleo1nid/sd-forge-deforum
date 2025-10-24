@@ -202,10 +202,7 @@ def transform_image_3d_switcher(device, prev_img_cv2, depth_tensor, rot_mat, tra
     elif isinstance(prev_img_cv2, list):
         prev_img_cv2 = np.array(prev_img_cv2)
 
-    if anim_args.depth_algorithm.lower() in ['midas+adabins (old)', 'zoe+adabins (old)']:
-        return transform_image_3d_legacy(device, prev_img_cv2, depth_tensor, rot_mat, translate, anim_args, keys, frame_idx)
-    else:
-        return transform_image_3d_new(device, prev_img_cv2, depth_tensor, rot_mat, translate, anim_args, keys, frame_idx)
+    return transform_image_3d_new(device, prev_img_cv2, depth_tensor, rot_mat, translate, anim_args, keys, frame_idx)
 
 
 def transform_image_3d_legacy(device, prev_img_cv2, depth_tensor, rot_mat, translate, anim_args, keys, frame_idx):
@@ -262,27 +259,11 @@ def transform_image_3d_new(device, prev_img_cv2, depth_tensor, rot_mat, translat
     originally an adapted and optimized version of transform_image_3d from Disco Diffusion https://github.com/alembics/disco-diffusion
     modified by reallybigname to control various incoming tensors
     '''
-    if anim_args.depth_algorithm.lower().startswith('midas'): # 'Midas-3-Hybrid' or 'Midas-3.1-BeitLarge'
-        depth = 1
-        depth_factor = -1
-        depth_offset = -2
-    elif anim_args.depth_algorithm.lower() == "adabins":
-        depth = 1
-        depth_factor = 1
-        depth_offset = 1
-    elif anim_args.depth_algorithm.lower().startswith('depth-anything'):
-        # TODO tune?
+    if anim_args.depth_algorithm.lower().startswith('depth-anything'):
+        # Depth-Anything V2 parameters
         depth = 1
         depth_factor = -1
         depth_offset = -2.3  # TODO? allow (mis)configuring this to 0 for crazy distortion effects.
-    elif anim_args.depth_algorithm.lower() == "leres":
-        depth = 1
-        depth_factor = 1
-        depth_offset = 1
-    elif anim_args.depth_algorithm.lower() == "zoe":
-        depth = 1
-        depth_factor = 1
-        depth_offset = 1
     else:
         raise Exception(f"Unknown depth_algorithm passed to transform_image_3d function: {anim_args.depth_algorithm}")
 
