@@ -274,6 +274,11 @@ class FluxControlNetV2Manager:
                         # Create position IDs for text tokens (matches encoder_hidden_states seq len)
                         txt_ids = torch.zeros((1, 77, 3), device=self.device, dtype=torch.float32)
                         print(f"   Created dummy txt_ids: {txt_ids.shape}")
+
+                    if guidance is None:
+                        # Create dummy guidance (scalar guidance scale, typically 3.5 for Flux)
+                        guidance = torch.tensor([3.5], device=self.device, dtype=torch.float32)
+                        print(f"   Created dummy guidance: {guidance}")
             except Exception as e:
                 print(f"   ⚠️ VAE encoding failed: {e}")
                 import traceback

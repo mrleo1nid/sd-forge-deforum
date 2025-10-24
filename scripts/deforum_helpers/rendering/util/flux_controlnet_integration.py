@@ -206,6 +206,10 @@ def prepare_flux_controlnet_for_frame(
             # Compute canny edges for visualization
             canny_edges = canny_edge_detection(control_image, canny_low, canny_high)
 
+            # Dilate edges for bolder visualization (NOT affecting ControlNet processing)
+            kernel = np.ones((3, 3), np.uint8)
+            canny_edges_bold = cv2.dilate(canny_edges, kernel, iterations=2)
+
             # Find depth-raft-preview.png (directly in batch directory)
             import os
             depth_preview_path = os.path.join(args.outdir, "depth-raft-preview.png")
@@ -216,8 +220,8 @@ def prepare_flux_controlnet_for_frame(
                 if depth_preview is not None:
                     # Convert BGR to RGB for overlay function
                     depth_preview_rgb = cv2.cvtColor(depth_preview, cv2.COLOR_BGR2RGB)
-                    # Overlay edges in red
-                    overlay = overlay_canny_edges(depth_preview_rgb, canny_edges, edge_color=(255, 0, 0), alpha=0.8)
+                    # Overlay bold edges in red
+                    overlay = overlay_canny_edges(depth_preview_rgb, canny_edges_bold, edge_color=(255, 0, 0), alpha=0.8)
                     # Save back to same file
                     cv2.imwrite(depth_preview_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
                     print(f"   💡 Overlaid canny edges on: {depth_preview_path}")
@@ -226,8 +230,8 @@ def prepare_flux_controlnet_for_frame(
                 print(f"   ℹ️ Depth preview not found, creating black preview: {depth_preview_path}")
                 # Create black image matching control image size
                 black_preview = np.zeros_like(control_image)
-                # Overlay canny edges on black background
-                overlay = overlay_canny_edges(black_preview, canny_edges, edge_color=(255, 0, 0), alpha=1.0)
+                # Overlay bold canny edges on black background
+                overlay = overlay_canny_edges(black_preview, canny_edges_bold, edge_color=(255, 0, 0), alpha=1.0)
                 # Save
                 cv2.imwrite(depth_preview_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
                 print(f"   💡 Created canny edge preview: {depth_preview_path}")
