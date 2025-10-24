@@ -13,9 +13,9 @@ from .images import Images
 from .mask import Mask
 from .shakify.shaker import Shaker
 from .subtitle import Srt
-from deforum.rendering import depth_helpers as depth_utils
+from deforum.rendering.helpers import depth as depth_utils
 from deforum.utils.system.logging import log as log_utils
-from deforum.rendering import memory as memory_utils
+from deforum.rendering.helpers import memory as memory_utils
 from deforum.rendering import options as opt_utils
 from deforum.rendering.calls.images import call_get_mask_from_file_with_frame
 from deforum.rendering.calls.mask import call_compose_mask_with_check

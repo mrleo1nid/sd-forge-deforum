@@ -7,8 +7,8 @@ from cv2.typing import MatLike
 
 from .data.frame.diffusion_frame import DiffusionFrame
 from .data.render_data import RenderData
-from deforum.utils import image_utils
-from deforum.rendering import turbo_helpers as turbo_utils
+from deforum.utils.image import processing as image_utils
+from deforum.rendering.helpers import turbo as turbo_utils
 from deforum.utils.functional import tube
 from deforum.utils.image.processing import maintain_colors
 from deforum.animation.optical_flow_utils import get_flow_from_images, image_transform_optical_flow

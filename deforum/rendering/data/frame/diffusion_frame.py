@@ -16,8 +16,8 @@ from .tween_frame import Tween
 from deforum.rendering.data import RenderData, Schedule
 from deforum.rendering.data.taqaddumat import Taqaddumat
 from deforum.rendering import img_2_img_tubes
-from deforum.rendering import depth_helpers as depth_utils
-from deforum.rendering import filename_helpers as filename_utils
+from deforum.rendering.helpers import depth as depth_utils
+from deforum.rendering.helpers import filename as filename_utils
 from deforum.utils.system.logging import log as log_utils
 from deforum.utils import functional as utils
 from deforum.rendering.calls.anim import call_anim_frame_warp
