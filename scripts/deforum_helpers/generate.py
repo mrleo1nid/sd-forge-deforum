@@ -313,6 +313,10 @@ def generate_inner(args, keys, anim_args, loop_args, controlnet_args,
                 cnet_args = get_controlnet_script_args(args, anim_args, controlnet_args, root, parseq_adapter, frame_idx=frame)
                 add_forge_script_to_deforum_run(p_txt, "ControlNet", cnet_args)
 
+            # Inject Flux ControlNet V2 control samples if available
+            from .flux_controlnet_forge_injection import inject_control_into_processing
+            inject_control_into_processing(p_txt)
+
             with A1111OptionsOverrider({"control_net_detectedmap_dir" : os.path.join(args.outdir, "controlnet_detected_map")}):
                 p_txt.scheduler = "Simple"  # FIXME provide
                 processed = processing.process_images(p_txt)

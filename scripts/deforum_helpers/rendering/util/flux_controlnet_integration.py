@@ -161,6 +161,86 @@ def get_control_image_for_frame(
         raise ValueError(f"Unsupported control type: {control_type}")
 
 
+def prepare_flux_controlnet_for_frame(
+    data: "RenderData",
+    frame: "DiffusionFrame"
+):
+    """Prepare Flux ControlNet V2 for generation (Forge-native).
+
+    Computes control samples and stores them for Forge's pipeline to pick up.
+    Does NOT perform generation - that's handled by Forge's normal pipeline.
+
+    Args:
+        data: Rendering data containing settings and state
+        frame: Current keyframe to generate
+    """
+    from ...flux_controlnet_v2 import FluxControlNetV2Manager
+    from ...flux_controlnet_forge_injection import store_control_samples
+    import torch
+
+    anim_args = data.args.anim_args
+    args = data.args.args
+
+    # Get ControlNet settings
+    control_type = getattr(anim_args, 'flux_controlnet_type', 'canny')
+    model_name = getattr(anim_args, 'flux_controlnet_model', 'instantx')
+    strength = getattr(anim_args, 'flux_controlnet_strength', 0.7)
+    canny_low = getattr(anim_args, 'flux_controlnet_canny_low', 100)
+    canny_high = getattr(anim_args, 'flux_controlnet_canny_high', 200)
+
+    print(f"   Type: {control_type}, Model: {model_name}, Strength: {strength}")
+
+    # Get control image
+    control_image = get_control_image_for_frame(data, frame, control_type)
+    if control_image is None:
+        print(f"⚠️ Could not get {control_type} control image, skipping ControlNet")
+        return
+
+    print(f"   Control image shape: {control_image.shape}")
+
+    # Initialize V2 ControlNet manager
+    manager = FluxControlNetV2Manager(
+        control_type=control_type,
+        model_name=model_name,
+        device='cuda'
+    )
+    manager.load_model()
+
+    # Compute control samples
+    # Create dummy hidden_states (ControlNet processes control image, not latents)
+    batch_size = 1
+    height = args.H // 16  # Flux uses 16x downsampling
+    width = args.W // 16
+    seq_len = height * width
+    channels = 64  # Flux latent channels
+
+    dummy_hidden_states = torch.zeros(
+        (batch_size, seq_len, channels),
+        device='cuda',
+        dtype=torch.bfloat16
+    )
+
+    try:
+        controlnet_block_samples, controlnet_single_block_samples = manager.compute_control_samples(
+            hidden_states=dummy_hidden_states,
+            control_image=control_image,
+            conditioning_scale=strength,
+            preprocess_control=True,
+            canny_low=canny_low,
+            canny_high=canny_high
+        )
+
+        # Store control samples for Forge to pick up
+        store_control_samples(controlnet_block_samples, controlnet_single_block_samples)
+
+        print(f"✓ Flux ControlNet V2 prepared successfully")
+
+    except Exception as e:
+        print(f"⚠️ Flux ControlNet V2 error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 def generate_with_flux_controlnet(
     data: "RenderData",
     frame: "DiffusionFrame"
