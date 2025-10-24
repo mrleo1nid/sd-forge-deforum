@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from ...util import opt_utils
-from ....subtitle_handler import init_srt_file
+from deforum.media.subtitle_handler import init_srt_file
 
 
 @dataclass(init=True, frozen=True, repr=False, eq=False)

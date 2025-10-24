@@ -23,7 +23,7 @@ from modules import ui_components
 # noinspection PyUnresolvedReferences
 from modules.shared import opts, cmd_opts, OptionInfo, options_section
 
-from .subtitle_handler import get_user_values
+from deforum.media.subtitle_handler import get_user_values
 from deforum.media.video_audio_utilities import find_ffmpeg_binary
 
 

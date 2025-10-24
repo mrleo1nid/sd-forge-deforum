@@ -23,7 +23,7 @@ from .utils.wan_progress_utils import (
 
 # Import Deforum utilities for settings and audio handling
 from deforum.media.video_audio_utilities import download_audio
-from ..subtitle_handler import init_srt_file, write_frame_subtitle, calculate_frame_duration
+from deforum.media.subtitle_handler import init_srt_file, write_frame_subtitle, calculate_frame_duration
 from deforum.config.settings import save_settings_from_animation_run
 
 class WanSimpleIntegration:

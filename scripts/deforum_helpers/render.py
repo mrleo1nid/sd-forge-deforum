@@ -40,7 +40,7 @@ from deforum.media.save_images import save_image
 from deforum.core.masking.composable import compose_mask_with_check
 from deforum.config.settings import save_settings_from_animation_run
 from .deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
-from .subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
+from deforum.media.subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
 from .resume import get_resume_vars
 from deforum.core.masking.masks import do_overlay_mask
 from .prompt import prepare_prompt
