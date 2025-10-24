@@ -113,18 +113,21 @@ class FluxControlNetV2Manager:
 
             if forge_vae_path.exists():
                 print(f"   Loading from local file: {forge_vae_path}")
-                self.vae = AutoencoderKL.from_single_file(
-                    str(forge_vae_path),
-                    torch_dtype=torch.float32  # VAE needs float32
-                )
+                # Temporarily unpatch HF download to avoid etag error
+                with temporarily_unpatch_hf_download():
+                    self.vae = AutoencoderKL.from_single_file(
+                        str(forge_vae_path),
+                        torch_dtype=torch.float32  # VAE needs float32
+                    )
             else:
                 # Fallback to HuggingFace (requires auth)
                 print("   ⚠️ ae.safetensors not found in models/VAE/, trying HuggingFace...")
-                self.vae = AutoencoderKL.from_pretrained(
-                    "black-forest-labs/FLUX.1-dev",
-                    subfolder="vae",
-                    torch_dtype=torch.float32
-                )
+                with temporarily_unpatch_hf_download():
+                    self.vae = AutoencoderKL.from_pretrained(
+                        "black-forest-labs/FLUX.1-dev",
+                        subfolder="vae",
+                        torch_dtype=torch.float32
+                    )
 
             self.vae = self.vae.to(self.device)
             print("✓ Flux VAE loaded")

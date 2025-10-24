@@ -200,24 +200,34 @@ def prepare_flux_controlnet_for_frame(
     print(f"   Control image shape: {control_image.shape}")
     print(f"   Control image dtype: {control_image.dtype}, range: [{control_image.min():.3f}, {control_image.max():.3f}]")
 
-    # Save canny edge visualization if canny mode
+    # Overlay canny edges on depth-raft-preview.png if canny mode
     if control_type == "canny":
         try:
             # Compute canny edges for visualization
             canny_edges = canny_edge_detection(control_image, canny_low, canny_high)
-            # Overlay edges in red on original image
-            overlay = overlay_canny_edges(control_image, canny_edges, edge_color=(255, 0, 0), alpha=0.8)
 
-            # Save to depth preview directory for debugging
+            # Find depth-raft-preview.png and overlay canny edges on it
             import os
             root = data.args.root
             depth_dir = os.path.join(args.outdir, f"{root.timestring}_depth")
-            os.makedirs(depth_dir, exist_ok=True)
-            overlay_path = os.path.join(depth_dir, f"{root.timestring}_{frame.i:09}_canny_overlay.png")
-            cv2.imwrite(overlay_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
-            print(f"   💡 Saved canny edge visualization: {overlay_path}")
+            depth_preview_path = os.path.join(depth_dir, f"{root.timestring}_{frame.i:09}_depth-raft-preview.png")
+
+            if os.path.exists(depth_preview_path):
+                # Load existing depth preview
+                depth_preview = cv2.imread(depth_preview_path)
+                if depth_preview is not None:
+                    # Convert BGR to RGB for overlay function
+                    depth_preview_rgb = cv2.cvtColor(depth_preview, cv2.COLOR_BGR2RGB)
+                    # Overlay edges in red
+                    overlay = overlay_canny_edges(depth_preview_rgb, canny_edges, edge_color=(255, 0, 0), alpha=0.8)
+                    # Save back to same file
+                    cv2.imwrite(depth_preview_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+                    print(f"   💡 Overlaid canny edges on: {depth_preview_path}")
+            else:
+                print(f"   ℹ️ Depth preview not found yet: {depth_preview_path}")
+                print(f"   ℹ️ Canny edges will be applied on next frame")
         except Exception as e:
-            print(f"   ⚠️ Could not save canny visualization: {e}")
+            print(f"   ⚠️ Could not overlay canny visualization: {e}")
             import traceback
             traceback.print_exc()
 
