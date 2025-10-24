@@ -26,8 +26,8 @@ from modules.shared import cmd_opts, device as sh_device
 from modules import devices
 import shutil
 from deforum.media.interpolation import clean_folder_name
-from rife.inference_video import duplicate_pngs_from_folder
-from .video_audio_utilities import get_quick_vid_info, vid2frames, ffmpeg_stitch_video
+from deforum.utils.general_utils import duplicate_pngs_from_folder
+from deforum.media.video_audio_utilities import get_quick_vid_info, vid2frames, ffmpeg_stitch_video
 
 def process_depth_vid_upload_logic(file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth, vid_file_name, keep_imgs, f_location, f_crf, f_preset, f_models_path):
     print("got a request to *vid2depth* an existing video.")

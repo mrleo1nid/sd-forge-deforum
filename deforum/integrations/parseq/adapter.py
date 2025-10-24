@@ -22,10 +22,10 @@ from operator import itemgetter
 import numpy as np
 import pandas as pd
 import requests
-from .animation_key_frames import DeformAnimKeys, ControlNetKeys, LooperAnimKeys
+from deforum.core.keyframes import DeformAnimKeys, ControlNetKeys, LooperAnimKeys
 from deforum.utils.logging import log
-from .rich import console
-from .general_utils import tickOrCross
+from deforum.utils.rich import console
+from deforum.utils.general_utils import tickOrCross
 
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
