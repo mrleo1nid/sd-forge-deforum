@@ -19,7 +19,7 @@ import time
 import pathlib
 from modules.shared import opts, state
 from deforum.orchestration.render import render_animation
-from scripts.deforum_helpers.rendering.util.log_utils import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
+from deforum.utils.logging.log import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
 from scripts.deforum_helpers.seed import next_seed
 from deforum.media.video_audio_utilities import vid2frames, render_preview
 from scripts.deforum_helpers.prompt import interpolate_prompts

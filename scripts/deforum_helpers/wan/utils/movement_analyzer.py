@@ -22,7 +22,7 @@ from deforum.utils.schedule_manipulation_utils import (
 # Try to import Camera Shakify components for integration
 try:
     # Direct import of shake data to avoid dependency issues
-    from ...rendering.data.shakify.shake_data import SHAKE_LIST
+    from deforum.rendering.data.shakify.shake_data import SHAKE_LIST
     from ...defaults import get_camera_shake_list
     import pandas as pd
     from scipy.interpolate import CubicSpline

@@ -34,7 +34,7 @@ from deforum.core.keyframes import FrameInterpolater
 
 # Optional imports for console output
 try:
-    from scripts.deforum_helpers.rendering.util.log_utils import (
+    from deforum.utils.logging.log import (
         RED, GREEN, PURPLE, RESET_COLOR
     )
 except ImportError:

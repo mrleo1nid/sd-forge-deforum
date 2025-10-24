@@ -21,7 +21,7 @@ from pathlib import Path
 import gradio as gr
 # noinspection PyUnresolvedReferences
 from modules.ui_components import FormRow, FormColumn, ToolButton
-from scripts.deforum_helpers.rendering.util import emoji_utils
+from deforum.utils.logging import emoji
 from deforum.config.defaults import get_gradio_html, DeforumAnimPrompts
 from deforum.ui.gradio_funcs import (upload_vid_to_interpolate, upload_pics_to_interpolate,
                            ncnn_upload_vid_to_upscale, upload_vid_to_depth)

@@ -68,7 +68,7 @@ except ImportError:
 try:
     from deforum.core.prompts import check_is_number
     from deforum.utils.general_utils import debug_print
-    from scripts.deforum_helpers.rendering.util import log_utils
+    from deforum.utils.logging import log
 except ImportError:
     # Fallback for testing
     check_is_number = lambda x: x.replace('.', '').replace('-', '').isdigit()

@@ -46,8 +46,8 @@ from deforum.core.masking.masks import do_overlay_mask
 from scripts.deforum_helpers.prompt import prepare_prompt
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
-from scripts.deforum_helpers.rendering import experimental_core
-from scripts.deforum_helpers.rendering.util import log_utils
+from deforum.rendering import experimental_core
+from deforum.utils.logging import log
 from deforum.integrations.raft import RAFT
 
 from deforum_api import JobStatusTracker

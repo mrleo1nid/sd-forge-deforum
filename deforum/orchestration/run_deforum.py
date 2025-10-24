@@ -30,7 +30,7 @@ from deforum.utils.general_utils import get_deforum_version, get_commit_date
 from deforum.media.upscaling import make_upscale_v2
 from deforum.media.video_audio_utilities import ffmpeg_stitch_video, make_gifski_gif, handle_imgs_deletion, handle_input_frames_deletion, handle_cn_frames_deletion, get_ffmpeg_params, get_ffmpeg_paths
 from pathlib import Path
-from scripts.deforum_helpers.rendering.util.log_utils import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
+from deforum.utils.logging.log import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
 from deforum.config.settings import save_settings_from_animation_run
 from deforum.integrations.controlnet.legacy_controlnet import num_of_models
 
@@ -214,7 +214,7 @@ def run_deforum(*args):
                 render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
             elif anim_args.animation_mode == 'Flux/Wan':
                 # Flux/Wan mode: Flux generates keyframes + Wan FLF2V for interpolation
-                from .rendering.render_wan_flux import render_wan_flux
+                from deforum.rendering.wan_flux import render_wan_flux
                 render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root)
             else:
                 print('Other modes are not available yet!')
