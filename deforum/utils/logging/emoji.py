@@ -1,8 +1,7 @@
-from . import opt_utils
-
-
 def _select(emoji):
-    return '' if opt_utils.is_emojis_disabled() else emoji
+    # Lazy import to avoid circular dependency
+    from deforum.rendering.options import is_emojis_disabled
+    return '' if is_emojis_disabled() else emoji
 
 
 # Use emojis sparingly to catch attention to essential items.
