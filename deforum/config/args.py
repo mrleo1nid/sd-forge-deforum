@@ -1521,7 +1521,7 @@ def process_args(args_dict_main, run_id):
     os.makedirs(args.outdir, exist_ok=True)
 
     # Load Deforum logo from project root (deforum/config/ -> deforum/ -> extension root)
-    extension_root = pathlib.Path(__file__).parent.parent
+    extension_root = pathlib.Path(__file__).parent.parent.parent
     default_img = Image.open(os.path.join(extension_root, 'deforum-logo.jpg'))
     assert default_img is not None
     default_img = default_img.resize((args.W, args.H))
