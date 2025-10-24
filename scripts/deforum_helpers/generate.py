@@ -37,7 +37,7 @@ from types import SimpleNamespace
 
 from .deforum_scripts_overrides import add_forge_script_to_deforum_run, initialise_forge_scripts
 
-from .general_utils import debug_print
+from deforum.utils.general_utils import debug_print
 
 # Import pure functions from refactored utils module
 from deforum.utils.validation_utils import is_valid_json as isJson

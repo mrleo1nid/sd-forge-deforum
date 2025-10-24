@@ -21,7 +21,7 @@ import shutil
 from modules.shared import opts
 from torch.hub import download_url_to_file
 
-from .rendering.util import log_utils
+from scripts.deforum_helpers.rendering.util import log_utils
 
 # Import pure functions from refactored utils module
 from deforum.utils.string_utils import (

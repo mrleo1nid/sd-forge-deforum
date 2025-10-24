@@ -16,7 +16,7 @@
 
 import gradio as gr
 import modules.paths as ph
-from .general_utils import get_os
+from deforum.utils.general_utils import get_os
 from deforum.media.upscaling import process_ncnn_upscale_vid_upload_logic
 from deforum.media.video_audio_utilities import extract_number, get_quick_vid_info, get_ffmpeg_params
 from deforum.media.interpolation import process_interp_vid_upload_logic, process_interp_pics_upload_logic, gradio_f_interp_get_fps_and_fcount

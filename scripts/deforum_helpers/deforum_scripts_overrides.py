@@ -2,7 +2,7 @@ import copy
 from modules import scripts
 from modules.processing import StableDiffusionProcessing,  StableDiffusionProcessingImg2Img, StableDiffusionProcessingTxt2Img
 
-from .general_utils import debug_print
+from deforum.utils.general_utils import debug_print
 
 
 # By default do not include any of Forge's always-on scripts. They will be re-enabled individually based on the settings.

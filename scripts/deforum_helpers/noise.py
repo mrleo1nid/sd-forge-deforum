@@ -48,7 +48,7 @@ def add_noise(
 ) -> np.ndarray:
     """Add noise to image sample (white or Perlin) with optional mask."""
     try:
-        from .animation import sample_to_cv2
+        from deforum.animation.animation import sample_to_cv2
     except ImportError:
         from animation import sample_to_cv2
 

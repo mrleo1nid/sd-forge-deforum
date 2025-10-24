@@ -26,7 +26,7 @@ import time
 from PIL import Image, ImageOps
 from .generate import generate, isJson
 from .noise import add_noise
-from .animation import anim_frame_warp
+from deforum.animation.animation import anim_frame_warp
 from .animation_key_frames import DeformAnimKeys, LooperAnimKeys
 from deforum.media.video_audio_utilities import get_frame_name, get_next_frame, render_preview
 from deforum.depth import DepthModel

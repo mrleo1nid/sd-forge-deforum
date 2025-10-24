@@ -52,7 +52,7 @@ def save_cadence_frame_and_depth_map_if_active(data: RenderData, frame, image):
         # Create preview with optional flow arrows
         show_flow_arrows = getattr(data.args.anim_args, 'show_flow_arrows', False)
         if show_flow_arrows and hasattr(frame, 'cadence_flow') and frame.cadence_flow is not None:
-            from ...optical_flow_utils import draw_flow_arrows
+            from deforum.animation.optical_flow_utils import draw_flow_arrows
             depth_with_flow = draw_flow_arrows(depth_image, frame.cadence_flow)
             cv2.imwrite(depth_preview_path, depth_with_flow)
         else:

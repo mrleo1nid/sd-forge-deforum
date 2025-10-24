@@ -10,7 +10,7 @@ from .data.render_data import RenderData
 from .util import image_utils, turbo_utils
 from .util.fun_utils import tube
 from ..colors import maintain_colors
-from ..optical_flow_utils import get_flow_from_images, image_transform_optical_flow
+from deforum.animation.optical_flow_utils import get_flow_from_images, image_transform_optical_flow
 from deforum.core.masking.masks import do_overlay_mask
 
 """
