@@ -8,15 +8,14 @@ Provides utilities to generate keyframes using Flux ControlNet based on:
 import cv2
 import numpy as np
 from PIL import Image
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ...flux_controlnet import FluxControlNetManager
-from ...flux_controlnet_preprocessors import preprocess_image_for_controlnet
-from ..data.render_data import RenderData
-from ..data.frame.diffusion_frame import DiffusionFrame
+if TYPE_CHECKING:
+    from ..data.render_data import RenderData
+    from ..data.frame.diffusion_frame import DiffusionFrame
 
 
-def is_flux_controlnet_enabled(data: RenderData) -> bool:
+def is_flux_controlnet_enabled(data: "RenderData") -> bool:
     """Check if Flux ControlNet is enabled in animation args.
 
     Args:
@@ -29,7 +28,7 @@ def is_flux_controlnet_enabled(data: RenderData) -> bool:
     return getattr(anim_args, 'enable_flux_controlnet', False)
 
 
-def should_use_flux_controlnet_for_frame(data: RenderData, frame: DiffusionFrame) -> bool:
+def should_use_flux_controlnet_for_frame(data: "RenderData", frame: "DiffusionFrame") -> bool:
     """Determine if Flux ControlNet should be used for this specific frame.
 
     ControlNet is only applied to keyframes (not tweens) and requires:
@@ -62,8 +61,8 @@ def should_use_flux_controlnet_for_frame(data: RenderData, frame: DiffusionFrame
 
 
 def get_control_image_for_frame(
-    data: RenderData,
-    frame: DiffusionFrame,
+    data: "RenderData",
+    frame: "DiffusionFrame",
     control_type: str
 ) -> Optional[np.ndarray]:
     """Get control image for Flux ControlNet.
@@ -101,8 +100,8 @@ def get_control_image_for_frame(
 
 
 def generate_with_flux_controlnet(
-    data: RenderData,
-    frame: DiffusionFrame
+    data: "RenderData",
+    frame: "DiffusionFrame"
 ) -> Image.Image:
     """Generate keyframe using Flux ControlNet.
 
@@ -113,6 +112,9 @@ def generate_with_flux_controlnet(
     Returns:
         Generated PIL Image
     """
+    # Import here to avoid circular dependency
+    from ...flux_controlnet import FluxControlNetManager
+
     anim_args = data.args.anim_args
     args = data.args.args
 
