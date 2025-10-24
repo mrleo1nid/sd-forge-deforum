@@ -383,11 +383,9 @@ def patch_forge_kmodel_for_controlnet():
             # Import here to avoid issues during patch application
             try:
                 # Get control samples from global storage
-                import sys
-                sys.path.insert(0, '/home/zirteq/workspace/stable-diffusion-webui-forge/extensions/sd-forge-deforum')
-                from scripts.deforum_helpers.flux_controlnet_forge_injection import get_stored_control_samples
-
-                control_samples = get_stored_control_samples()
+                # TODO: Re-implement ControlNet integration when it's working again
+                # The legacy flux_controlnet_forge_injection module has been removed
+                control_samples = None  # Placeholder - ControlNet currently disabled
 
                 if control_samples is not None:
                     controlnet_block_samples, controlnet_single_block_samples = control_samples

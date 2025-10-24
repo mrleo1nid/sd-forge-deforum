@@ -401,7 +401,7 @@ def deforum_simple_api(_: gr.Blocks, app: FastAPI):
     from fastapi.responses import JSONResponse
     from fastapi import FastAPI, Query, Request, UploadFile
     from fastapi.encoders import jsonable_encoder
-    from deforum_helpers.general_utils import get_deforum_version
+    from deforum.utils.general_utils import get_deforum_version
     import uuid, pathlib
 
     @app.exception_handler(RequestValidationError)

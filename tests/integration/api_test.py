@@ -26,7 +26,7 @@ from .utils import (API_BASE_URL, wait_for_job_to_complete,
 
 from scripts.deforum_api_models import (DeforumJobPhase, DeforumJobStatus,
                                         DeforumJobStatusCategory)
-from scripts.deforum_helpers.subtitle_handler import get_user_values
+from deforum.media.subtitle_handler import get_user_values
 
 
 def test_simple_settings(snapshot):
