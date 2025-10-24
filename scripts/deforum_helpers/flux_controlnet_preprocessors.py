@@ -27,6 +27,16 @@ def canny_edge_detection(
     Returns:
         Canny edge map as uint8 numpy array (H, W, 3) - grayscale edges in RGB format
     """
+    # Normalize dtype to uint8 if needed (OpenCV requires uint8 or float32)
+    if image.dtype == np.float64 or image.dtype == np.float32:
+        # Check if values are in 0-1 range or 0-255 range
+        if image.max() <= 1.0:
+            image = (image * 255.0).astype(np.uint8)
+        else:
+            image = image.astype(np.uint8)
+    elif image.dtype != np.uint8:
+        image = image.astype(np.uint8)
+
     # Convert to grayscale if needed
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -109,3 +119,54 @@ def numpy_to_pil(image: np.ndarray) -> Image.Image:
     if image.dtype != np.uint8:
         image = image.astype(np.uint8)
     return Image.fromarray(image)
+
+
+def overlay_canny_edges(
+    base_image: np.ndarray,
+    canny_edges: np.ndarray,
+    edge_color: tuple = (255, 0, 0),  # Red by default
+    alpha: float = 0.8
+) -> np.ndarray:
+    """Overlay canny edges in color on top of base image for visualization.
+
+    Args:
+        base_image: Original image to overlay edges on (BGR or RGB format)
+        canny_edges: Canny edge map (grayscale or RGB, with white edges)
+        edge_color: RGB color for edges (default: red)
+        alpha: Opacity of edges (0.0 = transparent, 1.0 = opaque)
+
+    Returns:
+        Image with colored edge overlay as uint8 numpy array
+    """
+    # Ensure base image is uint8
+    if base_image.dtype == np.float64 or base_image.dtype == np.float32:
+        if base_image.max() <= 1.0:
+            base_image = (base_image * 255.0).astype(np.uint8)
+        else:
+            base_image = base_image.astype(np.uint8)
+
+    # Ensure base image is RGB
+    if len(base_image.shape) == 2:
+        base_image = cv2.cvtColor(base_image, cv2.COLOR_GRAY2RGB)
+    elif base_image.shape[2] == 4:
+        base_image = cv2.cvtColor(base_image, cv2.COLOR_BGRA2RGB)
+
+    # Extract edge mask (white pixels in canny output)
+    if len(canny_edges.shape) == 3:
+        # If RGB, take first channel
+        edge_mask = canny_edges[:, :, 0]
+    else:
+        edge_mask = canny_edges
+
+    # Create colored edge image
+    overlay = base_image.copy()
+
+    # Apply edge color where edges are detected
+    for c in range(3):
+        overlay[:, :, c] = np.where(
+            edge_mask > 127,  # Edge pixels (white)
+            int(edge_color[c] * alpha + base_image[:, :, c] * (1 - alpha)),
+            base_image[:, :, c]
+        )
+
+    return overlay

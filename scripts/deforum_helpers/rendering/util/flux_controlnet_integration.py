@@ -176,6 +176,7 @@ def prepare_flux_controlnet_for_frame(
     """
     from ...flux_controlnet_v2 import FluxControlNetV2Manager
     from ...flux_controlnet_forge_injection import store_control_samples
+    from ...flux_controlnet_preprocessors import overlay_canny_edges, canny_edge_detection
     import torch
 
     anim_args = data.args.anim_args
@@ -197,6 +198,25 @@ def prepare_flux_controlnet_for_frame(
         return
 
     print(f"   Control image shape: {control_image.shape}")
+
+    # Save canny edge visualization if canny mode
+    if control_type == "canny" and hasattr(data, 'depth_model'):
+        try:
+            # Compute canny edges for visualization
+            canny_edges = canny_edge_detection(control_image, canny_low, canny_high)
+            # Overlay edges in red on original image
+            overlay = overlay_canny_edges(control_image, canny_edges, edge_color=(255, 0, 0), alpha=0.8)
+
+            # Save to depth preview directory for debugging
+            import os
+            from ...root import root
+            depth_dir = os.path.join(args.outdir, f"{root.timestring}_depth")
+            os.makedirs(depth_dir, exist_ok=True)
+            overlay_path = os.path.join(depth_dir, f"{root.timestring}_{frame.i:09}_canny_overlay.png")
+            cv2.imwrite(overlay_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+            print(f"   💡 Saved canny edge visualization: {overlay_path}")
+        except Exception as e:
+            print(f"   ⚠️ Could not save canny visualization: {e}")
 
     # Initialize V2 ControlNet manager
     manager = FluxControlNetV2Manager(
