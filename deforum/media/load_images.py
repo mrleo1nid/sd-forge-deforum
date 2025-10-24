@@ -19,9 +19,9 @@ import os
 from PIL import Image
 import socket
 import torchvision.transforms.functional as TF
-from .general_utils import clean_gradio_path_strings
 
 # Import pure functions from refactored utils module
+from deforum.utils.general_utils import clean_gradio_path_strings
 from deforum.utils.validation_utils import (
     blank_if_none,
     none_if_blank,
