@@ -12,12 +12,12 @@ from PIL import Image
 from typing import Optional, Union, Tuple
 from diffusers import FluxControlNetModel, AutoencoderKL
 
-from .flux_controlnet_models import (
+from .models import (
     load_flux_controlnet_model,
     get_model_info,
     temporarily_unpatch_hf_download
 )
-from .flux_controlnet_preprocessors import (
+from .preprocessors import (
     preprocess_image_for_controlnet,
     numpy_to_pil
 )

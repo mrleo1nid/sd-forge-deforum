@@ -28,7 +28,7 @@ def init_deforum():
 
     # Apply compatibility patches for diffusers git main + Forge
     try:
-        from deforum_helpers.diffusers_compat_patch import apply_all_patches
+        from deforum.integrations.flux_controlnet.diffusers_compat import apply_all_patches
         apply_all_patches()
     except Exception as e:
         print(f"⚠️ Deforum: Failed to apply diffusers compatibility patches: {e}")

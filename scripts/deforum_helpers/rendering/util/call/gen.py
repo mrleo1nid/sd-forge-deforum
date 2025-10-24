@@ -1,6 +1,6 @@
 from ....generate import generate
 from ..flux_controlnet_integration import should_use_flux_controlnet_for_frame, prepare_flux_controlnet_for_frame
-from ....flux_controlnet_forge_injection import clear_control_samples
+from deforum.integrations.flux_controlnet import clear_control_samples
 
 
 def call_generate(data, frame: 'DiffusionFrame', redo_seed: int = None):

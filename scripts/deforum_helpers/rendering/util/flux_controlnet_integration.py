@@ -174,9 +174,12 @@ def prepare_flux_controlnet_for_frame(
         data: Rendering data containing settings and state
         frame: Current keyframe to generate
     """
-    from ...flux_controlnet_v2 import FluxControlNetV2Manager
-    from ...flux_controlnet_forge_injection import store_control_samples
-    from ...flux_controlnet_preprocessors import overlay_canny_edges, canny_edge_detection
+    from deforum.integrations.flux_controlnet import (
+        FluxControlNetV2Manager,
+        store_control_samples,
+        overlay_canny_edges,
+        canny_edge_detection
+    )
     import torch
 
     anim_args = data.args.anim_args

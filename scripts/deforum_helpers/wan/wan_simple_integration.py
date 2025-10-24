@@ -338,7 +338,7 @@ class WanSimpleIntegration:
                     # Apply compatibility patches BEFORE importing diffusers
                     # This ensures patches are active even if diffusers was imported elsewhere
                     try:
-                        from ..diffusers_compat_patch import apply_all_patches
+                        from deforum.integrations.flux_controlnet.diffusers_compat import apply_all_patches
                         print("🔧 Applying diffusers compatibility patches before pipeline load...")
                         apply_all_patches()
                     except Exception as patch_e:
