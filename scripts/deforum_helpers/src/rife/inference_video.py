@@ -13,7 +13,7 @@ from queue import Queue
 import time
 from .model.pytorch_msssim import ssim_matlab
 
-from deforum_helpers.video_audio_utilities import ffmpeg_stitch_video
+from deforum.media.video_audio_utilities import ffmpeg_stitch_video
 from deforum.utils.general_utils import duplicate_pngs_from_folder
 
 warnings.filterwarnings("ignore")
