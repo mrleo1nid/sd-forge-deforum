@@ -26,8 +26,8 @@ def store_control_samples(
     global _current_controlnet_samples
     _current_controlnet_samples = (controlnet_block_samples, controlnet_single_block_samples)
     print(f"🌐 Stored Flux ControlNet samples for generation")
-    print(f"   Block samples: {len(controlnet_block_samples)} tensors")
-    print(f"   Single block samples: {len(controlnet_single_block_samples)} tensors")
+    print(f"   Block samples: {len(controlnet_block_samples) if controlnet_block_samples is not None else 0} tensors")
+    print(f"   Single block samples: {len(controlnet_single_block_samples) if controlnet_single_block_samples is not None else 0} tensors")
 
 
 def get_stored_control_samples() -> Optional[Tuple]:
