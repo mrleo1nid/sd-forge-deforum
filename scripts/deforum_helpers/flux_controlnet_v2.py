@@ -99,40 +99,32 @@ class FluxControlNetV2Manager:
 
         self.controlnet = self.controlnet.to(self.device)
 
-        # Load Flux VAE for control image encoding
-        print("🌐 Loading Flux VAE for control image encoding...")
+        # Use Forge's already-loaded Flux VAE for control image encoding
+        print("🌐 Accessing Forge's Flux VAE for control image encoding...")
         try:
-            import os
-            import sys
-            from pathlib import Path
+            from modules.shared import sd_model
 
-            # Find Forge's webui root (go up from extension directory)
-            current_file = Path(__file__)
-            webui_root = current_file.parents[4]  # Go up 4 levels to webui root
-            forge_vae_path = webui_root / "models" / "VAE" / "ae.safetensors"
+            # Forge's Flux model already has VAE loaded
+            if hasattr(sd_model, 'forge_objects') and hasattr(sd_model.forge_objects, 'vae'):
+                forge_vae = sd_model.forge_objects.vae
+                print(f"   ✓ Using Forge's loaded Flux VAE")
 
-            if forge_vae_path.exists():
-                print(f"   Loading from local file: {forge_vae_path}")
-                # Temporarily unpatch HF download to avoid etag error
-                with temporarily_unpatch_hf_download():
-                    self.vae = AutoencoderKL.from_single_file(
-                        str(forge_vae_path),
-                        torch_dtype=torch.float32  # VAE needs float32
-                    )
+                # Forge's VAE is backend.patcher.vae.VAE, we need to extract the actual model
+                if hasattr(forge_vae, 'first_stage_model'):
+                    self.vae = forge_vae.first_stage_model
+                    print(f"   ✓ Extracted VAE model from Forge wrapper")
+                else:
+                    self.vae = forge_vae
+
+                # Make sure it's on the right device
+                self.vae = self.vae.to(self.device)
+                print("✓ Forge's Flux VAE ready for use")
             else:
-                # Fallback to HuggingFace (requires auth)
-                print("   ⚠️ ae.safetensors not found in models/VAE/, trying HuggingFace...")
-                with temporarily_unpatch_hf_download():
-                    self.vae = AutoencoderKL.from_pretrained(
-                        "black-forest-labs/FLUX.1-dev",
-                        subfolder="vae",
-                        torch_dtype=torch.float32
-                    )
+                print("   ⚠️ Could not access Forge's VAE")
+                self.vae = None
 
-            self.vae = self.vae.to(self.device)
-            print("✓ Flux VAE loaded")
         except Exception as e:
-            print(f"⚠️ Could not load Flux VAE: {e}")
+            print(f"⚠️ Could not access Forge's Flux VAE: {e}")
             import traceback
             traceback.print_exc()
             print("   Will proceed without VAE (control will not work)")
@@ -157,7 +149,6 @@ class FluxControlNetV2Manager:
         preprocess_control: bool = True,
         canny_low: int = 100,
         canny_high: int = 200,
-        vae: Optional[torch.nn.Module] = None,
     ) -> Tuple[Tuple[torch.Tensor, ...], Tuple[torch.Tensor, ...]]:
         """Compute control samples from preprocessed control image.
 
@@ -214,11 +205,21 @@ class FluxControlNetV2Manager:
 
         # VAE encode and patchify control image to match hidden_states format
         if self.vae is not None:
-            print(f"   VAE encoding control image with Flux VAE...")
+            print(f"   VAE encoding control image with Forge's Flux VAE...")
             try:
                 with torch.inference_mode():
-                    # Use Flux's diffusers VAE
-                    control_latent = self.vae.encode(control_rgb).latent_dist.sample()
+                    # Forge's VAE model - use encode with regulation
+                    # Check if it's Forge's backend VAE or diffusers VAE
+                    if hasattr(self.vae, 'encode') and hasattr(self.vae, 'quant_conv'):
+                        # Forge's backend.nn.vae.AutoencodingEngine
+                        # Normalize to [-1, 1] for Forge's VAE
+                        control_rgb_normalized = control_rgb * 2.0 - 1.0
+                        control_latent = self.vae.encode(control_rgb_normalized, regulation='none')
+                        print(f"   Using Forge's backend VAE encoder")
+                    else:
+                        # Fallback to diffusers-style (shouldn't happen now)
+                        control_latent = self.vae.encode(control_rgb).latent_dist.sample()
+                        print(f"   Using diffusers-style VAE encoder")
 
                     # Apply VAE scaling (Flux VAE config)
                     # shift_factor and scaling_factor from Flux VAE
@@ -240,13 +241,10 @@ class FluxControlNetV2Manager:
                 traceback.print_exc()
                 print(f"   Falling back to RGB image (may not work)")
                 control_tensor = control_rgb.to(dtype=self.torch_dtype)
-        elif vae is not None:
-            # Try using provided Forge VAE (fallback)
-            print(f"   ⚠️ Using provided VAE (may not work correctly for Flux)")
-            control_tensor = control_rgb.to(dtype=self.torch_dtype)
         else:
-            # Fallback: Use RGB image directly (will likely fail)
-            print(f"   ⚠️ No VAE available - using RGB image (may not work correctly)")
+            # No VAE available - control will not work
+            print(f"   ⚠️ No VAE available - control will not work correctly")
+            print(f"   ⚠️ Make sure Flux model is loaded in Forge")
             control_tensor = control_rgb.to(dtype=self.torch_dtype)
 
         print(f"   Hidden states shape: {hidden_states.shape if hidden_states is not None else 'None'}")
