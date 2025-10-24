@@ -7,14 +7,13 @@ animation mode and depth-based transformations.
 from .depth import DepthModel
 from .depth_anything_v2 import DepthAnything
 from .vid2depth import (
-    vid2depth_main,
-    add_soundtrack,
-    # Add other vid2depth functions as needed
+    process_depth_vid_upload_logic,
+    process_video_depth,
 )
 
 __all__ = [
     "DepthModel",
     "DepthAnything",
-    "vid2depth_main",
-    "add_soundtrack",
+    "process_depth_vid_upload_logic",
+    "process_video_depth",
 ]
