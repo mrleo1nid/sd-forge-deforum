@@ -31,6 +31,7 @@ BLUE = from_hex_color(HEX_BLUE)
 PURPLE = from_hex_color(HEX_PURPLE)
 
 BOLD = f"{ESC}1{TERM}"
+ITALIC = f"{ESC}3{TERM}"
 UNDERLINE = f"{ESC}4{TERM}"
 
 
@@ -117,7 +118,7 @@ def error(s: str):
     print(f"{RED}{BOLD}Error: {RESET_COLOR}{s}")
 
 
-def warn(s: str):
+def warning(s: str):
     print(f"{ORANGE}{BOLD}Warning: {RESET_COLOR}{s}")
 
 
