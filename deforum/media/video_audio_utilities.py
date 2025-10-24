@@ -34,9 +34,9 @@ from torch.hub import download_url_to_file
 from modules.shared import state, opts
 from pkg_resources import resource_filename
 
-from .general_utils import checksum, clean_gradio_path_strings, debug_print
-from .http_client import get_http_client
-from .rich import console
+from deforum.utils.general_utils import checksum, clean_gradio_path_strings, debug_print
+from deforum.utils.http_client import get_http_client
+from deforum.utils.rich import console
 
 # Import pure functions from refactored utils module
 from deforum.utils.path_utils import (
