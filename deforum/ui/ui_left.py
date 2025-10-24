@@ -46,7 +46,7 @@ def wan_generate_video():
         
         # Try to discover models to check if setup is complete
         try:
-            from scripts.deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
+            from deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
             integration = WanSimpleIntegration()
             models = integration.discover_models()
             
