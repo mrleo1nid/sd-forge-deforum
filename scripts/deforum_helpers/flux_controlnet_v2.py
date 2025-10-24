@@ -102,16 +102,37 @@ class FluxControlNetV2Manager:
         # Load Flux VAE for control image encoding
         print("🌐 Loading Flux VAE for control image encoding...")
         try:
-            self.vae = AutoencoderKL.from_pretrained(
-                "black-forest-labs/FLUX.1-dev",
-                subfolder="vae",
-                torch_dtype=torch.float32  # VAE needs float32
-            )
+            import os
+            import sys
+            from pathlib import Path
+
+            # Find Forge's webui root (go up from extension directory)
+            current_file = Path(__file__)
+            webui_root = current_file.parents[4]  # Go up 4 levels to webui root
+            forge_vae_path = webui_root / "models" / "VAE" / "ae.safetensors"
+
+            if forge_vae_path.exists():
+                print(f"   Loading from local file: {forge_vae_path}")
+                self.vae = AutoencoderKL.from_single_file(
+                    str(forge_vae_path),
+                    torch_dtype=torch.float32  # VAE needs float32
+                )
+            else:
+                # Fallback to HuggingFace (requires auth)
+                print("   ⚠️ ae.safetensors not found in models/VAE/, trying HuggingFace...")
+                self.vae = AutoencoderKL.from_pretrained(
+                    "black-forest-labs/FLUX.1-dev",
+                    subfolder="vae",
+                    torch_dtype=torch.float32
+                )
+
             self.vae = self.vae.to(self.device)
             print("✓ Flux VAE loaded")
         except Exception as e:
             print(f"⚠️ Could not load Flux VAE: {e}")
-            print("   Will try to use Forge's VAE (may not work correctly)")
+            import traceback
+            traceback.print_exc()
+            print("   Will proceed without VAE (control will not work)")
             self.vae = None
 
         self.is_loaded = True
