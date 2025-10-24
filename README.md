@@ -13,7 +13,39 @@ Integrates dynamic camera shake effects with data sourced from EatTheFutures 'Ca
 This fork of the extension is _basically working_.
 
 &#x26A0;&#xFE0F; The extension now uses **only the experimental render core** (legacy core has been removed).
-Some features may require adjustment or may be disabled (Kohya HR Fix, FreeU, ControlNet).
+Some features may require adjustment or may be disabled (Kohya HR Fix, FreeU).
+
+## ⚡ Major Changes from Upstream
+
+This fork has undergone significant refactoring and modernization:
+
+### **Removed Legacy Features**
+- **❌ Hybrid Video Mode**: Completely removed (experimental core only)
+- **❌ Legacy Render Core**: Removed stable/legacy core (experimental core is now the only option)
+- **❌ 2D Animation Mode**: Removed (3D mode is now default)
+- **❌ Wan Only Mode**: Removed (superseded by Flux/Wan hybrid mode)
+- **❌ Legacy Depth Models**: MiDaS, AdaBins, LeReS, ZoeDepth removed
+
+### **Updated & Fixed Features**
+- **✅ Depth-Anything V2**: Now the only depth estimation model (faster, more accurate)
+- **✅ RIFE Frame Interpolation**: Fixed and working (available in Distribution tab)
+- **✅ Flux ControlNet**: Fully functional with proper diffusers integration
+- **✅ RAFT Optical Flow**: Updated and working for motion estimation
+
+### **New Features**
+- **🆕 Wan 2.1 Integration**: Full FLF2V and I2V chaining support
+- **🆕 Qwen Prompt Enhancement**: AI-powered prompt expansion
+- **🆕 Movement Analysis**: Translates Deforum schedules to natural language
+- **🆕 Camera Shakify**: Pre-recorded camera shake patterns from Blender
+
+### **Codebase Refactoring**
+- **📦 Package Structure**: Migrated from flat `scripts/deforum_helpers/` to hierarchical `deforum/` package
+- **🗂️ Clean Organization**:
+  - `deforum/core/` - Business logic (keyframes, prompts, seeds, masking)
+  - `deforum/utils/` - Pure utility functions
+  - `deforum/rendering/` - Rendering pipeline
+  - `deforum/integrations/` - External integrations (Wan, Parseq, Flux ControlNet)
+  - `deforum/integrations/external_repos/` - Third-party libraries (CLIPSeg, RIFE, FILM, Wan2.1)
 
 ## UI Structure
 
