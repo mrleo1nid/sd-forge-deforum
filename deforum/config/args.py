@@ -61,12 +61,19 @@ def RootArgs():
 # as it's supported in the back-end depth code
 def DeforumAnimArgs():
     return {
+        "render_mode": {
+            "label": "Render Mode",
+            "type": "radio",
+            "choices": ['Classic 3D', 'New 3D', 'Keyframes Only', 'Flux/Wan'],
+            "value": "New 3D",
+            "info": "Primary workflow selector: Classic 3D (fixed cadence, RAFT/ControlNet), New 3D (keyframe redistribution, dual strength), Keyframes Only (depth tweening), Flux/Wan (AI interpolation)"
+        },
         "animation_mode": {
-            "label": "Animation mode",
+            "label": "Animation mode (Legacy - use Render Mode instead)",
             "type": "radio",
             "choices": ['3D', 'Interpolation', 'Flux/Wan'],
             "value": "3D",
-            "info": "control animation mode, will hide non relevant params upon change"
+            "info": "[DEPRECATED] Use Render Mode instead. This field is maintained for backward compatibility."
         },
         "max_frames": {
             "label": "Max frames",
