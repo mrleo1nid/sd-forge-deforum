@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ...util import opt_utils
-from ....RAFT import RAFT
+from deforum.integrations.raft import RAFT
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)

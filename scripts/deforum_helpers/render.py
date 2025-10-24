@@ -31,7 +31,7 @@ from .animation_key_frames import DeformAnimKeys, LooperAnimKeys
 from .video_audio_utilities import get_frame_name, get_next_frame, render_preview
 from .depth import DepthModel
 from .colors import maintain_colors
-from .parseq_adapter import ParseqAdapter
+from deforum.integrations.parseq import ParseqAdapter
 from .seed import next_seed
 from .image_sharpening import unsharp_mask
 from .load_images import get_mask, load_img, load_image, get_mask_from_file
@@ -48,7 +48,7 @@ from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
 from .rendering import experimental_core
 from .rendering.util import log_utils
-from .RAFT import RAFT
+from deforum.integrations.raft import RAFT
 
 from deforum_api import JobStatusTracker
 

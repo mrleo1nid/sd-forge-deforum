@@ -25,7 +25,7 @@ from .video_audio_utilities import vid2frames, render_preview
 from .prompt import interpolate_prompts
 from .generate import generate
 from .animation_key_frames import DeformAnimKeys
-from .parseq_adapter import ParseqAdapter
+from deforum.integrations.parseq import ParseqAdapter
 from .save_images import save_image
 from .settings import save_settings_from_animation_run
 
