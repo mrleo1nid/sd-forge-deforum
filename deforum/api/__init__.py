@@ -2,9 +2,12 @@
 
 This module provides REST API endpoints for running Deforum generations
 and managing job status through FastAPI integration.
+
+API endpoints are automatically registered via script_callbacks.on_app_started()
+when the module is imported (see bottom of api.py).
 """
 
-from .api import JobStatusTracker, on_deforum_api_startup
+from .api import JobStatusTracker
 from .models import (
     Batch,
     DeforumJobErrorType,
@@ -15,7 +18,6 @@ from .models import (
 
 __all__ = [
     "JobStatusTracker",
-    "on_deforum_api_startup",
     "Batch",
     "DeforumJobErrorType",
     "DeforumJobPhase",
