@@ -298,19 +298,37 @@ def generate_with_flux_controlnet(
     # TODO: Compute per-step with actual latents for better control
     print(f"   Computing control samples...")
 
-    # Create dummy hidden_states (will be refined in future)
-    # Shape should match Flux latents: (batch, seq_len, channels)
+    # Create dummy hidden_states matching Flux's patchification
+    # Flux uses VAE (16x downsample) + patchification (patch_size=2)
     batch_size = 1
-    height = args.H // 16  # Flux uses 16x downsampling
-    width = args.W // 16
-    seq_len = height * width
-    channels = 64  # Flux latent channels
+
+    # After VAE encoding
+    latent_h = args.H // 16
+    latent_w = args.W // 16
+
+    # Flux pads to make dimensions divisible by patch_size (2)
+    patch_size = 2
+    pad_h = (patch_size - latent_h % patch_size) % patch_size
+    pad_w = (patch_size - latent_w % patch_size) % patch_size
+    padded_h = latent_h + pad_h
+    padded_w = latent_w + pad_w
+
+    # After patchification: (h/2) * (w/2) patches
+    h_patches = padded_h // patch_size
+    w_patches = padded_w // patch_size
+    seq_len = h_patches * w_patches
+
+    # Each patch contains (16 channels * 2 * 2) = 64 values
+    channels = 64
 
     dummy_hidden_states = torch.zeros(
         (batch_size, seq_len, channels),
         device='cuda',
         dtype=torch.bfloat16
     )
+
+    print(f"   Latent dimensions: {latent_h}x{latent_w} → padded: {padded_h}x{padded_w}")
+    print(f"   Patches: {h_patches}x{w_patches} = {seq_len} patches, {channels} channels per patch")
 
     # Also need dummy text embeddings and other parameters
     # For now, compute control samples without these (simplified)
