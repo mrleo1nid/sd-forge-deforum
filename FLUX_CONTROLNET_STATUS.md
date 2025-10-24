@@ -1,13 +1,13 @@
 # Flux ControlNet Integration Status
 
-⚠️ **STATUS: V2 IN PROGRESS (~80% COMPLETE, NOT READY FOR USE)**
+⚠️ **STATUS: V2 COMPLETE, READY FOR TESTING**
 
-**Current State:** Phase 2 nearly complete
+**Current State:** Phase 2 COMPLETE! Phase 3 (testing) begins
 - ✅ V2 manager loads ControlNet model only (~3.6GB)
-- ✅ Runtime patches applied to Forge's Flux transformer
-- ✅ Control samples computed successfully
-- ⚠️ Falls back to v1 pipeline for actual generation
-- ⏳ Need final wiring to pass control through Forge processing
+- ✅ Runtime patches applied to IntegratedFluxTransformer2DModel
+- ✅ Control samples computed and injected into Forge pipeline
+- ✅ Complete Forge-native integration (no pipeline bypass)
+- ⏳ Ready for real-world testing with 16GB VRAM
 
 ## Current State (v1 - NOT VIABLE - Double VRAM usage)
 
@@ -115,7 +115,7 @@ We need to inject control samples into Forge's Flux without duplicating the base
 - Line 391: `for block in self.single_blocks:` - ⚠️ **NO ControlNet injection here**
 - ❌ **Critical finding**: Forge's Flux transformer is missing `controlnet_block_samples` and `controlnet_single_block_samples` parameters
 
-### Phase 2: Minimal Integration ⏳ IN PROGRESS
+### Phase 2: Minimal Integration ✅ COMPLETE
 
 **1. Load Only ControlNet Model** ✅ DONE
 - Created `flux_controlnet_v2.py` with `FluxControlNetV2Manager` class
@@ -137,14 +137,14 @@ We need to inject control samples into Forge's Flux without duplicating the base
 - Applied automatically at extension init via `apply_all_patches()`
 - ✅ No Forge source file modifications needed!
 
-**4. Wire Control into Generation Pipeline** 🟡 PARTIAL
-- ✅ V2 manager connected to `generate_with_flux_controlnet()`
-- ✅ Control samples computed successfully with dummy hidden_states
-- ✅ Added `patch_forge_kmodel_for_controlnet()` to pass control via kwargs
-- ⚠️ Currently falls back to v1 for actual generation (temporary)
-- ⏳ TODO: Pass control samples through Forge's StableDiffusionProcessing
-- ⏳ TODO: Hook into transformer_options properly
-- ⏳ TODO: Remove v1 fallback once fully working
+**4. Wire Control into Generation Pipeline** ✅ COMPLETE
+- ✅ Created `flux_controlnet_forge_injection.py` for control sample storage
+- ✅ `prepare_flux_controlnet_for_frame()` computes and stores control samples
+- ✅ `inject_control_into_processing()` injects into UNet model_options
+- ✅ Patched `KModel.apply_model()` to pass control via kwargs
+- ✅ Control flows through Forge's normal generation pipeline
+- ✅ No v1 fallback - pure v2 implementation
+- ✅ Fixed class name: `IntegratedFluxTransformer2DModel`
 
 ### Phase 3: Testing & Refinement
 
