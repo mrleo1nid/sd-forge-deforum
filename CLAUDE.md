@@ -422,11 +422,9 @@ huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan
 - Verify both first and last keyframes are properly generated
 - Check console for FLF2V DEBUG logs in Wan Only/Flux modes
 
-## Refactoring Standards and Rules
+## Coding Standards
 
-**Active Branch:** `refactor/functional-patterns`
-
-When refactoring code in this repository, follow **STRICT** functional programming principles and Python best practices. See `REFACTORING_RULES.md` for complete details.
+When writing or modifying code in this repository, follow **STRICT** functional programming principles and Python best practices. See `CODING_GUIDE.md` for complete details.
 
 ### Critical Rules (Must Follow)
 
@@ -446,23 +444,7 @@ When refactoring code in this repository, follow **STRICT** functional programmi
 - **Explicit dependencies:** Function params show what data is needed
 - **Separate pure logic from side effects:** Pure functions in `utils/`, side effects in orchestrators
 
-### Refactoring Priority Order
-
-1. Add type hints to all functions
-2. Add docstrings (Google style)
-3. Eliminate code duplication (extract to utils)
-4. Extract magic numbers to constants
-5. Separate pure calculations from side effects
-6. Convert imperative loops to comprehensions (where readable)
-7. Break down complex functions (complexity > 10)
-8. Add error handling and validation
-9. Remove dead code and unused imports
-10. Format with Black, lint with flake8
-11. Write unit tests for pure functions
-
-### Key Architecture Notes
-
-**IMPORTANT:** When refactoring, study these first:
+### Key Architecture Components
 
 1. **Experimental Core** (`scripts/deforum_helpers/rendering/experimental_core.py:22`)
    - This is the ONLY render core (legacy core removed)
@@ -470,7 +452,7 @@ When refactoring code in this repository, follow **STRICT** functional programmi
    - Generates subtitle .srt file asynchronously
    - Iterates through frames calling `generate_inner()`
    - Applies transformations (2D/3D movement, depth warping)
-   - Handles hybrid video, masks, and noise schedules
+   - Handles masks and noise schedules
    - Stitches final video with ffmpeg
 
 2. **IMG2IMG Pipelines** (Forge backend)
@@ -581,4 +563,4 @@ def process_frames(frames: list[Frame | None], mode: str) -> list[ProcessedFrame
     ]
 ```
 
-See `REFACTORING_RULES.md` for comprehensive guidelines and anti-patterns to avoid.
+See `CODING_GUIDE.md` for comprehensive guidelines and anti-patterns to avoid.

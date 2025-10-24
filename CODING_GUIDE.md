@@ -1,15 +1,18 @@
-# Refactoring Rules and Standards
+# Deforum Coding Guide
 
-**Branch:** `refactor/functional-patterns`
+**Purpose:** This guide establishes coding standards and best practices for the sd-forge-deforum extension.
 
 **Status:** ✅ **Phase 2 Refactoring COMPLETE** (October 2025)
 - All code migrated from `scripts/deforum_helpers/` to `deforum/` package
 - Clean package structure established
 - Functional programming patterns applied throughout
 
-**Purpose:** This document serves as a reference for **future refactoring work** and maintaining code quality standards.
+**Scope:** These standards apply to all new code and refactoring work. They prioritize:
+- **Functional programming patterns** - Pure functions, immutability, composition
+- **Code quality** - Type hints, documentation, complexity limits
+- **Testability** - Small, testable units with comprehensive coverage
 
-These rules MUST be followed during all refactoring work. They prioritize functional programming patterns, code quality, and testability.
+See also: [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow and [CLAUDE.md](CLAUDE.md) for AI assistant instructions.
 
 ## Architecture and Package Structure
 
