@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ....animation_key_frames import DeformAnimKeys
+from deforum.core.keyframes import DeformAnimKeys
 
 
 @dataclass(init=True, frozen=True, repr=False, eq=False)

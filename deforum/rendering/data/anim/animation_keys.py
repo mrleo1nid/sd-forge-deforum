@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ....animation_key_frames import DeformAnimKeys, LooperAnimKeys
+from deforum.core.keyframes import DeformAnimKeys, LooperAnimKeys
 
 
 @dataclass(init=True, frozen=True, repr=False, eq=False)

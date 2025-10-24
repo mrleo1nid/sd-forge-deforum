@@ -1,4 +1,4 @@
-from ....generate import generate
+from deforum.orchestration.generate import generate
 from ..flux_controlnet_integration import should_use_flux_controlnet_for_frame, prepare_flux_controlnet_for_frame
 from deforum.integrations.flux_controlnet import clear_control_samples
 
