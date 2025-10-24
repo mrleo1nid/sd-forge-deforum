@@ -1,10 +1,10 @@
 #!/bin/bash
-# run-tests.sh - Start Forge server with Deforum API and run tests
+# run-api-tests.sh - Start Forge server with Deforum API and run integration tests
 #
 # Usage:
-#   ./run-tests.sh              # Run all tests
-#   ./run-tests.sh --quick      # Skip post-processing tests (faster)
-#   ./run-tests.sh tests/deforum_test.py::test_simple_settings  # Run specific test
+#   ./run-api-tests.sh              # Run all API integration tests
+#   ./run-api-tests.sh --quick      # Skip post-processing tests (faster)
+#   ./run-api-tests.sh tests/integration/api_test.py::test_simple_settings  # Run specific test
 
 set -e  # Exit on error
 
