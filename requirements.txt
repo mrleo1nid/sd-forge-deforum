@@ -7,6 +7,6 @@ imageio_ffmpeg
 rich
 gdown
 easydict
-git+https://github.com/huggingface/diffusers.git
+diffusers>=0.30.0,<0.32.0
 transformers>=4.36.0,<4.46.0
 accelerate>=0.25.0,<0.31.0

@@ -8,63 +8,6 @@ import torch
 from diffusers import FluxControlNetModel, FluxControlNetPipeline
 from typing import Optional, Dict
 import os
-from contextlib import contextmanager
-
-
-@contextmanager
-def temporarily_unpatch_hf_download():
-    """Temporarily restore original HuggingFace download to avoid etag parameter conflict.
-
-    Forge patches huggingface_hub download functions with a signature that doesn't
-    support the 'etag' parameter that newer diffusers/transformers uses.
-    This context manager temporarily restores the original during model loading.
-    """
-    try:
-        from huggingface_hub import file_download
-        patched_fn = file_download._download_to_tmp_and_move
-
-        # Try to get the original function (it's wrapped by the patch)
-        # The patch calls original_download_to_tmp_and_move, but we need to access it
-        if hasattr(patched_fn, '__wrapped__'):
-            original_fn = patched_fn.__wrapped__
-        else:
-            # Import the original directly from a fresh module
-            import importlib
-            import sys
-            # Remove cached module to force reimport
-            if 'huggingface_hub.file_download' in sys.modules:
-                cached_module = sys.modules['huggingface_hub.file_download']
-                # Save the patched version
-                patched_fn = cached_module._download_to_tmp_and_move
-
-                # Import fresh to get original
-                from huggingface_hub.file_download import _download_to_tmp_and_move as original_fn_fresh
-
-                # Temporarily replace with original
-                file_download._download_to_tmp_and_move = original_fn_fresh
-
-                yield
-
-                # Restore patched version
-                file_download._download_to_tmp_and_move = patched_fn
-                return
-            else:
-                # No patching detected, just yield
-                yield
-                return
-
-        # Restore original
-        file_download._download_to_tmp_and_move = original_fn
-
-        yield
-
-        # Restore patch
-        file_download._download_to_tmp_and_move = patched_fn
-
-    except Exception as e:
-        print(f"Warning: Could not unpatch HF download: {e}")
-        # Continue anyway
-        yield
 
 
 # Available Flux ControlNet models
@@ -139,13 +82,12 @@ def load_flux_controlnet_model(
     print(f"Loading Flux {control_type.title()} ControlNet model: {model_id}")
     print(f"This may take a while on first load (downloading from HuggingFace)...")
 
-    # Load model with temporarily unpatched HF download to avoid etag parameter conflict
+    # Load model
     try:
-        with temporarily_unpatch_hf_download():
-            controlnet = FluxControlNetModel.from_pretrained(
-                model_id,
-                torch_dtype=torch_dtype
-            )
+        controlnet = FluxControlNetModel.from_pretrained(
+            model_id,
+            torch_dtype=torch_dtype
+        )
 
         # Cache the model
         _model_cache[cache_key] = controlnet
@@ -191,12 +133,11 @@ def load_flux_controlnet_pipeline(
     print(f"Creating Flux ControlNet pipeline with base model: {base_model}")
 
     try:
-        with temporarily_unpatch_hf_download():
-            pipe = FluxControlNetPipeline.from_pretrained(
-                base_model,
-                controlnet=controlnet,
-                torch_dtype=torch_dtype
-            )
+        pipe = FluxControlNetPipeline.from_pretrained(
+            base_model,
+            controlnet=controlnet,
+            torch_dtype=torch_dtype
+        )
         pipe.to(device)
 
         print("✓ Flux ControlNet pipeline created successfully")
