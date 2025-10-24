@@ -1,8 +1,9 @@
 from typing import List
 
-from . import log_utils, opt_utils
-from ..data import RenderData
-from ..data.frame import DiffusionFrame
+from deforum.utils.logging import log as log_utils
+from deforum.rendering import options as opt_utils
+from deforum.rendering.data import RenderData
+from deforum.rendering.data.frame import DiffusionFrame
 from deforum.media.subtitle_handler import calculate_frame_duration, frame_time, time_to_srt_format
 
 

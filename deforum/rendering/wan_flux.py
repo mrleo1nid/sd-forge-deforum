@@ -21,8 +21,11 @@ from modules import shared  # type: ignore
 from .data.render_data import RenderData
 from .data.frame import KeyFrameDistribution, DiffusionFrame
 from .data.taqaddumat import Taqaddumat
-from .util import log_utils, web_ui_utils, image_utils, filename_utils
-from ..wan.wan_simple_integration import WanSimpleIntegration
+from deforum.utils.logging import log as log_utils
+from deforum.rendering import webui_helpers as web_ui_utils
+from deforum.utils import image_utils
+from deforum.rendering import filename_helpers as filename_utils
+from deforum.integrations.wan.wan_simple_integration import WanSimpleIntegration
 from deforum.media.video_audio_utilities import ffmpeg_stitch_video
 
 

@@ -1,7 +1,7 @@
 import os
 
 from . import filename_utils, memory_utils
-from ...depth import DepthModel
+from deforum.depth import DepthModel
 
 
 def generate_and_save_depth_map_if_active(data, opencv_image, i):

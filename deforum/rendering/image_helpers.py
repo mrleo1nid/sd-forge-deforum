@@ -11,7 +11,7 @@ import cv2
 from cv2.typing import MatLike
 
 from . import filename_utils
-from ..data.render_data import RenderData
+from deforum.rendering.data.render_data import RenderData
 
 # Import pure conversion functions from refactored utils module
 from deforum.utils.image_utils import (
