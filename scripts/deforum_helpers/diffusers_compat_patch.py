@@ -399,8 +399,8 @@ def patch_forge_kmodel_for_controlnet():
                     # Debug print once per generation
                     if not hasattr(self, '_flux_cn_logged'):
                         print(f"🌐 Passing Flux ControlNet samples to transformer")
-                        print(f"   Block samples: {len(controlnet_block_samples)} tensors")
-                        print(f"   Single block samples: {len(controlnet_single_block_samples)} tensors")
+                        print(f"   Block samples: {len(controlnet_block_samples) if controlnet_block_samples is not None else 0} tensors")
+                        print(f"   Single block samples: {len(controlnet_single_block_samples) if controlnet_single_block_samples is not None else 0} tensors")
                         self._flux_cn_logged = True
             except Exception as e:
                 # Silently fail if control samples not available (not all generations use ControlNet)

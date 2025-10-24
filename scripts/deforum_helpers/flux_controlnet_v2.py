@@ -314,8 +314,8 @@ class FluxControlNetV2Manager:
         controlnet_single_block_samples = controlnet_output.controlnet_single_block_samples
 
         print(f"✓ ControlNet samples computed:")
-        print(f"   Block samples: {len(controlnet_block_samples)} tensors")
-        print(f"   Single block samples: {len(controlnet_single_block_samples)} tensors")
+        print(f"   Block samples: {len(controlnet_block_samples) if controlnet_block_samples is not None else 0} tensors")
+        print(f"   Single block samples: {len(controlnet_single_block_samples) if controlnet_single_block_samples is not None else 0} tensors")
 
         return controlnet_block_samples, controlnet_single_block_samples
 
