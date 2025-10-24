@@ -17,9 +17,9 @@
 import os
 from pathlib import Path
 from rife.inference_video import run_rife_new_video_infer
-from .video_audio_utilities import get_quick_vid_info, vid2frames, media_file_has_audio, extract_number, ffmpeg_stitch_video
+from deforum.media.video_audio_utilities import get_quick_vid_info, vid2frames, media_file_has_audio, extract_number, ffmpeg_stitch_video
 from film_interpolation.film_inference import run_film_interp_infer
-from .general_utils import duplicate_pngs_from_folder, checksum, convert_images_from_list
+from deforum.utils.general_utils import duplicate_pngs_from_folder, checksum, convert_images_from_list
 from modules.shared import opts
 
 # Import pure functions from refactored utils module
