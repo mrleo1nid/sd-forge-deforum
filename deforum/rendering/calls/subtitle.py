@@ -25,7 +25,7 @@ def _prepare_subtitle_text(data, params_to_print, frame_i, is_cadence, seed, sub
     seed_str = str(seed).zfill(10)  # Convert seed to string and pad with leading zeros to 10 digits if necessary.
     subseed_str = str(subseed).zfill(10)  # TODO also provide subseed_strength
     if not data.parseq_adapter.use_parseq:
-        log_utils.warning("Complex subtitles not supported without Parseq in the experimental core: Params removed.")
+        log_utils.warning("Complex subtitles not supported without Parseq in the render core: Params removed.")
         return f"F#: {index_str}; {params_str}"
     else:
         return f"F#: {index_str}; Cadence: {cadence_str}; Seed: {seed_str}; SubSeed: {subseed_str}; {params_str}"

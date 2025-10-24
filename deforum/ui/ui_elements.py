@@ -1996,7 +1996,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
                 
                 When Camera Shakify is enabled, the system:
                 1. **Generates frame-specific shake data** based on the prompt's frame position
-                2. **Overlays shake on Deforum schedules** (like experimental render core)
+                2. **Overlays shake on Deforum schedules** (like render core)
                 3. **Analyzes combined movement** for each prompt's timeframe
                 4. **Provides varied descriptions** that reflect actual camera behavior
                 
@@ -2271,7 +2271,7 @@ def get_tab_distribution(da):
         ## Keyframe Distribution & Render Mode
 
         **This is the main control for switching between rendering modes:**
-        - **Keyframes Only:** Modern experimental render core (recommended for Flux + Wan)
+        - **Keyframes Only:** Modern render core (recommended for Flux + Wan)
         - **Cadence:** Traditional rendering with fixed frame intervals
 
         **Wan FLF2V Integration** is available when using Keyframes Only mode.
@@ -2445,7 +2445,7 @@ def get_tab_output(da, dv):
 
 def create_keyframe_distribution_info_tab():
     create_row(gr.Markdown(f"""
-        {emoji_utils.warn} Keyframe distribution uses an experimental render core with a slightly different feature set.
+        {emoji_utils.warn} Keyframe distribution has a slightly different feature set.
         Some features may not be supported and could cause errors or unexpected results if not disabled.
     """))
     create_accordion_md_row("Keyframe Distribution Info", f"""

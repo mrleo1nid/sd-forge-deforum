@@ -64,6 +64,6 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
             except Exception as e:
                 print(f"Error pre-downloading audio: {e}")
 
-    # Always use experimental render core (legacy core removed)
+    # Always use render core (legacy core removed)
     core.render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
 

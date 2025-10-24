@@ -9,7 +9,7 @@ from deforum.utils.system.logging.log import HEX_BLUE, HEX_GREEN, HEX_ORANGE, HE
 
 
 class Taqaddumat:
-    # Only used by experimental core. Stable core provides its own TQDM in deforum_tqdm.py
+    # Progress bar helper for the render core
     NO_ETA_RBAR = "| {n_fmt}/{total_fmt} [{elapsed}, {rate_fmt}{postfix}]"
     NO_ETA_BAR_FORMAT = "{l_bar}{bar}" + f"{NO_ETA_RBAR}"
     DEFAULT_BAR_FORMAT = "{l_bar}{bar}{r_bar}"  # see 'bar_format' at https://tqdm.github.io/docs/tqdm/

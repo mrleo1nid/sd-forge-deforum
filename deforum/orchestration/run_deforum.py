@@ -197,7 +197,7 @@ def run_deforum(*args):
         from .render_modes import render_input_video, render_animation_with_video_mask, render_interpolation
 
         tqdm_backup = shared.total_tqdm
-        # Experimental core (only core now) provides its own tqdm directly, no need to wrap it
+        # Render core (only core now) provides its own tqdm directly, no need to wrap it
 
         try:  # dispatch to appropriate renderer
             JobStatusTracker().update_phase(job_id, DeforumJobPhase.GENERATING)

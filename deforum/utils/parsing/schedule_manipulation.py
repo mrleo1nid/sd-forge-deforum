@@ -15,7 +15,7 @@ def apply_shakify_to_schedule(
 ) -> str:
     """Apply Camera Shakify values to base movement schedule to create combined schedule.
 
-    This mimics the _maybe_shake function from the experimental render core by
+    This mimics the _maybe_shake function from the render core by
     additively combining base movement values with shake values.
 
     Args:

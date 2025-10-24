@@ -38,8 +38,6 @@ def _strip_negative_prompt(prompt_text):
 
 
 def render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
-    log_utils.info("Using experimental render core.", log_utils.RED)
-    
     # Pre-download soundtrack if specified
     if video_args.add_soundtrack == 'File' and video_args.soundtrack_path is not None:
         if video_args.soundtrack_path.startswith(('http://', 'https://')):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Wan Simple Integration with Styled Progress
-Updated to use experimental render core styling for progress indicators
+Updated to use render core styling for progress indicators
 """
 
 from pathlib import Path

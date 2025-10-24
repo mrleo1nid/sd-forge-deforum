@@ -78,10 +78,10 @@ def on_ui_settings():
     add("deforum_save_gen_info_as_srt_params",
         "Animation parameters to be saved to the .srt file (Frame # and Seed will always be saved):",
         ['Prompt'], ui_components.DropdownMulti, lambda: {"interactive": True, "choices": get_user_values()})
-    add_dd("deforum_subtitles_per_second", "Desired subtitles per second (Mostly useful at high FPS. Experimental core only)", '10',
+    add_dd("deforum_subtitles_per_second", "Desired subtitles per second (Mostly useful at high FPS. Render core only)", '10',
            _subtitles_per_second_choices())
     add_cb("deforum_always_write_keyframe_subtitle",
-           "Always write keyframe subtitle (makes subtitles per second fuzzy, but provides better synchronization. Experimental core only).",
+           "Always write keyframe subtitle (makes subtitles per second fuzzy, but provides better synchronization. Render core only).",
            True)
 
     add_subsection("Deforum Preview Settings")

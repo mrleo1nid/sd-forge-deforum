@@ -696,7 +696,7 @@ class MovementAnalyzer:
 def analyze_deforum_movement(anim_args, sensitivity: float = 1.0, max_frames: int = 120, frame_start: int = 0) -> Tuple[str, float]:
     """
     Enhanced movement analysis with full Camera Shakify integration and frame-by-frame directional analysis
-    Creates combined movement schedules like the experimental render core does, then analyzes the actual resulting movement
+    Creates combined movement schedules like the render core does, then analyzes the actual resulting movement
     
     Args:
         anim_args: Object with Deforum animation arguments
@@ -718,7 +718,7 @@ def analyze_deforum_movement(anim_args, sensitivity: float = 1.0, max_frames: in
         print(f"🎬 Camera Shakify '{shake_name}' integration: {'✅ Success' if shakify_data else '❌ Failed'}")
     
     # 2. Create combined movement schedules (base + shake)
-    # This mimics what the experimental render core does with _maybe_shake
+    # This mimics what the render core does with _maybe_shake
     if shakify_data:
         # Apply shakify to translation schedules
         combined_translation_x = apply_shakify_to_schedule(

@@ -1,12 +1,12 @@
 """
-Wan Progress Utilities - Styled progress indicators matching experimental render core
+Wan Progress Utilities - Styled progress indicators matching render core
 """
 
 import sys
 from tqdm import tqdm
 from typing import Optional, Any
 
-# Import the same color constants as experimental render core
+# Import the same color constants as render core
 from deforum.utils.system.logging.log import (
     HEX_BLUE, HEX_GREEN, HEX_ORANGE, HEX_RED, HEX_PURPLE, HEX_YELLOW,
     BLUE, GREEN, ORANGE, RED, PURPLE, YELLOW, RESET_COLOR, BOLD
@@ -22,9 +22,9 @@ except ImportError:
 
 
 class WanProgressBar:
-    """Styled progress bar for Wan operations using experimental render core colors"""
+    """Styled progress bar for Wan operations using render core colors"""
     
-    # Progress bar formats matching experimental render core
+    # Progress bar formats matching render core
     NO_ETA_RBAR = "| {n_fmt}/{total_fmt} [{elapsed}, {rate_fmt}{postfix}]"
     NO_ETA_BAR_FORMAT = "{l_bar}{bar}" + f"{NO_ETA_RBAR}"
     DEFAULT_BAR_FORMAT = "{l_bar}{bar}{r_bar}"
