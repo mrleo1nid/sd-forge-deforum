@@ -23,7 +23,7 @@ import modules.shared as shared
 from modules.sd_models import forge_model_reload, FakeInitialModel
 from modules.processing import Processed, StableDiffusionProcessingImg2Img
 from deforum.config.args import get_component_names, process_args
-from .deforum_tqdm import DeforumTQDM
+from deforum.utils.deforum_tqdm import DeforumTQDM
 from deforum.media.save_images import dump_frames_cache, reset_frames_cache
 from deforum.media.interpolation import process_video_interpolation
 from deforum.utils.general_utils import get_deforum_version, get_commit_date

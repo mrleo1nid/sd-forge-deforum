@@ -26,16 +26,16 @@ from modules.shared import sd_model, state, cmd_opts
 from .deforum_controlnet import is_controlnet_enabled, get_controlnet_script_args
 from .prompt import split_weighted_subprompts
 from deforum.media.load_images import load_img, prepare_mask, check_mask_for_errors
-from .webui_sd_pipeline import get_webui_sd_pipeline
+from deforum.pipeline.webui_sd_pipeline import get_webui_sd_pipeline
 from deforum.utils.rich import console
 from deforum.config.defaults import get_samplers_list, get_schedulers_list
 from .prompt import check_is_number
-from .opts_overrider import A1111OptionsOverrider
+from deforum.utils.opts_overrider import A1111OptionsOverrider
 import cv2
 import numpy as np
 from types import SimpleNamespace
 
-from .deforum_scripts_overrides import add_forge_script_to_deforum_run, initialise_forge_scripts
+from deforum.core.deforum_scripts_overrides import add_forge_script_to_deforum_run, initialise_forge_scripts
 
 from deforum.utils.general_utils import debug_print
 

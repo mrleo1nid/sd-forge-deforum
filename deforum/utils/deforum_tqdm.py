@@ -28,7 +28,7 @@ class DeforumTQDM:
         self._video_args = video_args
 
     def reset(self):
-        from .animation_key_frames import DeformAnimKeys
+        from scripts.deforum_helpers.animation_key_frames import DeformAnimKeys
         from deforum.integrations.parseq import ParseqAdapter
         deforum_total = 0
         # FIXME: get only amount of steps
