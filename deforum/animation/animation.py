@@ -55,7 +55,7 @@ __all__ = [
 
 # Optional imports (not available in tests)
 try:
-    import py3d_tools as p3d  # From src/ folder
+    from deforum.animation import py3d_tools as p3d
 except ImportError:
     p3d = None
 

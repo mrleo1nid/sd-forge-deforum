@@ -40,7 +40,7 @@ def find_clipseg():
     raise Exception('CLIPseg weights not found!')
 
 def setup_clipseg(root):
-    from clipseg.models.clipseg import CLIPDensePredT
+    from deforum.integrations.external_repos.clipseg.models.clipseg import CLIPDensePredT
     model = CLIPDensePredT(version='ViT-B/16', reduce_dim=64)
     model.eval()
     model.load_state_dict(torch.load(find_clipseg(), map_location=root.device), strict=False)
