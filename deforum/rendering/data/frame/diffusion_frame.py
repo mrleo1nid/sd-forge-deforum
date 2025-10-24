@@ -28,7 +28,7 @@ from deforum.rendering.calls.subtitle import call_write_subtitle_from_to
 from deforum.rendering.calls.video_and_audio import call_render_preview
 from deforum.utils.image_utils import maintain_colors
 from deforum.media.save_images import save_image
-from deforum.core.seed import generate_next_seed
+from deforum.utils.seed_utils import generate_next_seed
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)
