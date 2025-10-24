@@ -247,6 +247,33 @@ class FluxControlNetV2Manager:
                     if hidden_states is None:
                         hidden_states = torch.zeros_like(control_tensor)
                         print(f"   Created dummy hidden_states matching control shape: {hidden_states.shape}")
+
+                    # Create dummy parameters if not provided (required by ControlNet)
+                    if timestep is None:
+                        # Use middle timestep (500 out of 1000)
+                        timestep = torch.tensor([500.0], device=self.device, dtype=torch.float32)
+                        print(f"   Created dummy timestep: {timestep}")
+
+                    if encoder_hidden_states is None:
+                        # Create dummy text embeddings (Flux uses 4096 dim)
+                        encoder_hidden_states = torch.zeros((1, 77, 4096), device=self.device, dtype=self.torch_dtype)
+                        print(f"   Created dummy encoder_hidden_states: {encoder_hidden_states.shape}")
+
+                    if pooled_projections is None:
+                        # Create dummy pooled projections (Flux uses 768 dim)
+                        pooled_projections = torch.zeros((1, 768), device=self.device, dtype=self.torch_dtype)
+                        print(f"   Created dummy pooled_projections: {pooled_projections.shape}")
+
+                    if img_ids is None:
+                        # Create position IDs for image tokens
+                        batch_size, seq_len, _ = hidden_states.shape
+                        img_ids = torch.zeros((batch_size, seq_len, 3), device=self.device, dtype=torch.float32)
+                        print(f"   Created dummy img_ids: {img_ids.shape}")
+
+                    if txt_ids is None:
+                        # Create position IDs for text tokens (matches encoder_hidden_states seq len)
+                        txt_ids = torch.zeros((1, 77, 3), device=self.device, dtype=torch.float32)
+                        print(f"   Created dummy txt_ids: {txt_ids.shape}")
             except Exception as e:
                 print(f"   ⚠️ VAE encoding failed: {e}")
                 import traceback
