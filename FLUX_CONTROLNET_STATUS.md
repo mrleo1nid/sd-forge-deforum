@@ -1,6 +1,8 @@
 # Flux ControlNet Integration Status
 
-## Current State (v1 - Working but with limitations)
+⚠️ **STATUS: FOUNDATION COMPLETE, NEEDS V2 REFACTOR (NOT READY FOR USE)**
+
+## Current State (v1 - NOT VIABLE - Double VRAM usage)
 
 ### What Works ✅
 - Flux ControlNet model loading (Canny and Depth)
@@ -9,13 +11,14 @@
 - Integration with Deforum's keyframe distribution system
 - Multiple model providers (InstantX, XLabs-AI, BFL, Shakker Labs)
 
-### Limitations ⚠️
+### Why v1 is NOT VIABLE ❌
 
 **VRAM Usage:**
 - Creates separate FluxControlNetPipeline from diffusers
 - Loads full Flux model (~12GB) in addition to Forge's loaded model
-- Effectively doubles VRAM usage for Flux
-- Not ideal, but functional
+- **Effectively doubles VRAM usage** - requires ~24GB minimum
+- **Target users have 16GB VRAM** - this approach doesn't work
+- **Must implement v2 (Forge-native)** to be usable
 
 **Authentication Required:**
 1. Run: `huggingface-cli login`
@@ -99,15 +102,96 @@ User → Deforum → Forge's loaded Flux + ControlNet model → Generate
 - Focus on other features
 - Revisit when we have more time/knowledge
 
-## Decision
+## Decision: Implement v2 (Forge-native integration)
 
-For now, **proceeding with Option D** (accept current state):
-- Feature is functional
-- VRAM usage is acceptable for most users (24GB+ GPUs)
-- Authentication is one-time setup
-- Can optimize later when we better understand architecture
+**v1 is REJECTED** - double VRAM usage makes it unusable for target users (16GB VRAM).
 
-Users with limited VRAM can disable Flux ControlNet and use standard Flux generation.
+**Must implement v2** (Option C - Hybrid approach) to make this feature viable. This is a multi-session task.
+
+## V2 Implementation Roadmap
+
+### Phase 1: Research & Understanding (Next Session)
+
+**1. Study Forge's ControlNet Backend** (`backend/patcher/controlnet.py`)
+- How does `apply_controlnet_advanced()` work for SD/SDXL?
+- How are control hints injected into UNet?
+- What is the `set_cond_hint()` API?
+- How does `add_patched_controlnet()` work?
+
+**2. Study FluxControlNetModel Internals**
+- How does FluxControlNetModel compute control hints?
+- What's the forward pass signature?
+- Can we extract control tensors without full pipeline?
+- What conditioning format does Flux expect?
+
+**3. Understand Forge's Flux Loading**
+- How does Forge load `flux1-dev-bnb-nf4-v2.safetensors`?
+- Where is the Flux transformer in `p.sd_model.forge_objects`?
+- Can we access the Flux UNet/transformer directly?
+
+### Phase 2: Minimal Integration (After Research)
+
+**1. Load Only ControlNet Model**
+- Modify `flux_controlnet_models.py` to load **only** FluxControlNetModel (~3.6GB)
+- Don't create FluxControlNetPipeline (saves ~12GB)
+- Cache the ControlNet model between frames
+
+**2. Compute Control Hints**
+- Preprocess control image (Canny/Depth) - **already done** ✓
+- Pass through FluxControlNetModel forward pass
+- Extract control tensors/embeddings
+- Format for Forge injection
+
+**3. Inject into Forge's Processing**
+- Option A: Modify `generate.py` to add control to Forge's Flux processing
+- Option B: Create Flux-specific ControlNet patcher in Forge backend
+- Option C: Inject control tensors directly into `p.sd_model.forge_objects.unet`
+
+### Phase 3: Testing & Refinement
+
+**1. Test with 16GB VRAM**
+- Verify no VRAM duplication
+- Confirm Forge's Flux + ControlNet model fits
+- Measure performance
+
+**2. Refine Control Application**
+- Tune strength/conditioning parameters
+- Test Canny and Depth modes
+- Verify visual quality
+
+**3. Clean Up**
+- Remove v1 pipeline code
+- Update documentation
+- Add usage examples
+
+### Open Questions for Next Session
+
+1. **Can we call FluxControlNetModel.forward() directly?**
+   - Need to check diffusers source code
+   - What inputs does it expect?
+   - What outputs does it produce?
+
+2. **Where in Forge's Flux pipeline can we inject control?**
+   - During text encoding?
+   - During transformer forward pass?
+   - Via custom attention injection?
+
+3. **Does Forge's backend support Flux at all?**
+   - Check `backend/nn/` for Flux-specific code
+   - May need to implement from scratch
+
+4. **Can we reuse any code from archive/crazy-flux-controlnet-monkeypatch?**
+   - Was it attempting v2-style integration?
+   - Any useful patterns to extract?
+
+### Success Criteria
+
+- ✅ Loads Forge's Flux model (already loaded)
+- ✅ Loads ControlNet model only (~3.6GB)
+- ✅ Total VRAM < 16GB
+- ✅ Generates with ControlNet guidance
+- ✅ Quality comparable to diffusers pipeline
+- ✅ No Forge backend monkey-patching (if possible)
 
 ## Related Files
 
