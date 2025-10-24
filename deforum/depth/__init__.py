@@ -5,7 +5,7 @@ animation mode and depth-based transformations.
 """
 
 from .depth import DepthModel
-from .depth_anything_v2 import DepthAnythingV2
+from .depth_anything_v2 import DepthAnything
 from .vid2depth import (
     vid2depth_main,
     add_soundtrack,
@@ -14,7 +14,7 @@ from .vid2depth import (
 
 __all__ = [
     "DepthModel",
-    "DepthAnythingV2",
+    "DepthAnything",
     "vid2depth_main",
     "add_soundtrack",
 ]
