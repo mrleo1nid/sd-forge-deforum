@@ -210,7 +210,7 @@ def prepare_flux_controlnet_for_frame(
 
             # Save to depth preview directory for debugging
             import os
-            from ...root import root
+            root = data.args.root
             depth_dir = os.path.join(args.outdir, f"{root.timestring}_depth")
             os.makedirs(depth_dir, exist_ok=True)
             overlay_path = os.path.join(depth_dir, f"{root.timestring}_{frame.i:09}_canny_overlay.png")
@@ -265,10 +265,13 @@ def prepare_flux_controlnet_for_frame(
     # Access Forge's VAE for control image encoding
     vae = None
     try:
-        vae = data.sd_model.forge_objects.vae
+        from modules.shared import sd_model
+        vae = sd_model.forge_objects.vae
         print(f"   ✓ Accessed Forge's VAE for control image encoding")
     except Exception as e:
         print(f"   ⚠️ Could not access VAE: {e}, control may not work correctly")
+        import traceback
+        traceback.print_exc()
 
     try:
         controlnet_block_samples, controlnet_single_block_samples = manager.compute_control_samples(
