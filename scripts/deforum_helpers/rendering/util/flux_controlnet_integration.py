@@ -206,11 +206,11 @@ def prepare_flux_controlnet_for_frame(
             # Compute canny edges for visualization
             canny_edges = canny_edge_detection(control_image, canny_low, canny_high)
 
-            # Find depth-raft-preview.png and overlay canny edges on it
+            # Find depth-raft-preview.png (directly in output directory)
             import os
             root = data.args.root
-            depth_dir = os.path.join(args.outdir, f"{root.timestring}_depth")
-            depth_preview_path = os.path.join(depth_dir, f"{root.timestring}_{frame.i:09}_depth-raft-preview.png")
+            output_dir = os.path.join(args.outdir, f"{root.timestring}")
+            depth_preview_path = os.path.join(output_dir, "depth-raft-preview.png")
 
             if os.path.exists(depth_preview_path):
                 # Load existing depth preview
@@ -224,8 +224,16 @@ def prepare_flux_controlnet_for_frame(
                     cv2.imwrite(depth_preview_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
                     print(f"   💡 Overlaid canny edges on: {depth_preview_path}")
             else:
-                print(f"   ℹ️ Depth preview not found yet: {depth_preview_path}")
-                print(f"   ℹ️ Canny edges will be applied on next frame")
+                # Create black preview image if it doesn't exist
+                print(f"   ℹ️ Depth preview not found, creating black preview: {depth_preview_path}")
+                os.makedirs(output_dir, exist_ok=True)
+                # Create black image matching control image size
+                black_preview = np.zeros_like(control_image)
+                # Overlay canny edges on black background
+                overlay = overlay_canny_edges(black_preview, canny_edges, edge_color=(255, 0, 0), alpha=1.0)
+                # Save
+                cv2.imwrite(depth_preview_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+                print(f"   💡 Created canny edge preview: {depth_preview_path}")
         except Exception as e:
             print(f"   ⚠️ Could not overlay canny visualization: {e}")
             import traceback

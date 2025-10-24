@@ -208,7 +208,7 @@ class FluxControlNetV2Manager:
             print(f"   VAE encoding control image with Forge's Flux VAE...")
             try:
                 with torch.inference_mode():
-                    # Forge's VAE model - use encode with regulation
+                    # Forge's VAE model - use encode
                     # Check if it's Forge's backend VAE or diffusers VAE
                     if hasattr(self.vae, 'encode') and hasattr(self.vae, 'quant_conv'):
                         # Forge's backend.nn.vae.AutoencodingEngine
@@ -220,7 +220,8 @@ class FluxControlNetV2Manager:
                         vae_dtype = next(self.vae.parameters()).dtype
                         control_rgb_normalized = control_rgb_normalized.to(dtype=vae_dtype)
 
-                        control_latent = self.vae.encode(control_rgb_normalized, regulation='none')
+                        # Call encode without regulation (will use posterior.sample())
+                        control_latent = self.vae.encode(control_rgb_normalized)
                         print(f"   Using Forge's backend VAE encoder (dtype: {vae_dtype})")
                     else:
                         # Fallback to diffusers-style (shouldn't happen now)
