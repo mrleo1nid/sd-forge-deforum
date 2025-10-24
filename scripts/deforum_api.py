@@ -31,7 +31,7 @@ from contextlib import contextmanager
 from scripts.deforum_extend_paths import deforum_sys_extend
 
 import gradio as gr
-from deforum_helpers.args import (DeforumAnimArgs, DeforumArgs,
+from deforum.config.args import (DeforumAnimArgs, DeforumArgs,
                                   DeforumOutputArgs, LoopArgs, ParseqArgs,
                                   RootArgs, get_component_names)
 from deforum_helpers.opts_overrider import A1111OptionsOverrider

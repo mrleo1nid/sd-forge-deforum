@@ -22,7 +22,7 @@ import torch
 import modules.shared as shared
 from modules.sd_models import forge_model_reload, FakeInitialModel
 from modules.processing import Processed, StableDiffusionProcessingImg2Img
-from .args import get_component_names, process_args
+from deforum.config.args import get_component_names, process_args
 from .deforum_tqdm import DeforumTQDM
 from .save_images import dump_frames_cache, reset_frames_cache
 from deforum.media.interpolation import process_video_interpolation
@@ -31,7 +31,7 @@ from .upscaling import make_upscale_v2
 from .video_audio_utilities import ffmpeg_stitch_video, make_gifski_gif, handle_imgs_deletion, handle_input_frames_deletion, handle_cn_frames_deletion, get_ffmpeg_params, get_ffmpeg_paths
 from pathlib import Path
 from .rendering.util.log_utils import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
-from .settings import save_settings_from_animation_run
+from deforum.config.settings import save_settings_from_animation_run
 from .deforum_controlnet import num_of_models
 
 from scripts.deforum_api import JobStatusTracker

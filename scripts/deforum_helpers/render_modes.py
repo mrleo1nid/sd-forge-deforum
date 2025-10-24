@@ -27,7 +27,7 @@ from .generate import generate
 from .animation_key_frames import DeformAnimKeys
 from deforum.integrations.parseq import ParseqAdapter
 from .save_images import save_image
-from .settings import save_settings_from_animation_run
+from deforum.config.settings import save_settings_from_animation_run
 
 # Import pure functions from refactored utils module
 from deforum.utils.expression_utils import parse_frame_expression

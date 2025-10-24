@@ -38,7 +38,7 @@ from .load_images import get_mask, load_img, load_image, get_mask_from_file
 # Hybrid video removed - was: from .hybrid_video import (...)
 from .save_images import save_image
 from .composable_masks import compose_mask_with_check
-from .settings import save_settings_from_animation_run
+from deforum.config.settings import save_settings_from_animation_run
 from .deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
 from .subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
 from .resume import get_resume_vars

@@ -22,7 +22,7 @@ from ...deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
 from ...generate import (isJson)
 from deforum.integrations.parseq import ParseqAdapter
 from ...prompt import prepare_prompt
-from ...settings import save_settings_from_animation_run
+from deforum.config.settings import save_settings_from_animation_run
 
 
 @dataclass(init=True, frozen=True, repr=False, eq=False)

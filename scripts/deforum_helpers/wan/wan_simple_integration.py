@@ -24,7 +24,7 @@ from .utils.wan_progress_utils import (
 # Import Deforum utilities for settings and audio handling
 from ..video_audio_utilities import download_audio
 from ..subtitle_handler import init_srt_file, write_frame_subtitle, calculate_frame_duration
-from ..settings import save_settings_from_animation_run
+from deforum.config.settings import save_settings_from_animation_run
 
 class WanSimpleIntegration:
     """Simplified Wan integration with auto-discovery and proper progress styling"""
@@ -1764,7 +1764,7 @@ Error: {diffusers_e}
     def _get_deforum_version(self) -> str:
         """Get Deforum version/commit ID"""
         try:
-            from ..settings import get_deforum_version
+            from deforum.config.settings import get_deforum_version
             return get_deforum_version()
         except:
             return "unknown"

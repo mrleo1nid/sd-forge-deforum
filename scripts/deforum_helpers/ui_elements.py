@@ -22,7 +22,7 @@ import gradio as gr
 # noinspection PyUnresolvedReferences
 from modules.ui_components import FormRow, FormColumn, ToolButton
 from .rendering.util import emoji_utils
-from .defaults import get_gradio_html, DeforumAnimPrompts
+from deforum.config.defaults import get_gradio_html, DeforumAnimPrompts
 from .gradio_funcs import (upload_vid_to_interpolate, upload_pics_to_interpolate,
                            ncnn_upload_vid_to_upscale, upload_vid_to_depth)
 from .video_audio_utilities import direct_stitch_vid_from_frames
@@ -262,7 +262,7 @@ def get_tab_keyframes(d, da, dloopArgs):
 def get_tab_prompts(da, dw, dv=None):
     # Import dv if not provided
     if dv is None:
-        from .args import DeforumOutputArgs
+        from deforum.config.args import DeforumOutputArgs
         from types import SimpleNamespace
         dv = SimpleNamespace(**DeforumOutputArgs())
 
@@ -740,7 +740,7 @@ def wan_generate_video(*component_args):
         models = integration.discover_models()
         
         # Get wan_args from the components to check auto-download setting
-        from .args import get_component_names
+        from deforum.config.args import get_component_names
         component_names = get_component_names()
         wan_auto_download = True  # Default value
         
@@ -883,7 +883,7 @@ TI2V models are unified text/image-to-video (Wan 2.2) - recommended!
             print(f"   {i}. {model['name']} ({model['size']}) - {model['path']}")
         
         # Get component names to find the animation_prompts index
-        from .args import get_component_names
+        from deforum.config.args import get_component_names
         component_names = get_component_names()
         
         # Find animation_prompts in the component list
@@ -948,7 +948,7 @@ Each prompt will be smoothly connected using I2V continuity!"""
         # run_deforum expects: job_id, custom_settings_file, *component_values
         # where component_values must match exactly with get_component_names()
         
-        from .args import get_component_names
+        from deforum.config.args import get_component_names
         component_names = get_component_names()
         expected_component_count = len(component_names)
         
@@ -2159,7 +2159,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
         wan_flash_attention_status.value = "⚠️ <span style='color: #FF9800;'>Status check unavailable</span>"
     
     # Get all component names for the handlers
-    from .args import get_component_names
+    from deforum.config.args import get_component_names
     component_names = get_component_names()
 
     # DEPRECATED EVENT HANDLERS - Commented out for hidden standalone workflow
@@ -2809,7 +2809,7 @@ Movement descriptions will be added to your existing prompts."""
                     print(f"✅ Using Camera Shakify settings from UI components")
                 else:
                     # Fallback to reading from DeforumArgs if component references not available
-                    from .args import DeforumArgs
+                    from deforum.config.args import DeforumArgs
                     current_args = DeforumArgs()
                     anim_args.shake_name = getattr(current_args, 'shake_name', "None")
                     anim_args.shake_intensity = getattr(current_args, 'shake_intensity', 1.0)
@@ -3546,7 +3546,7 @@ def wan_generate_with_validation(*component_args):
     """Wrapper for wan_generate_video that includes validation"""
     try:
         # Get component names to find the wan_enhanced_prompts index
-        from .args import get_component_names
+        from deforum.config.args import get_component_names
         component_names = get_component_names()
         
         # Find wan_enhanced_prompts in the component list

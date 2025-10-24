@@ -15,13 +15,13 @@
 # Contact the authors: https://deforum.github.io/
 
 import os
-from .args import DeforumOutputArgs, get_component_names, get_settings_component_names
+from deforum.config.args import DeforumOutputArgs, get_component_names, get_settings_component_names
 from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
 from modules.util import open_folder
 from modules.call_queue import wrap_gradio_gpu_call
 from .run_deforum import run_deforum
-from .settings import save_settings, load_all_settings, get_default_settings_path, update_settings_path
+from deforum.config.settings import save_settings, load_all_settings, get_default_settings_path, update_settings_path
 from .general_utils import get_deforum_version, get_commit_date
 from .ui_left import setup_deforum_left_side_ui
 from scripts.deforum_extend_paths import deforum_sys_extend

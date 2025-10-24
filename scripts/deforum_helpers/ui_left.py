@@ -16,9 +16,9 @@
 
 from types import SimpleNamespace
 import gradio as gr
-from .defaults import get_gradio_html
+from deforum.config.defaults import get_gradio_html
 from .gradio_funcs import change_css, handle_change_functions
-from .args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, RootArgs, LoopArgs, WanArgs
+from deforum.config.args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, RootArgs, LoopArgs, WanArgs
 from .rendering.util import emoji_utils
 # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
 # from .deforum_controlnet import setup_controlnet_ui
@@ -192,7 +192,7 @@ def setup_deforum_left_side_ui():
             from .ui_elements import wan_generate_video as wan_generate_video_main
             
             # Get all component values to pass to the Wan generation function
-            from .args import get_component_names
+            from deforum.config.args import get_component_names
             component_names = get_component_names()
             
             # Create list of all UI components in the correct order

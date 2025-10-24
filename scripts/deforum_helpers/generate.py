@@ -28,7 +28,7 @@ from .prompt import split_weighted_subprompts
 from .load_images import load_img, prepare_mask, check_mask_for_errors
 from .webui_sd_pipeline import get_webui_sd_pipeline
 from .rich import console
-from .defaults import get_samplers_list, get_schedulers_list
+from deforum.config.defaults import get_samplers_list, get_schedulers_list
 from .prompt import check_is_number
 from .opts_overrider import A1111OptionsOverrider
 import cv2
