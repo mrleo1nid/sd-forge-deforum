@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 import requests
 from deforum.core.keyframes import DeformAnimKeys, ControlNetKeys, LooperAnimKeys
-from deforum.utils.logging import log
+from deforum.utils.logging import log as log_utils
 from deforum.utils.rich import console
 from deforum.utils.general_utils import tickOrCross
 
