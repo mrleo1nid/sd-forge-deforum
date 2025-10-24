@@ -234,10 +234,10 @@ def patch_forge_flux_controlnet():
 
         # Import Forge's Flux transformer
         sys.path.insert(0, '/home/zirteq/workspace/stable-diffusion-webui-forge')
-        from backend.nn.flux import Flux
+        from backend.nn.flux import IntegratedFluxTransformer2DModel
 
         # Save original inner_forward method
-        original_inner_forward = Flux.inner_forward
+        original_inner_forward = IntegratedFluxTransformer2DModel.inner_forward
 
         def patched_inner_forward(self, img, img_ids, txt, txt_ids, timesteps, y, guidance=None,
                                  controlnet_block_samples=None, controlnet_single_block_samples=None):
@@ -301,7 +301,7 @@ def patch_forge_flux_controlnet():
             return img
 
         # Also patch forward() to accept and pass ControlNet parameters
-        original_forward = Flux.forward
+        original_forward = IntegratedFluxTransformer2DModel.forward
 
         def patched_forward(self, x, timestep, context, y, guidance=None,
                           controlnet_block_samples=None, controlnet_single_block_samples=None, **kwargs):
@@ -341,10 +341,10 @@ def patch_forge_flux_controlnet():
             return out
 
         # Replace both methods
-        Flux.inner_forward = patched_inner_forward
-        Flux.forward = patched_forward
+        IntegratedFluxTransformer2DModel.inner_forward = patched_inner_forward
+        IntegratedFluxTransformer2DModel.forward = patched_forward
 
-        print("✅ Forge Flux ControlNet patch applied: Flux.forward and inner_forward now support ControlNet")
+        print("✅ Forge Flux ControlNet patch applied: IntegratedFluxTransformer2DModel now supports ControlNet")
         return True
 
     except Exception as e:
