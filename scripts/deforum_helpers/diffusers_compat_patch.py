@@ -373,24 +373,34 @@ def patch_forge_kmodel_for_controlnet():
             """
             Patched apply_model that passes Flux ControlNet samples to transformer
 
-            Retrieves pre-computed control samples from model_options and passes them
+            Retrieves pre-computed control samples from global storage and passes them
             to the Flux transformer via kwargs.
             """
-            # Check if Flux ControlNet samples are available in model_options
-            controlnet_block_samples = self.model_options.get('controlnet_block_samples')
-            controlnet_single_block_samples = self.model_options.get('controlnet_single_block_samples')
+            # Import here to avoid issues during patch application
+            try:
+                # Get control samples from global storage
+                import sys
+                sys.path.insert(0, '/home/zirteq/workspace/stable-diffusion-webui-forge/extensions/sd-forge-deforum')
+                from scripts.deforum_helpers.flux_controlnet_forge_injection import get_stored_control_samples
 
-            if controlnet_block_samples is not None and controlnet_single_block_samples is not None:
-                # Pass control samples to Flux via extra_conds
-                kwargs['controlnet_block_samples'] = controlnet_block_samples
-                kwargs['controlnet_single_block_samples'] = controlnet_single_block_samples
+                control_samples = get_stored_control_samples()
 
-                # Debug print once per generation
-                if not hasattr(self, '_flux_cn_logged'):
-                    print(f"🌐 Passing Flux ControlNet samples to transformer")
-                    print(f"   Block samples: {len(controlnet_block_samples)} tensors")
-                    print(f"   Single block samples: {len(controlnet_single_block_samples)} tensors")
-                    self._flux_cn_logged = True
+                if control_samples is not None:
+                    controlnet_block_samples, controlnet_single_block_samples = control_samples
+
+                    # Pass control samples to Flux via extra_conds
+                    kwargs['controlnet_block_samples'] = controlnet_block_samples
+                    kwargs['controlnet_single_block_samples'] = controlnet_single_block_samples
+
+                    # Debug print once per generation
+                    if not hasattr(self, '_flux_cn_logged'):
+                        print(f"🌐 Passing Flux ControlNet samples to transformer")
+                        print(f"   Block samples: {len(controlnet_block_samples)} tensors")
+                        print(f"   Single block samples: {len(controlnet_single_block_samples)} tensors")
+                        self._flux_cn_logged = True
+            except Exception as e:
+                # Silently fail if control samples not available (not all generations use ControlNet)
+                pass
 
             # Call original apply_model with potentially added controlnet kwargs
             return original_apply_model(self, x, t, c_concat, c_crossattn, control, transformer_options, **kwargs)
