@@ -46,7 +46,7 @@ def wan_generate_video():
         
         # Try to discover models to check if setup is complete
         try:
-            from deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
+            from deforum.integrations.wan.wan_simple_integration import WanSimpleIntegration
             integration = WanSimpleIntegration()
             models = integration.discover_models()
             
@@ -452,7 +452,7 @@ def setup_deforum_left_side_ui():
 
     # Set up Wan Model Validation buttons
     try:
-        from deforum_helpers.wan.wan_model_validator import WanModelValidator
+        from deforum.integrations.wan.wan_model_validator import WanModelValidator
         
         # Validation functions
         def wan_validate_models():

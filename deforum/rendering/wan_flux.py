@@ -25,7 +25,7 @@ from deforum.utils.logging import log as log_utils
 from deforum.rendering import webui_helpers as web_ui_utils
 from deforum.utils import image_utils
 from deforum.rendering import filename_helpers as filename_utils
-from deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
+from deforum.integrations.wan.wan_simple_integration import WanSimpleIntegration
 from deforum.media.video_audio_utilities import ffmpeg_stitch_video
 
 
