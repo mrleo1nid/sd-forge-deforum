@@ -2,6 +2,13 @@
 
 **Branch:** `refactor/functional-patterns`
 
+**Status:** ✅ **Phase 2 Refactoring COMPLETE** (October 2025)
+- All code migrated from `scripts/deforum_helpers/` to `deforum/` package
+- Clean package structure established
+- Functional programming patterns applied throughout
+
+**Purpose:** This document serves as a reference for **future refactoring work** and maintaining code quality standards.
+
 These rules MUST be followed during all refactoring work. They prioritize functional programming patterns, code quality, and testability.
 
 ## Architecture and Package Structure
@@ -12,43 +19,54 @@ Following WebUI extension conventions and modern Python packaging standards:
 
 ```
 extensions/sd-forge-deforum/
-├── deforum/                    # NEW: Clean library package (modern Python standard)
+├── deforum/                    # ✅ Clean library package (modern Python standard)
 │   ├── __init__.py
-│   ├── utils/                  # Pure utility functions (PHASE 2: IN PROGRESS)
-│   │   ├── __init__.py
+│   ├── api/                    # ✅ REST API module
+│   │   ├── api.py              # API endpoints
+│   │   ├── models.py           # API data models
+│   │   └── __init__.py
+│   ├── config/                 # ✅ Configuration and settings
+│   │   ├── args.py             # Argument definitions
+│   │   ├── defaults.py         # Default values
+│   │   ├── settings.py         # Settings management
+│   │   └── default_settings.txt  # Default configuration template
+│   ├── utils/                  # ✅ Pure utility functions
 │   │   ├── seed_utils.py       # Seed generation logic
 │   │   ├── image_utils.py      # Image processing (sharpening, color matching)
 │   │   ├── noise_utils.py      # Perlin noise generation
 │   │   ├── prompt_utils.py     # Prompt parsing and interpolation
 │   │   └── transform_utils.py  # 3D transformations and matrix operations
-│   ├── core/                   # Core business logic (FUTURE)
-│   └── rendering/              # Rendering pipeline (FUTURE)
-├── scripts/
-│   ├── deforum.py              # Main WebUI script (keep as-is)
-│   ├── deforum_api.py          # REST API endpoints (keep)
-│   ├── deforum_api_models.py   # API data models (keep)
-│   └── deforum_helpers/        # LEGACY: Gradually migrate from here
-│       ├── prompt.py           # ✅ Refactored (Phase 1 complete)
-│       ├── animation.py        # ✅ Refactored (Phase 1 complete)
-│       ├── seed.py             # ✅ Refactored (Phase 1 complete)
-│       ├── colors.py           # ✅ Refactored (Phase 1 complete)
-│       ├── image_sharpening.py # ✅ Refactored (Phase 1 complete)
-│       ├── noise.py            # ✅ Refactored (Phase 1 complete)
-│       └── ...                 # Other files to be refactored
-├── tests/
-│   ├── unit/                   # Unit tests for pure functions
-│   │   ├── test_seed.py        # ✅ 13 tests, 63% coverage
-│   │   ├── test_image_sharpening.py  # ✅ 14 tests, 100% coverage
-│   │   ├── test_colors.py      # ✅ 11 tests, 100% coverage
-│   │   ├── test_noise.py       # ✅ 23 tests, 71% coverage
-│   │   ├── test_prompt.py      # ✅ 43 tests, 74% coverage
-│   │   ├── test_animation.py   # ✅ 29 tests, 41% coverage
-│   │   └── ...
-│   └── integration/            # Integration tests (future)
-├── preload.py                  # Early initialization
-├── requirements.txt            # Python dependencies
-├── REFACTORING_RULES.md        # This file
-└── README.md
+│   ├── core/                   # ✅ Core business logic
+│   │   ├── keyframes.py        # Keyframe scheduling
+│   │   ├── prompts.py          # Prompt scheduling
+│   │   ├── seeds.py            # Seed iteration
+│   │   └── masking/            # Masking subsystem
+│   ├── rendering/              # ✅ Rendering pipeline
+│   │   ├── experimental_core.py  # Main render loop
+│   │   ├── wan_flux.py         # Flux/Wan hybrid mode
+│   │   ├── noise.py            # Noise application
+│   │   └── data/               # Render data structures
+│   ├── integrations/           # ✅ External integrations
+│   │   ├── wan/                # Wan AI video integration
+│   │   ├── parseq/             # Parseq keyframe integration
+│   │   ├── flux_controlnet/    # Flux ControlNet integration
+│   │   └── external_repos/     # Third-party libraries
+│   │       ├── clipseg/        # CLIPSeg (word masking)
+│   │       ├── rife/           # RIFE (frame interpolation)
+│   │       ├── film_interpolation/  # FILM (frame interpolation)
+│   │       └── wan2.1/         # Wan 2.1 model repository
+│   ├── media/                  # ✅ Media I/O
+│   ├── animation/              # ✅ Animation logic
+│   ├── depth/                  # ✅ Depth estimation
+│   ├── orchestration/          # ✅ High-level orchestration
+│   └── ui/                     # ✅ UI components
+├── scripts/                    # ✅ Forge integration layer ONLY
+│   ├── deforum.py              # Main WebUI script (Forge entry point)
+│   └── deforum_extend_paths.py  # sys.path setup
+├── tests/                      # ✅ Test suite
+├── preload.py                  # ✅ Extension preload hook
+├── REFACTORING_RULES.md        # This document
+└── README.md                   # User documentation
 ```
 
 ### Design Rationale
