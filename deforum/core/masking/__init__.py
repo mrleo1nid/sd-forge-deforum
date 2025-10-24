@@ -6,18 +6,15 @@ composable masks, human detection masks, and word-based masks.
 
 from .masks import (
     do_overlay_mask,
-    # Add other mask functions as needed
 )
 from .composable import (
     compose_mask_with_check,
-    # Add other composable functions as needed
 )
-from .human import (
-    # Add human masking functions as needed
-)
-from .word import (
-    # Add word masking functions as needed
-)
+
+# human and word modules are available but not exported at package level
+# Import them directly if needed:
+#   from deforum.core.masking.human import video2humanmasks
+#   from deforum.core.masking.word import get_word_mask
 
 __all__ = [
     "do_overlay_mask",
