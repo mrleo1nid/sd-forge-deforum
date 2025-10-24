@@ -206,11 +206,9 @@ def prepare_flux_controlnet_for_frame(
             # Compute canny edges for visualization
             canny_edges = canny_edge_detection(control_image, canny_low, canny_high)
 
-            # Find depth-raft-preview.png (directly in output directory)
+            # Find depth-raft-preview.png (directly in batch directory)
             import os
-            root = data.args.root
-            output_dir = os.path.join(args.outdir, f"{root.timestring}")
-            depth_preview_path = os.path.join(output_dir, "depth-raft-preview.png")
+            depth_preview_path = os.path.join(args.outdir, "depth-raft-preview.png")
 
             if os.path.exists(depth_preview_path):
                 # Load existing depth preview
@@ -226,7 +224,6 @@ def prepare_flux_controlnet_for_frame(
             else:
                 # Create black preview image if it doesn't exist
                 print(f"   ℹ️ Depth preview not found, creating black preview: {depth_preview_path}")
-                os.makedirs(output_dir, exist_ok=True)
                 # Create black image matching control image size
                 black_preview = np.zeros_like(control_image)
                 # Overlay canny edges on black background
@@ -248,37 +245,9 @@ def prepare_flux_controlnet_for_frame(
     manager.load_model()
 
     # Compute control samples
-    # Create dummy hidden_states matching Flux's patchification
-    # Flux uses VAE (16x downsample) + patchification (patch_size=2)
-    batch_size = 1
-
-    # After VAE encoding
-    latent_h = args.H // 16
-    latent_w = args.W // 16
-
-    # Flux pads to make dimensions divisible by patch_size (2)
-    patch_size = 2
-    pad_h = (patch_size - latent_h % patch_size) % patch_size
-    pad_w = (patch_size - latent_w % patch_size) % patch_size
-    padded_h = latent_h + pad_h
-    padded_w = latent_w + pad_w
-
-    # After patchification: (h/2) * (w/2) patches
-    h_patches = padded_h // patch_size
-    w_patches = padded_w // patch_size
-    seq_len = h_patches * w_patches
-
-    # Each patch contains (16 channels * 2 * 2) = 64 values
-    channels = 64
-
-    dummy_hidden_states = torch.zeros(
-        (batch_size, seq_len, channels),
-        device='cuda',
-        dtype=torch.bfloat16
-    )
-
-    print(f"   Latent dimensions: {latent_h}x{latent_w} → padded: {padded_h}x{padded_w}")
-    print(f"   Patches: {h_patches}x{w_patches} = {seq_len} patches, {channels} channels per patch")
+    # Note: We'll pass None for hidden_states and let ControlNet compute from control image
+    # This avoids dummy shape mismatches
+    dummy_hidden_states = None
 
     try:
         controlnet_block_samples, controlnet_single_block_samples = manager.compute_control_samples(

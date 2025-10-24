@@ -242,6 +242,11 @@ class FluxControlNetV2Manager:
                     control_tensor = control_tensor.to(dtype=self.torch_dtype)
 
                     print(f"   Control patchified shape: {control_tensor.shape}")
+
+                    # Create dummy hidden_states matching control_tensor shape if not provided
+                    if hidden_states is None:
+                        hidden_states = torch.zeros_like(control_tensor)
+                        print(f"   Created dummy hidden_states matching control shape: {hidden_states.shape}")
             except Exception as e:
                 print(f"   ⚠️ VAE encoding failed: {e}")
                 import traceback
