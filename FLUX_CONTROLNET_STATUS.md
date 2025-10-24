@@ -108,40 +108,36 @@ We need to inject control samples into Forge's Flux without duplicating the base
 - Line 391: `for block in self.single_blocks:` - ⚠️ **NO ControlNet injection here**
 - ❌ **Critical finding**: Forge's Flux transformer is missing `controlnet_block_samples` and `controlnet_single_block_samples` parameters
 
-### Phase 2: Minimal Integration (After Research)
+### Phase 2: Minimal Integration ⏳ IN PROGRESS
 
-**1. Load Only ControlNet Model**
-- Modify `flux_controlnet_models.py` to load **only** FluxControlNetModel (~3.6GB)
-- Don't create FluxControlNetPipeline (saves ~12GB)
-- Cache the ControlNet model between frames
+**1. Load Only ControlNet Model** ✅ DONE
+- Created `flux_controlnet_v2.py` with `FluxControlNetV2Manager` class
+- Loads **only** FluxControlNetModel (~3.6GB), not full pipeline
+- No duplicate Flux model loaded (saves ~12GB)
+- Model caching via existing `flux_controlnet_models.py`
 
-**2. Compute Control Hints**
-- Preprocess control image (Canny/Depth) - **already done** ✓
-- Pass through FluxControlNetModel forward pass
-- Extract control tensors/embeddings
-- Format for Forge injection
+**2. Compute Control Samples** ✅ DONE
+- Preprocess control image (Canny/Depth) - reuses v1 preprocessors ✓
+- `compute_control_samples()` method calls `FluxControlNetModel.forward()` directly
+- Returns `(controlnet_block_samples, controlnet_single_block_samples)` tuples
+- Ready to inject into Forge's Flux transformer
 
-**3. Inject Control into Forge's Flux**
+**3. Patch Forge's Flux Transformer** ✅ DONE
+- Added `patch_forge_flux_controlnet()` to `diffusers_compat_patch.py`
+- Runtime patches `Flux.inner_forward()` to accept ControlNet parameters
+- Runtime patches `Flux.forward()` to pass parameters through
+- Injects control after each double_block and single_block (matches diffusers)
+- Applied automatically at extension init via `apply_all_patches()`
+- ✅ No Forge source file modifications needed!
 
-Based on Phase 1 research, we have three implementation options:
-
-**Option A: Patch Forge's Flux Transformer** (backend/nn/flux.py)
-- Modify `inner_forward()` to accept `controlnet_block_samples` and `controlnet_single_block_samples` parameters
-- Update line 388 loop: inject control from `controlnet_block_samples` into `double_blocks`
-- Update line 391 loop: inject control from `controlnet_single_block_samples` into `single_blocks`
-- ⚠️ Requires modifying Forge core code (not ideal but most direct)
-
-**Option B: Wrapper/Interceptor Pattern**
-- Create wrapper around Forge's Flux transformer that intercepts calls
-- Compute control samples before calling original transformer
-- Manually apply control to latents between block calls
-- ✅ Avoids modifying Forge core, but more complex
-
-**Option C: High-Level Pipeline Injection**
-- Hook into Forge's processing pipeline before transformer is called
-- Compute control samples and store in processing context
-- Find injection point where we can modify latents with control signals
-- ❓ Need to verify if Forge exposes suitable hooks
+**4. Wire Control into Generation Pipeline** ⏳ TODO
+- Need to connect V2 manager to Deforum's generation flow
+- Compute control samples in `generate_with_flux_controlnet()`
+- Pass `controlnet_block_samples` and `controlnet_single_block_samples` to Forge
+- Options for passing control:
+  - Via `model_options` with custom conditioning modifier
+  - Via `**extra_conds` in k_model.py apply_model()
+  - Via Forge's processing pipeline hooks
 
 ### Phase 3: Testing & Refinement
 
