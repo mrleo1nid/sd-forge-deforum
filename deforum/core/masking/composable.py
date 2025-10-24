@@ -30,7 +30,7 @@
 # using regex and PIL operations
 import re
 from deforum.media.load_images import get_mask_from_file, check_mask_for_errors, blank_if_none
-from .word_masking import get_word_mask
+from .word import get_word_mask
 from PIL import ImageChops
 from modules.shared import opts
 
