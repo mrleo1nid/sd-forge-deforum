@@ -219,9 +219,145 @@ def patch_diffusers_attention():
         return False
 
 
+def patch_forge_flux_controlnet():
+    """
+    Patch Forge's Flux transformer to support Flux ControlNet
+
+    Adds controlnet_block_samples and controlnet_single_block_samples parameters
+    to inner_forward() method and injects control after each block.
+
+    This matches diffusers' FluxTransformer2DModel ControlNet implementation.
+    """
+    try:
+        import sys
+        import torch
+
+        # Import Forge's Flux transformer
+        sys.path.insert(0, '/home/zirteq/workspace/stable-diffusion-webui-forge')
+        from backend.nn.flux import Flux
+
+        # Save original inner_forward method
+        original_inner_forward = Flux.inner_forward
+
+        def patched_inner_forward(self, img, img_ids, txt, txt_ids, timesteps, y, guidance=None,
+                                 controlnet_block_samples=None, controlnet_single_block_samples=None):
+            """
+            Patched Flux.inner_forward with ControlNet support
+
+            Adds control sample injection after each double_block and single_block,
+            matching diffusers' FluxTransformer2DModel implementation.
+            """
+            # Import here to avoid circular deps
+            from backend.nn.flux import timestep_embedding
+
+            if img.ndim != 3 or txt.ndim != 3:
+                raise ValueError("Input img and txt tensors must have 3 dimensions.")
+
+            img = self.img_in(img)
+            vec = self.time_in(timestep_embedding(timesteps, 256).to(img.dtype))
+
+            if self.guidance_embed:
+                if guidance is None:
+                    raise ValueError("Didn't get guidance strength for guidance distilled model.")
+                vec = vec + self.guidance_in(timestep_embedding(guidance, 256).to(img.dtype))
+
+            vec = vec + self.vector_in(y)
+            txt = self.txt_in(txt)
+            del y, guidance
+
+            ids = torch.cat((txt_ids, img_ids), dim=1)
+            del txt_ids, img_ids
+
+            pe = self.pe_embedder(ids)
+            del ids
+
+            # Process double_blocks with ControlNet injection
+            for index_block, block in enumerate(self.double_blocks):
+                img, txt = block(img=img, txt=txt, vec=vec, pe=pe)
+
+                # Inject ControlNet control samples (Flux ControlNet support)
+                if controlnet_block_samples is not None and index_block < len(controlnet_block_samples):
+                    # Add control sample to image hidden states
+                    # This matches diffusers' FluxTransformer2DModel implementation
+                    img = img + controlnet_block_samples[index_block]
+
+            img = torch.cat((txt, img), 1)
+
+            # Process single_blocks with ControlNet injection
+            for index_block, block in enumerate(self.single_blocks):
+                img = block(img, vec=vec, pe=pe)
+
+                # Inject ControlNet control samples (Flux ControlNet support)
+                if controlnet_single_block_samples is not None and index_block < len(controlnet_single_block_samples):
+                    # Add control sample to hidden states
+                    # This matches diffusers' FluxTransformer2DModel implementation
+                    img = img + controlnet_single_block_samples[index_block]
+
+            del pe
+            img = img[:, txt.shape[1]:, ...]
+            del txt
+            img = self.final_layer(img, vec)
+            del vec
+            return img
+
+        # Also patch forward() to accept and pass ControlNet parameters
+        original_forward = Flux.forward
+
+        def patched_forward(self, x, timestep, context, y, guidance=None,
+                          controlnet_block_samples=None, controlnet_single_block_samples=None, **kwargs):
+            """Patched Flux.forward with ControlNet support"""
+            bs, c, h, w = x.shape
+            input_device = x.device
+            input_dtype = x.dtype
+            patch_size = 2
+            pad_h = (patch_size - x.shape[-2] % patch_size) % patch_size
+            pad_w = (patch_size - x.shape[-1] % patch_size) % patch_size
+            x = torch.nn.functional.pad(x, (0, pad_w, 0, pad_h), mode="circular")
+
+            from einops import rearrange, repeat
+            img = rearrange(x, "b c (h ph) (w pw) -> b (h w) (c ph pw)", ph=patch_size, pw=patch_size)
+            del x, pad_h, pad_w
+
+            h_len = ((h + (patch_size // 2)) // patch_size)
+            w_len = ((w + (patch_size // 2)) // patch_size)
+
+            img_ids = torch.zeros((h_len, w_len, 3), device=input_device, dtype=input_dtype)
+            img_ids[..., 1] = img_ids[..., 1] + torch.linspace(0, h_len - 1, steps=h_len, device=input_device, dtype=input_dtype)[:, None]
+            img_ids[..., 2] = img_ids[..., 2] + torch.linspace(0, w_len - 1, steps=w_len, device=input_device, dtype=input_dtype)[None, :]
+            img_ids = repeat(img_ids, "h w c -> b (h w) c", b=bs)
+
+            txt_ids = torch.zeros((bs, context.shape[1], 3), device=input_device, dtype=input_dtype)
+            del input_device, input_dtype
+
+            # Call inner_forward with ControlNet parameters
+            out = self.inner_forward(img, img_ids, context, txt_ids, timestep, y, guidance,
+                                    controlnet_block_samples=controlnet_block_samples,
+                                    controlnet_single_block_samples=controlnet_single_block_samples)
+
+            del img, img_ids, txt_ids, timestep, context
+
+            out = rearrange(out, "b (h w) (c ph pw) -> b c (h ph) (w pw)", h=h_len, w=w_len, ph=2, pw=2)[:, :, :h, :w]
+            del h_len, w_len, bs
+            return out
+
+        # Replace both methods
+        Flux.inner_forward = patched_inner_forward
+        Flux.forward = patched_forward
+
+        print("✅ Forge Flux ControlNet patch applied: Flux.forward and inner_forward now support ControlNet")
+        return True
+
+    except Exception as e:
+        print(f"⚠️ Failed to apply Forge Flux ControlNet patch: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def apply_all_patches():
     """Apply all compatibility patches"""
-    print("🔧 Applying diffusers compatibility patches for Forge + Wan 2.2...")
+    print("🔧 Applying diffusers compatibility patches for Forge + Wan 2.2 + Flux ControlNet...")
     patch_torch_rmsnorm()
     patch_flow_match_scheduler()
     patch_diffusers_attention()
+    patch_forge_flux_controlnet()
