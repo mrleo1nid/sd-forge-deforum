@@ -695,7 +695,7 @@ def DeforumAnimArgs():
             "label": "Flux Base Model",
             "type": "textbox",
             "value": "black-forest-labs/FLUX.1-dev",
-            "info": "HuggingFace model ID for Flux base model (advanced)"
+            "info": "HuggingFace model ID for Flux base - requires 'huggingface-cli login' and accepting FLUX.1-dev license at https://huggingface.co/black-forest-labs/FLUX.1-dev (TEMP: Will integrate with Forge's loaded model in future)"
         },
         "video_init_path": {
             "label": "Video init path/ URL",

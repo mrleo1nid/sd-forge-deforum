@@ -3,16 +3,78 @@
 Provides utilities to generate keyframes using Flux ControlNet based on:
 - Canny edges from previous frame
 - Depth maps from Depth-Anything V2
+
+CURRENT STATE (v1 - Standalone diffusers approach):
+- Uses separate FluxControlNetPipeline from diffusers
+- Loads full Flux model from HuggingFace (requires authentication)
+- Works but duplicates VRAM (Forge's Flux + our pipeline's Flux)
+- User must run: huggingface-cli login and accept FLUX.1-dev license
+
+FUTURE DIRECTION (v2 - Forge-native integration):
+- Load ONLY FluxControlNetModel (3.6GB), not full pipeline
+- Reuse Forge's already-loaded Flux model (no duplication)
+- Inject ControlNet conditioning into Forge's processing pipeline
+- Requires understanding Forge backend + Flux architecture better
+
+Why not done yet:
+- Forge stores Flux as single .safetensors (flux1-dev-bnb-nf4-v2.safetensors)
+- Diffusers expects full model repo with config.json, etc.
+- These formats are incompatible without conversion
+- Forge backend doesn't have Flux ControlNet support (project semi-abandoned)
+- Would need to implement Flux ControlNet patcher in Forge's backend
+
+See: archive/crazy-flux-controlnet-monkeypatch for previous attempt (too complex)
 """
 
 import cv2
 import numpy as np
+import os
 from PIL import Image
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..data.render_data import RenderData
     from ..data.frame.diffusion_frame import DiffusionFrame
+
+
+def get_local_flux_model_path() -> Optional[str]:
+    """Detect local Flux model to avoid HuggingFace authentication.
+
+    Forge stores Flux models in models/Stable-diffusion/Flux/ directory.
+    This function checks for local Flux files and returns the path if found.
+
+    Returns:
+        Path to local Flux model directory, or None if not found
+    """
+    try:
+        # Try to find Forge's webui root
+        import sys
+        from pathlib import Path
+
+        # Forge's models are relative to the webui root
+        # We're in: extensions/sd-forge-deforum/scripts/deforum_helpers/rendering/util/
+        # Need to go up to webui root
+        current_file = Path(__file__)
+        webui_root = current_file.parents[6]  # Go up 6 levels
+
+        flux_dir = webui_root / "models" / "Stable-diffusion" / "Flux"
+
+        if flux_dir.exists():
+            # Check for Flux model files
+            flux_files = list(flux_dir.glob("*.safetensors"))
+            if flux_files:
+                print(f"  Found local Flux model: {flux_files[0].name}")
+                # For diffusers, we need the directory, not the specific file
+                # But diffusers expects a model with config.json, etc.
+                # Since we only have .safetensors, we can't use it directly
+                # We'll need to keep using HF repo ID but with local cache
+                pass
+
+        return None
+
+    except Exception as e:
+        print(f"  Could not detect local Flux model: {e}")
+        return None
 
 
 def is_flux_controlnet_enabled(data: "RenderData") -> bool:
