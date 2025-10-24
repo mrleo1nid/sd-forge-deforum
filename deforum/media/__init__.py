@@ -15,8 +15,9 @@ from .save_images import (
     # Add other save functions as needed
 )
 from .upscaling import (
-    upscale_image,
-    # Add other upscaling functions as needed
+    process_ncnn_upscale_vid_upload_logic,
+    process_ncnn_video_upscaling,
+    make_upscale_v2,
 )
 from .video_audio_utilities import (
     get_frame_name,
@@ -35,7 +36,9 @@ __all__ = [
     # Save
     "save_image",
     # Upscaling
-    "upscale_image",
+    "process_ncnn_upscale_vid_upload_logic",
+    "process_ncnn_video_upscaling",
+    "make_upscale_v2",
     # Video/Audio
     "get_frame_name",
     "get_next_frame",
