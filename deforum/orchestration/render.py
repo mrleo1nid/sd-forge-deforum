@@ -46,7 +46,7 @@ from deforum.core.masking.masks import do_overlay_mask
 from deforum.core.prompts import prepare_prompt
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
-from deforum.rendering import experimental_core
+from deforum.rendering import core
 from deforum.utils.system.logging import log
 from deforum.integrations.raft import RAFT
 from deforum.api.api import JobStatusTracker
@@ -65,5 +65,5 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
                 print(f"Error pre-downloading audio: {e}")
 
     # Always use experimental render core (legacy core removed)
-    experimental_core.render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
+    core.render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
 

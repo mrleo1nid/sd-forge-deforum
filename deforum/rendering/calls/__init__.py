@@ -1,5 +1,5 @@
 """
-This module provides utility functions for simplifying calls to other modules within the `experimental_core.py` module.
+This module provides utility functions for simplifying calls to other modules within the `core.py` module.
 
 **Purpose:**
 - **Reduce Argument Complexity:**  Provides a way to call functions in other modules without directly handling
