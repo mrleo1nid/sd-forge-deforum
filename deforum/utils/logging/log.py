@@ -1,5 +1,3 @@
-from . import opt_utils
-
 # Import pure functions from refactored utils module
 from deforum.utils.color_utils import (
     hex_to_ansi_foreground as from_hex_color,
@@ -124,5 +122,7 @@ def warn(s: str):
 
 
 def debug(s: str):
-    if opt_utils.is_verbose():
+    # Lazy import to avoid circular dependency
+    from deforum.rendering.options import is_verbose
+    if is_verbose():
         print(f"{YELLOW}{BOLD}Debug: {RESET_COLOR}{s}")
