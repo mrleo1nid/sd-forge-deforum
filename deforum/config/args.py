@@ -28,8 +28,8 @@ from modules.processing import get_fixed_seed
 
 from .defaults import (get_guided_imgs_default_json, get_camera_shake_list, get_keyframe_distribution_list,
                        get_samplers_list, get_schedulers_list)
-from .deforum_controlnet import controlnet_component_names
-from .general_utils import get_os, substitute_placeholders
+from deforum.integrations.controlnet.legacy_controlnet import controlnet_component_names
+from scripts.deforum_helpers.general_utils import get_os, substitute_placeholders
 
 
 def RootArgs():
