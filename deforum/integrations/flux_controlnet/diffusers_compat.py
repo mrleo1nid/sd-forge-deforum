@@ -383,9 +383,9 @@ def patch_forge_kmodel_for_controlnet():
             # Import here to avoid issues during patch application
             try:
                 # Get control samples from global storage
-                # TODO: Re-implement ControlNet integration when it's working again
-                # The legacy flux_controlnet_forge_injection module has been removed
-                control_samples = None  # Placeholder - ControlNet currently disabled
+                from deforum.integrations.flux_controlnet.forge_injection import get_stored_control_samples
+
+                control_samples = get_stored_control_samples()
 
                 if control_samples is not None:
                     controlnet_block_samples, controlnet_single_block_samples = control_samples
