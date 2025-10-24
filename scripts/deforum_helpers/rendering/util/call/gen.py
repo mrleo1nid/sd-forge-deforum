@@ -1,7 +1,14 @@
 from ....generate import generate
+from ..flux_controlnet_integration import should_use_flux_controlnet_for_frame, generate_with_flux_controlnet
 
 
 def call_generate(data, frame: 'DiffusionFrame', redo_seed: int = None):
+    # Check if we should use Flux ControlNet for this frame
+    if should_use_flux_controlnet_for_frame(data, frame):
+        # Use Flux ControlNet generation
+        return generate_with_flux_controlnet(data, frame)
+
+    # Standard Forge generation path
     # TODO rename things, data.args.args.strength is actually "denoise", so strength is subtracted from 1.0 when passed.
     ia = data.args
     ia.args.strength = 1.0 - frame.strength  # update denoise for current diffusion from pre-generated frame
