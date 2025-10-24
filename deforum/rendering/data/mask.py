@@ -3,8 +3,7 @@ from typing import Any
 
 from PIL import Image
 
-from ..util import put_all
-from ..util.utils import create_img, call_or_use_on_cond
+from deforum.utils.functional_utils import put_all, create_img, call_or_use_on_cond
 from deforum.media.load_images import get_mask, load_img
 from deforum.rendering.calls.images import call_get_mask_from_file
 
