@@ -13,15 +13,18 @@ from .images import Images
 from .mask import Mask
 from .shakify.shaker import Shaker
 from .subtitle import Srt
-from ..util import depth_utils, log_utils, memory_utils, opt_utils
-from ..util.call.images import call_get_mask_from_file_with_frame
-from ..util.call.mask import call_compose_mask_with_check
-from ..util.call.video_and_audio import call_get_next_frame
-from ...args import DeforumArgs, DeforumAnimArgs, LoopArgs, ParseqArgs, RootArgs
-from ...deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
-from ...generate import (isJson)
+from deforum.rendering import depth_helpers as depth_utils
+from deforum.utils.logging import log as log_utils
+from deforum.rendering import memory as memory_utils
+from deforum.rendering import options as opt_utils
+from deforum.rendering.calls.images import call_get_mask_from_file_with_frame
+from deforum.rendering.calls.mask import call_compose_mask_with_check
+from deforum.rendering.calls.video_and_audio import call_get_next_frame
+from deforum.config.args import DeforumArgs, DeforumAnimArgs, LoopArgs, ParseqArgs, RootArgs
+from deforum.integrations.controlnet.legacy_controlnet_stubs import unpack_controlnet_vids, is_controlnet_enabled
+from deforum.orchestration.generate import isJson
 from deforum.integrations.parseq import ParseqAdapter
-from ...prompt import prepare_prompt
+from deforum.core.prompt import prepare_prompt
 from deforum.config.settings import save_settings_from_animation_run
 
 
