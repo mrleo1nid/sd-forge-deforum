@@ -113,11 +113,35 @@ def setup_deforum_left_side_ui():
     with gr.Row(variant='compact'):
         show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True)
 
-    # Top-level essential settings before tabs
+    # Top-level essential settings before tabs - NEW RENDER MODE SYSTEM
     with gr.Row(variant='compact'):
         from .ui_elements import create_gr_elem
-        animation_mode = create_gr_elem(da.animation_mode)
+        render_mode = create_gr_elem(da.render_mode)
         fps = create_gr_elem(dv.fps)
+
+    # Mode-dependent controls row
+    with gr.Row(variant='compact'):
+        cadence = create_gr_elem(da.diffusion_cadence)
+        pseudo_cadence_display = gr.Textbox(
+            label="Calculated Pseudo-Cadence",
+            value="Will be calculated on render",
+            interactive=False,
+            visible=False,
+            info="Average frames between diffusions (calculated from keyframes)"
+        )
+
+    # Strength schedules - visibility depends on render mode
+    with gr.Row(variant='compact'):
+        normal_strength = create_gr_elem(da.strength_schedule)
+        keyframe_strength = create_gr_elem(da.keyframe_strength_schedule)
+
+    # Keep legacy animation_mode hidden for backwards compatibility
+    animation_mode = gr.Radio(
+        label="Animation mode (Legacy - Hidden)",
+        choices=['3D', 'Interpolation', 'Flux/Wan'],
+        value="3D",
+        visible=False
+    )
 
     with gr.Blocks():
         with gr.Tabs() as main_tabs:
@@ -153,30 +177,71 @@ def setup_deforum_left_side_ui():
                 locals()[key] = value
 
             # Add top-level settings to locals()
+            locals()['render_mode'] = render_mode
             locals()['animation_mode'] = animation_mode
             locals()['fps'] = fps
+            locals()['cadence'] = cadence
+            locals()['pseudo_cadence_display'] = pseudo_cadence_display
+            locals()['strength_schedule'] = normal_strength
+            locals()['keyframe_strength_schedule'] = keyframe_strength
 
             # Store tab references for visibility control
             locals()['tab_depth'] = tab_depth
             locals()['tab_shakify'] = tab_shakify
             locals()['tab_wan'] = tab_wan
 
-    # Tab visibility based on animation mode
-    def update_tab_visibility(mode):
-        """Show/hide tabs based on animation mode"""
-        is_3d = mode == '3D'
-        is_flux_wan = mode == 'Flux/Wan'
+    # Mode change handler - updates all UI based on selected render mode
+    def handle_render_mode_change(mode):
+        """
+        Update UI components when render mode changes.
+        Returns updates for: tab_depth, tab_shakify, tab_wan, cadence, pseudo_cadence,
+                             fps, keyframe_strength, animation_mode
+        """
+        from deforum.rendering.data.render_mode import RenderMode
+
+        render_mode_enum = RenderMode.from_string(mode)
+        config = render_mode_enum.config
+
+        # Determine tab visibility
+        show_3d_tabs = render_mode_enum.should_show_3d_tabs()
+        show_wan_tab = render_mode_enum.should_show_wan_tab()
+
+        # Determine cadence/pseudo-cadence visibility
+        show_real_cadence = render_mode_enum.should_show_cadence_slider()
+        show_pseudo_cadence = config.shows_pseudo_cadence
+
+        # Determine strength slider visibility
+        show_keyframe_strength = render_mode_enum.should_show_keyframe_strength()
+
+        # Update legacy animation_mode for backward compatibility
+        legacy_mode = render_mode_enum.to_legacy_animation_mode()
 
         return [
-            gr.update(visible=is_3d),      # tab_depth
-            gr.update(visible=is_3d),      # tab_shakify
-            gr.update(visible=is_flux_wan) # tab_wan
+            gr.update(visible=show_3d_tabs),           # tab_depth
+            gr.update(visible=show_3d_tabs),           # tab_shakify
+            gr.update(visible=show_wan_tab),           # tab_wan
+            gr.update(visible=show_real_cadence,       # cadence
+                     value=config.default_cadence),
+            gr.update(visible=show_pseudo_cadence),    # pseudo_cadence_display
+            gr.update(value=config.default_fps),       # fps
+            gr.update(visible=show_keyframe_strength), # keyframe_strength
+            gr.update(value=legacy_mode)               # animation_mode (hidden)
         ]
 
-    animation_mode.change(
-        fn=update_tab_visibility,
-        inputs=[animation_mode],
-        outputs=[tab_depth, tab_shakify, tab_wan]
+    # Connect render mode change handler
+    render_mode.change(
+        fn=handle_render_mode_change,
+        inputs=[render_mode],
+        outputs=[
+            tab_depth,
+            tab_shakify,
+            tab_wan,
+            cadence,
+            pseudo_cadence_display,
+            fps,
+            keyframe_strength,
+            animation_mode
+        ]
     )
 
     # Gradio's Change functions - hiding and renaming elements based on other elements
