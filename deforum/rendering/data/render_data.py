@@ -24,7 +24,7 @@ from deforum.config.args import DeforumArgs, DeforumAnimArgs, LoopArgs, ParseqAr
 from deforum.integrations.controlnet.legacy_controlnet_stubs import unpack_controlnet_vids, is_controlnet_enabled
 from deforum.orchestration.generate import isJson
 from deforum.integrations.parseq import ParseqAdapter
-from deforum.core.prompt import prepare_prompt
+from deforum.core.prompts import prepare_prompt
 from deforum.config.settings import save_settings_from_animation_run
 
 
