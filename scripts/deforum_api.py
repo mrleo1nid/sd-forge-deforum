@@ -34,7 +34,7 @@ import gradio as gr
 from deforum.config.args import (DeforumAnimArgs, DeforumArgs,
                                   DeforumOutputArgs, LoopArgs, ParseqArgs,
                                   RootArgs, get_component_names)
-from deforum_helpers.opts_overrider import A1111OptionsOverrider
+from deforum.utils.opts_overrider import A1111OptionsOverrider
 from fastapi import FastAPI, Response, status
 
 from modules.shared import cmd_opts, opts, state

@@ -11,10 +11,6 @@ from .args import (
     LoopArgs,
     # Add other arg classes as needed
 )
-from .defaults import (
-    get_default_settings,
-    # Add other default functions as needed
-)
 from .settings import (
     load_settings,
     save_settings,
