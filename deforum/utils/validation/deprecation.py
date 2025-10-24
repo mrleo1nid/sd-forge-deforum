@@ -18,7 +18,7 @@
 # and print a message containing the old and the new names
 
 # Import pure function from refactored utils module
-from deforum.utils.format_utils import format_value_to_schedule
+from deforum.utils.conversion.formats import format_value_to_schedule
 
 deprecation_map = {
     "histogram_matching": None,

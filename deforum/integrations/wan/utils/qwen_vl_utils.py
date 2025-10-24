@@ -21,7 +21,7 @@ from torchvision import io, transforms
 from torchvision.transforms import InterpolationMode
 
 # Import pure math functions from refactored utils module
-from deforum.utils.math_utils import (
+from deforum.utils.math.core import (
     round_by_factor,
     ceil_by_factor,
     floor_by_factor,
@@ -40,7 +40,7 @@ MAX_RATIO = 200
 VIDEO_MIN_PIXELS = 128 * 28 * 28
 VIDEO_MAX_PIXELS = 768 * 28 * 28
 VIDEO_TOTAL_PIXELS = 24576 * 28 * 28
-# FRAME_FACTOR imported from deforum.utils.math_utils
+# FRAME_FACTOR imported from deforum.utils.math.core
 FPS = 2.0
 FPS_MIN_FRAMES = 4
 FPS_MAX_FRAMES = 768
@@ -61,7 +61,7 @@ def smart_resize_compat(height: int,
                  factor: int = IMAGE_FACTOR,
                  min_pixels: int = MIN_PIXELS,
                  max_pixels: int = MAX_PIXELS) -> tuple[int, int]:
-    """Wrapper for smart_resize from deforum.utils.math_utils (backward compatibility)."""
+    """Wrapper for smart_resize from deforum.utils.math.core (backward compatibility)."""
     return smart_resize(height, width, factor, min_pixels, max_pixels)
 
 
@@ -113,7 +113,7 @@ def fetch_image(ele: dict[str, str | Image.Image],
     return image
 
 
-# Backward compatibility wrapper - uses pure function from deforum.utils.math_utils
+# Backward compatibility wrapper - uses pure function from deforum.utils.math.core
 def smart_nframes(
     ele: dict,
     total_frames: int,
@@ -122,7 +122,7 @@ def smart_nframes(
     """Calculate number of frames for video used for model inputs (wrapper).
 
     This is a backward compatibility wrapper that converts the dict-based API
-    to the pure smart_nframes function from deforum.utils.math_utils.
+    to the pure smart_nframes function from deforum.utils.math.core.
 
     Args:
         ele (dict): Configuration dict supporting either 'fps' or 'nframes':

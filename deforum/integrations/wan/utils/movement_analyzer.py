@@ -11,11 +11,11 @@ import numpy as np
 from types import SimpleNamespace
 
 # Import pure functions from refactored utils module
-from deforum.utils.schedule_utils import (
+from deforum.utils.parsing.schedules import (
     parse_schedule_string,
     interpolate_schedule_values as interpolate_schedule,
 )
-from deforum.utils.schedule_manipulation_utils import (
+from deforum.utils.parsing.schedule_manipulation import (
     apply_shakify_to_schedule,
 )
 
@@ -39,7 +39,7 @@ try:
 except ImportError:
     DEFORUM_AVAILABLE = False
 
-# parse_schedule_string and interpolate_schedule imported from deforum.utils.schedule_utils
+# parse_schedule_string and interpolate_schedule imported from deforum.utils.parsing.schedules
 
 
 def create_shakify_data(shake_name: str, shake_intensity: float, shake_speed: float, target_fps: int = 30, max_frames: int = 120, frame_start: int = 0) -> Optional[Dict]:
@@ -118,7 +118,7 @@ def create_shakify_data(shake_name: str, shake_intensity: float, shake_speed: fl
     return result
 
 
-# apply_shakify_to_schedule imported from deforum.utils.schedule_manipulation_utils
+# apply_shakify_to_schedule imported from deforum.utils.parsing.schedule_manipulation
 
 
 class MovementAnalyzer:

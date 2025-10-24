@@ -12,7 +12,7 @@ from .frame_interpolation import (
 )
 
 # Re-export utility function from utils
-from deforum.utils.interpolation_utils import clean_folder_name
+from deforum.utils.math.interpolation import clean_folder_name
 
 __all__ = [
     "gradio_f_interp_get_fps_and_fcount",

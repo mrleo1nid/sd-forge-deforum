@@ -1,7 +1,7 @@
 """Image utilities - Mixed pure and impure functions.
 
 This module contains:
-- Pure conversion functions imported from deforum.utils.image_utils
+- Pure conversion functions imported from deforum.utils.image.processing
 - Impure I/O functions for saving/loading frames (kept here due to side effects)
 """
 
@@ -14,7 +14,7 @@ from deforum.rendering import filename_helpers as filename_utils
 from deforum.rendering.data.render_data import RenderData
 
 # Import pure conversion functions from refactored utils module
-from deforum.utils.image_utils import (
+from deforum.utils.image.processing import (
     bgr_to_rgb,
     numpy_to_pil,
     pil_to_numpy,

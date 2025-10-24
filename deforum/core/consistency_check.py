@@ -25,7 +25,7 @@ Original implementation taken from https://github.com/Sxela/flow_tools/blob/main
 """
 
 # Import pure function from refactored utils module
-from deforum.utils.optical_flow_utils import make_consistency
+from deforum.utils.media.optical_flow import make_consistency
 
 
 # parser = argparse.ArgumentParser()

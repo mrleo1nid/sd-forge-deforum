@@ -21,8 +21,8 @@ import socket
 import torchvision.transforms.functional as TF
 
 # Import pure functions from refactored utils module
-from deforum.utils.general_utils import clean_gradio_path_strings
-from deforum.utils.validation_utils import (
+from deforum.utils.general import clean_gradio_path_strings
+from deforum.utils.validation.validators import (
     blank_if_none,
     none_if_blank,
 )
@@ -114,5 +114,5 @@ def get_mask(args):
 def get_mask_from_file(mask_file, args):
     return prepare_mask(mask_file, (args.W, args.H), args.mask_contrast_adjust, args.mask_brightness_adjust)
 
-# blank_if_none imported from deforum.utils.validation_utils
-# none_if_blank imported from deforum.utils.validation_utils
+# blank_if_none imported from deforum.utils.validation.validators
+# none_if_blank imported from deforum.utils.validation.validators

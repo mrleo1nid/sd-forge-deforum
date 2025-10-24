@@ -23,9 +23,9 @@ import numpy as np
 import pandas as pd
 import requests
 from deforum.core.keyframes import DeformAnimKeys, ControlNetKeys, LooperAnimKeys
-from deforum.utils.logging import log as log_utils
-from deforum.utils.rich import console
-from deforum.utils.general_utils import tickOrCross
+from deforum.utils.system.logging import log as log_utils
+from deforum.utils.ui.console import console
+from deforum.utils.general import tickOrCross
 
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)

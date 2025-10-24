@@ -4,8 +4,8 @@ import gc
 import modules.shared as shared
 from tqdm import tqdm
 
-from deforum.utils.logging import log as log_utils
-from deforum.utils.logging.log import HEX_BLUE, HEX_GREEN, HEX_ORANGE, HEX_RED, HEX_PURPLE
+from deforum.utils.system.logging import log as log_utils
+from deforum.utils.system.logging.log import HEX_BLUE, HEX_GREEN, HEX_ORANGE, HEX_RED, HEX_PURPLE
 
 
 class Taqaddumat:

@@ -1,5 +1,5 @@
 # Import pure functions from refactored utils module
-from deforum.utils.color_utils import (
+from deforum.utils.image.color import (
     hex_to_ansi_foreground as from_hex_color,
 )
 
@@ -21,7 +21,7 @@ HEX_GREEN = '#8FE968'
 HEX_BLUE = '#36CEDC'
 HEX_PURPLE = '#A587CA'
 
-# from_hex_color imported from deforum.utils.color_utils
+# from_hex_color imported from deforum.utils.image.color
 
 RED = from_hex_color(HEX_RED)
 ORANGE = from_hex_color(HEX_ORANGE)

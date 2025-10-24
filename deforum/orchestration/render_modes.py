@@ -19,10 +19,10 @@ import time
 import pathlib
 from modules.shared import opts, state
 from deforum.orchestration.render import render_animation
-from deforum.utils.logging.log import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
+from deforum.utils.system.logging.log import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
 from deforum.core.seeds import next_seed
 from deforum.media.video_audio_utilities import vid2frames, render_preview
-from deforum.utils.prompt_utils import interpolate_prompts
+from deforum.utils.generation.prompts import interpolate_prompts
 from deforum.orchestration.generate import generate
 from deforum.core.keyframes import DeformAnimKeys
 from deforum.integrations.parseq import ParseqAdapter
@@ -30,7 +30,7 @@ from deforum.media.save_images import save_image
 from deforum.config.settings import save_settings_from_animation_run
 
 # Import pure functions from refactored utils module
-from deforum.utils.expression_utils import parse_frame_expression
+from deforum.utils.parsing.expressions import parse_frame_expression
 
 def render_input_video(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root):
     # create a folder for the video input frames to live in
@@ -84,7 +84,7 @@ def render_animation_with_video_mask(args, anim_args, video_args, parseq_args, l
 
     render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
 
-# get_parsed_value imported from deforum.utils.expression_utils as parse_frame_expression
+# get_parsed_value imported from deforum.utils.parsing.expressions as parse_frame_expression
 
 
 def get_parsed_value(value, frame_idx, max_f):

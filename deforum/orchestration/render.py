@@ -30,10 +30,10 @@ from deforum.animation.animation import anim_frame_warp
 from deforum.core.keyframes import DeformAnimKeys, LooperAnimKeys
 from deforum.media.video_audio_utilities import get_frame_name, get_next_frame, render_preview
 from deforum.depth import DepthModel
-from deforum.utils.image_utils import maintain_colors
+from deforum.utils.image.processing import maintain_colors
 from deforum.integrations.parseq import ParseqAdapter
 from deforum.core.seeds import next_seed
-from deforum.utils.image_utils import unsharp_mask
+from deforum.utils.image.processing import unsharp_mask
 from deforum.media.load_images import get_mask, load_img, load_image, get_mask_from_file
 # Hybrid video removed - was: from .hybrid_video import (...)
 from deforum.media.save_images import save_image
@@ -47,7 +47,7 @@ from deforum.core.prompts import prepare_prompt
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
 from deforum.rendering import experimental_core
-from deforum.utils.logging import log
+from deforum.utils.system.logging import log
 from deforum.integrations.raft import RAFT
 from deforum.api.api import JobStatusTracker
 

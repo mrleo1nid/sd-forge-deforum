@@ -34,7 +34,7 @@ import gradio as gr
 from deforum.config.args import (DeforumAnimArgs, DeforumArgs,
                                   DeforumOutputArgs, LoopArgs, ParseqArgs,
                                   RootArgs, get_component_names)
-from deforum.utils.opts_overrider import A1111OptionsOverrider
+from deforum.utils.system.opts_overrider import A1111OptionsOverrider
 from fastapi import FastAPI, Response, status
 
 from modules.shared import cmd_opts, opts, state
@@ -401,7 +401,7 @@ def deforum_simple_api(_: gr.Blocks, app: FastAPI):
     from fastapi.responses import JSONResponse
     from fastapi import FastAPI, Query, Request, UploadFile
     from fastapi.encoders import jsonable_encoder
-    from deforum.utils.general_utils import get_deforum_version
+    from deforum.utils.general import get_deforum_version
     import uuid, pathlib
 
     @app.exception_handler(RequestValidationError)

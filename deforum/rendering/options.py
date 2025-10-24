@@ -1,4 +1,4 @@
-from deforum.utils.functional_utils import put_if_present
+from deforum.utils.functional import put_if_present
 
 # noinspection PyUnresolvedReferences
 from modules.shared import opts

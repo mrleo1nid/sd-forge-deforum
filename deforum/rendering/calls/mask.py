@@ -2,7 +2,7 @@ import cv2
 from PIL import Image
 
 from deforum.core.masking.composable import compose_mask_with_check
-from deforum.utils.image_utils import unsharp_mask
+from deforum.utils.image.processing import unsharp_mask
 
 
 def call_compose_mask_with_check(init, mask_seq, val_masks, image):

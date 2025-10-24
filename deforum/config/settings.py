@@ -25,8 +25,8 @@ from .args import DeforumArgs, DeforumAnimArgs, DeforumOutputArgs, ParseqArgs, L
     pack_args, WanArgs
 from .defaults import mask_fill_choices, get_camera_shake_list
 from deforum.integrations.controlnet.legacy_controlnet_stubs import controlnet_component_names
-from deforum.utils.deprecation_utils import handle_deprecated_settings
-from deforum.utils.general_utils import get_deforum_version, clean_gradio_path_strings
+from deforum.utils.validation.deprecation import handle_deprecated_settings
+from deforum.utils.general import get_deforum_version, clean_gradio_path_strings
 
 
 def get_extension_base_dir():

@@ -21,26 +21,26 @@ import shutil
 from modules.shared import opts
 from torch.hub import download_url_to_file
 
-from deforum.utils.logging import log
+from deforum.utils.system.logging import log
 
 # Import pure functions from refactored utils module
-from deforum.utils.string_utils import (
+from deforum.utils.parsing.strings import (
     get_os,
     custom_placeholder_format,
     clean_gradio_path_strings,
     tick_or_cross as tickOrCross,
 )
-from deforum.utils.file_utils import (
+from deforum.utils.filesystem.files import (
     get_max_path_length as _get_max_path_length,
     count_files_in_folder,
 )
-from deforum.utils.interpolation_utils import (
+from deforum.utils.math.interpolation import (
     extract_rife_name,
     clean_folder_name as _clean_folder_name,
     set_interp_out_fps,
     calculate_frames_to_add,
 )
-from deforum.utils.hash_utils import (
+from deforum.utils.conversion.hashing import (
     compute_file_checksum_with_factory as checksum,
 )
 
@@ -54,9 +54,9 @@ def debug_print(message):
         log_utils.debug(message)
 
 
-# checksum imported from deforum.utils.hash_utils
+# checksum imported from deforum.utils.conversion.hashing
 
-# get_os imported from deforum.utils.string_utils
+# get_os imported from deforum.utils.parsing.strings
 
 
 # used in src/rife/inference_video.py and more, soon
@@ -122,7 +122,7 @@ def _get_extension_info():
         return None
 
 
-# custom_placeholder_format imported from deforum.utils.string_utils
+# custom_placeholder_format imported from deforum.utils.parsing.strings
 
 
 def test_long_path_support(base_folder_path):
@@ -174,9 +174,9 @@ def substitute_placeholders(template, arg_list, base_folder_path):
     return formatted_string[:max_length]
 
 
-# count_files_in_folder imported from deforum.utils.file_utils
+# count_files_in_folder imported from deforum.utils.filesystem.files
 
-# clean_gradio_path_strings imported from deforum.utils.string_utils
+# clean_gradio_path_strings imported from deforum.utils.parsing.strings
 
 
 def download_file_with_checksum(url, expected_checksum, dest_folder, dest_filename):
@@ -190,4 +190,4 @@ def download_file_with_checksum(url, expected_checksum, dest_folder, dest_filena
                             f"Please manually download from: {url}\nAnd place it in: {dest_folder}")
 
 
-# tickOrCross imported from deforum.utils.string_utils (aliased from tick_or_cross)
+# tickOrCross imported from deforum.utils.parsing.strings (aliased from tick_or_cross)

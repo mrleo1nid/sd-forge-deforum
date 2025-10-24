@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 # Import pure functions from refactored utils module
-from deforum.utils.math_utils import (
+from deforum.utils.math.core import (
     rotation_matrix,
     rotate_camera_towards_depth,
 )
@@ -34,5 +34,5 @@ __all__ = [
 # if auto_rotation:
 #    rot_mat = rotate_camera_towards_depth(depth_tensor, auto_rotation_steps, w, h, fov_deg, auto_rotation_depth_target)
 
-# rotate_camera_towards_depth imported from deforum.utils.math_utils
-# rotation_matrix imported from deforum.utils.math_utils
+# rotate_camera_towards_depth imported from deforum.utils.math.core
+# rotation_matrix imported from deforum.utils.math.core

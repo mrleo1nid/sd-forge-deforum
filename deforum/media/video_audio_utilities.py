@@ -34,16 +34,16 @@ from torch.hub import download_url_to_file
 from modules.shared import state, opts
 from pkg_resources import resource_filename
 
-from deforum.utils.general_utils import checksum, clean_gradio_path_strings, debug_print
-from deforum.utils.http_client import get_http_client
-from deforum.utils.rich import console
+from deforum.utils.general import checksum, clean_gradio_path_strings, debug_print
+from deforum.utils.system.http import get_http_client
+from deforum.utils.ui.console import console
 
 # Import pure functions from refactored utils module
-from deforum.utils.path_utils import (
+from deforum.utils.filesystem.paths import (
     extract_number_from_string,
     get_frame_name,
 )
-from deforum.utils.video_path_utils import (
+from deforum.utils.filesystem.video_paths import (
     get_next_frame_path,
     get_output_video_path as get_manual_frame_to_vid_output_path,
 )
@@ -95,7 +95,7 @@ def get_ffmpeg_paths(outdir, timestring, anim_args, video_args, output_suffix=''
         
     return [image_path, mp4_path, real_audio_track, srt_path]
 
-# Backward compatibility alias (imported from deforum.utils.path_utils)
+# Backward compatibility alias (imported from deforum.utils.filesystem.paths)
 extract_number = extract_number_from_string
     
 def save_frame(image, file_path):
@@ -389,7 +389,7 @@ def ffmpeg_stitch_video(ffmpeg_location=None, fps=None, outmp4_path=None, stitch
 
     print(status_summary, flush=True)
 
-# get_frame_name imported from deforum.utils.path_utils
+# get_frame_name imported from deforum.utils.filesystem.paths
 
 def get_next_frame(outdir, video_path, frame_idx, mask=False):
     """Legacy wrapper for get_next_frame_path - extracts video name from path."""
@@ -411,7 +411,7 @@ def find_ffmpeg_binary():
         except:
             return 'ffmpeg'
 
-# get_manual_frame_to_vid_output_path imported from deforum.utils.video_path_utils (aliased as get_output_video_path)
+# get_manual_frame_to_vid_output_path imported from deforum.utils.filesystem.video_paths (aliased as get_output_video_path)
 
 # These 2 functions belong to "stitch frames to video" in Output tab
 def direct_stitch_vid_from_frames(image_path, fps, add_soundtrack, audio_path):

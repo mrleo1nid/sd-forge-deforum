@@ -11,7 +11,7 @@ import cv2
 from PIL import Image
 
 # Import pure functions from refactored utils module
-from deforum.utils.noise_utils import (
+from deforum.utils.generation.noise import (
     deforum_noise_gen,
     round_to_multiple,
     normalize_perlin,

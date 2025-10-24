@@ -8,7 +8,7 @@ from scipy.interpolate import CubicSpline
 from .enum.shakify_key import ShakifyKey as Key
 from .enum.xyz import Xyz
 from .shake_data import SHAKE_LIST
-from deforum.utils.logging import log as log_utils
+from deforum.utils.system.logging import log as log_utils
 from deforum.config.defaults import get_camera_shake_list
 
 FRAME = 'frame'

@@ -7,7 +7,7 @@ from typing import Tuple, List
 from einops import rearrange
 
 # Import pure functions from refactored utils module
-from deforum.utils.transform_utils import (
+from deforum.utils.image.transforms import (
     normalize_image_to_tensor_range,
     denormalize_tensor_to_image_range,
     sample_from_cv2,
@@ -25,7 +25,7 @@ from deforum.utils.transform_utils import (
     create_corner_points,
     warpMatrix,
 )
-from deforum.utils.depth_utils import (
+from deforum.utils.media.depth import (
     prepare_depth_tensor,
     get_depth_min_max_formatted as depth_min_max_and_formatted,
 )
@@ -67,8 +67,8 @@ except ImportError:
 
 try:
     from deforum.core.prompts import check_is_number
-    from deforum.utils.general_utils import debug_print
-    from deforum.utils.logging import log
+    from deforum.utils.general import debug_print
+    from deforum.utils.system.logging import log
 except ImportError:
     # Fallback for testing
     check_is_number = lambda x: x.replace('.', '').replace('-', '').isdigit()

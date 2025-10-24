@@ -11,7 +11,7 @@ Seed Behaviors:
     fixed: Keep seed constant throughout animation
     random: Generate completely random seed each frame
 
-The module uses pure utility functions from deforum.utils.seed_utils for
+The module uses pure utility functions from deforum.utils.generation.seeds for
 calculations, but provides stateful iteration logic that updates arguments
 in-place (necessary for integration with the rendering pipeline).
 
@@ -26,7 +26,7 @@ import random
 from typing import Any, Literal
 
 # Import pure utilities
-from deforum.utils.seed_utils import (
+from deforum.utils.generation.seeds import (
     MAX_SEED,
     calculate_seed_increment,
     calculate_next_control,

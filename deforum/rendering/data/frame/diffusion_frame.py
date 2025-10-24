@@ -18,17 +18,17 @@ from deforum.rendering.data.taqaddumat import Taqaddumat
 from deforum.rendering import img_2_img_tubes
 from deforum.rendering import depth_helpers as depth_utils
 from deforum.rendering import filename_helpers as filename_utils
-from deforum.utils.logging import log as log_utils
-from deforum.utils import functional_utils as utils
+from deforum.utils.system.logging import log as log_utils
+from deforum.utils import functional as utils
 from deforum.rendering.calls.anim import call_anim_frame_warp
 from deforum.rendering.calls.gen import call_generate
 from deforum.rendering.calls.images import call_add_noise
 from deforum.rendering.calls.mask import call_compose_mask_with_check, call_unsharp_mask
 from deforum.rendering.calls.subtitle import call_write_subtitle_from_to
 from deforum.rendering.calls.video_and_audio import call_render_preview
-from deforum.utils.image_utils import maintain_colors
+from deforum.utils.image.processing import maintain_colors
 from deforum.media.save_images import save_image
-from deforum.utils.seed_utils import generate_next_seed
+from deforum.utils.generation.seeds import generate_next_seed
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=False)

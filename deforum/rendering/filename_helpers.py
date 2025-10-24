@@ -1,7 +1,7 @@
 """Filename utilities - Mixed pure and impure functions.
 
 This module contains:
-- Pure formatting functions imported from deforum.utils.filename_utils
+- Pure formatting functions imported from deforum.utils.filesystem.filenames
 - Impure path construction functions (kept here due to dependencies)
 """
 
@@ -10,7 +10,7 @@ from pathlib import Path
 from deforum.media.video_audio_utilities import get_frame_name
 
 # Import pure functions from refactored utils module
-from deforum.utils.filename_utils import (
+from deforum.utils.filesystem.filenames import (
     FileFormat,
     format_frame_index as _frame_filename_index,
     format_frame_filename,

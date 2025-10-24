@@ -24,7 +24,7 @@ from typing import Dict
 import pandas as pd
 
 # Import pure utilities
-from deforum.utils.prompt_utils import (
+from deforum.utils.generation.prompts import (
     interpolate_prompts,
     substitute_prompt_expressions,
     split_prompt_into_pos_neg,
@@ -34,7 +34,7 @@ from deforum.core.keyframes import FrameInterpolater
 
 # Optional imports for console output
 try:
-    from deforum.utils.logging.log import (
+    from deforum.utils.system.logging.log import (
         RED, GREEN, PURPLE, RESET_COLOR
     )
 except ImportError:

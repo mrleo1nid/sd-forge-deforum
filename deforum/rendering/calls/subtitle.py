@@ -1,4 +1,4 @@
-from deforum.utils.logging import log as log_utils
+from deforum.utils.system.logging import log as log_utils
 from deforum.rendering import options as opt_utils
 from deforum.media.subtitle_handler import format_animation_params, write_subtitle_from_to
 

@@ -9,8 +9,8 @@ from .data.frame.diffusion_frame import DiffusionFrame
 from .data.render_data import RenderData
 from deforum.utils import image_utils
 from deforum.rendering import turbo_helpers as turbo_utils
-from deforum.utils.functional_utils import tube
-from deforum.utils.image_utils import maintain_colors
+from deforum.utils.functional import tube
+from deforum.utils.image.processing import maintain_colors
 from deforum.animation.optical_flow_utils import get_flow_from_images, image_transform_optical_flow
 from deforum.core.masking.masks import do_overlay_mask
 

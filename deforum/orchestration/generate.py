@@ -24,24 +24,24 @@ import numexpr
 from modules import processing, sd_models
 from modules.shared import sd_model, state, cmd_opts
 from deforum.integrations.controlnet.legacy_controlnet_stubs import is_controlnet_enabled, get_controlnet_script_args
-from deforum.utils.prompt_utils import split_weighted_subprompts
+from deforum.utils.generation.prompts import split_weighted_subprompts
 from deforum.media.load_images import load_img, prepare_mask, check_mask_for_errors
 from deforum.pipeline.webui_sd_pipeline import get_webui_sd_pipeline
-from deforum.utils.rich import console
+from deforum.utils.ui.console import console
 from deforum.config.defaults import get_samplers_list, get_schedulers_list
-from deforum.utils.prompt_utils import check_is_number
-from deforum.utils.opts_overrider import A1111OptionsOverrider
+from deforum.utils.generation.prompts import check_is_number
+from deforum.utils.system.opts_overrider import A1111OptionsOverrider
 import cv2
 import numpy as np
 from types import SimpleNamespace
 
 from deforum.core.deforum_scripts_overrides import add_forge_script_to_deforum_run, initialise_forge_scripts
 
-from deforum.utils.general_utils import debug_print
+from deforum.utils.general import debug_print
 
 # Import pure functions from refactored utils module
-from deforum.utils.validation_utils import is_valid_json as isJson
-from deforum.utils.functional_utils import pairwise as pairwise_repl
+from deforum.utils.validation.validators import is_valid_json as isJson
+from deforum.utils.functional import pairwise as pairwise_repl
 
 def load_mask_latent(mask_input, shape):
     # mask_input (str or PIL Image.Image): Path to the mask image or a PIL Image object

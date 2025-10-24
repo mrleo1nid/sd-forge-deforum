@@ -19,11 +19,11 @@ from pathlib import Path
 from deforum.integrations.external_repos.rife.inference_video import run_rife_new_video_infer
 from deforum.media.video_audio_utilities import get_quick_vid_info, vid2frames, media_file_has_audio, extract_number, ffmpeg_stitch_video
 from deforum.integrations.external_repos.film_interpolation.film_inference import run_film_interp_infer
-from deforum.utils.general_utils import duplicate_pngs_from_folder, checksum, convert_images_from_list
+from deforum.utils.general import duplicate_pngs_from_folder, checksum, convert_images_from_list
 from modules.shared import opts
 
 # Import pure functions from refactored utils module
-from deforum.utils.interpolation_utils import (
+from deforum.utils.math.interpolation import (
     extract_rife_name,
     clean_folder_name,
     set_interp_out_fps,
@@ -195,7 +195,7 @@ def check_and_download_film_model(model_name, model_dest_folder):
         raise Exception(f"Error while downloading {model_name}. Please download from: {download_url}, and put in: {model_dest_folder}")
 
 
-# calculate_frames_to_add imported from deforum.utils.interpolation_utils
+# calculate_frames_to_add imported from deforum.utils.math.interpolation
 
 
 def process_interp_pics_upload_logic(pic_list, engine, x_am, sl_enabled, sl_am, keep_imgs, f_location, f_crf, f_preset, fps, f_models_path, resolution, add_soundtrack, audio_track):

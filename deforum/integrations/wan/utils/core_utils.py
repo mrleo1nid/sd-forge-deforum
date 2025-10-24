@@ -8,7 +8,7 @@ import torch
 import torchvision
 
 # Import pure functions from refactored utils module
-from deforum.utils.conversion_utils import (
+from deforum.utils.conversion.types import (
     generate_random_name as rand_name,
     string_to_boolean as str2bool_pure,
 )

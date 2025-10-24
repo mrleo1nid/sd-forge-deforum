@@ -23,8 +23,8 @@ import cv2
 import numpy as np
 
 # Import pure functions from refactored utils modules
-from deforum.utils.image_geometry_utils import center_crop, extend_with_grid
-from deforum.utils.optical_flow_utils import convert_relative_flow_to_absolute
+from deforum.utils.image.geometry import center_crop, extend_with_grid
+from deforum.utils.media.optical_flow import convert_relative_flow_to_absolute
 
 
 def remap(img, flow):

@@ -17,14 +17,14 @@
 """Subtitle handling - Mixed pure and impure functions.
 
 This module contains:
-- Pure formatting/calculation functions imported from deforum.utils.subtitle_utils
+- Pure formatting/calculation functions imported from deforum.utils.media.subtitles
 - Impure I/O functions for writing subtitle files (kept here due to side effects)
 """
 
 from decimal import Decimal
 
 # Import pure functions from refactored utils module
-from deforum.utils.subtitle_utils import (
+from deforum.utils.media.subtitles import (
     time_to_srt_format,
     calculate_frame_duration,
     frame_time,
