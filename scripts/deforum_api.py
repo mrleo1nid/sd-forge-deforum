@@ -96,7 +96,7 @@ def run_deforum_batch(batch_id: str, job_ids: [str], deforum_settings_files: Lis
             state.interrupted = False
 
             # Invoke deforum with appropriate args
-            from deforum_helpers.run_deforum import run_deforum 
+            from deforum.orchestration.run_deforum import run_deforum 
             run_deforum(*run_deforum_args)
 
     except Exception as e:

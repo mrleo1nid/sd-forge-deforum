@@ -24,30 +24,30 @@ import random
 import PIL
 import time
 from PIL import Image, ImageOps
-from .generate import generate, isJson
-from .noise import add_noise
+from deforum.orchestration.generate import generate, isJson
+from scripts.deforum_helpers.noise import add_noise
 from deforum.animation.animation import anim_frame_warp
-from .animation_key_frames import DeformAnimKeys, LooperAnimKeys
+from scripts.deforum_helpers.animation_key_frames import DeformAnimKeys, LooperAnimKeys
 from deforum.media.video_audio_utilities import get_frame_name, get_next_frame, render_preview
 from deforum.depth import DepthModel
-from .colors import maintain_colors
+from scripts.deforum_helpers.colors import maintain_colors
 from deforum.integrations.parseq import ParseqAdapter
-from .seed import next_seed
-from .image_sharpening import unsharp_mask
+from scripts.deforum_helpers.seed import next_seed
+from scripts.deforum_helpers.image_sharpening import unsharp_mask
 from deforum.media.load_images import get_mask, load_img, load_image, get_mask_from_file
 # Hybrid video removed - was: from .hybrid_video import (...)
 from deforum.media.save_images import save_image
 from deforum.core.masking.composable import compose_mask_with_check
 from deforum.config.settings import save_settings_from_animation_run
-from .deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
+from deforum.integrations.controlnet.legacy_controlnet import unpack_controlnet_vids, is_controlnet_enabled
 from deforum.media.subtitle_handler import init_srt_file, write_frame_subtitle, format_animation_params
 from deforum.pipeline.resume import get_resume_vars
 from deforum.core.masking.masks import do_overlay_mask
-from .prompt import prepare_prompt
+from scripts.deforum_helpers.prompt import prepare_prompt
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
-from .rendering import experimental_core
-from .rendering.util import log_utils
+from scripts.deforum_helpers.rendering import experimental_core
+from scripts.deforum_helpers.rendering.util import log_utils
 from deforum.integrations.raft import RAFT
 
 from deforum_api import JobStatusTracker

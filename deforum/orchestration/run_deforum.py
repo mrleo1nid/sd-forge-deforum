@@ -30,9 +30,9 @@ from deforum.utils.general_utils import get_deforum_version, get_commit_date
 from deforum.media.upscaling import make_upscale_v2
 from deforum.media.video_audio_utilities import ffmpeg_stitch_video, make_gifski_gif, handle_imgs_deletion, handle_input_frames_deletion, handle_cn_frames_deletion, get_ffmpeg_params, get_ffmpeg_paths
 from pathlib import Path
-from .rendering.util.log_utils import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
+from scripts.deforum_helpers.rendering.util.log_utils import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLOR
 from deforum.config.settings import save_settings_from_animation_run
-from .deforum_controlnet import num_of_models
+from deforum.integrations.controlnet.legacy_controlnet import num_of_models
 
 from scripts.deforum_api import JobStatusTracker
 from scripts.deforum_api_models import DeforumJobPhase
@@ -193,7 +193,7 @@ def run_deforum(*args):
         torch.cuda.empty_cache()
         
         # Import them *here* or we add 3 seconds to initial webui launch-time. user doesn't feel it when we import inside the func:
-        from .render import render_animation
+        from deforum.orchestration.render import render_animation
         from .render_modes import render_input_video, render_animation_with_video_mask, render_interpolation
 
         tqdm_backup = shared.total_tqdm

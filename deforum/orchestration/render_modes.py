@@ -18,13 +18,13 @@ import os
 import time
 import pathlib
 from modules.shared import opts, state
-from .render import render_animation
-from .rendering.util.log_utils import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
-from .seed import next_seed
+from deforum.orchestration.render import render_animation
+from scripts.deforum_helpers.rendering.util.log_utils import BOLD, BLUE, GREEN, PURPLE, RESET_COLOR
+from scripts.deforum_helpers.seed import next_seed
 from deforum.media.video_audio_utilities import vid2frames, render_preview
-from .prompt import interpolate_prompts
-from .generate import generate
-from .animation_key_frames import DeformAnimKeys
+from scripts.deforum_helpers.prompt import interpolate_prompts
+from deforum.orchestration.generate import generate
+from scripts.deforum_helpers.animation_key_frames import DeformAnimKeys
 from deforum.integrations.parseq import ParseqAdapter
 from deforum.media.save_images import save_image
 from deforum.config.settings import save_settings_from_animation_run

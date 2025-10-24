@@ -732,7 +732,7 @@ def wan_generate_video(*component_args):
         print(f"🎬 Wan video generation button clicked! Received {len(component_args)} arguments")
         
         # Import the main Deforum run function
-        from .run_deforum import run_deforum
+        from deforum.orchestration.run_deforum import run_deforum
         from .wan.wan_simple_integration import WanSimpleIntegration
         
         # Auto-discover models first to validate setup
