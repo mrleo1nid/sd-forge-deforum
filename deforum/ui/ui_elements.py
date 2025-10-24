@@ -727,7 +727,7 @@ def wan_generate_video(*component_args):
         
         # Import the main Deforum run function
         from deforum.orchestration.run_deforum import run_deforum
-        from .wan.wan_simple_integration import WanSimpleIntegration
+        from deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
         
         # Auto-discover models first to validate setup
         integration = WanSimpleIntegration()
@@ -750,7 +750,7 @@ def wan_generate_video(*component_args):
             print("📥 No models found and auto-download enabled. Downloading recommended model...")
             
             try:
-                from .wan.wan_model_downloader import WanModelDownloader
+                from deforum_helpers.wan.wan_model_downloader import WanModelDownloader
                 downloader = WanModelDownloader()
                 
                 # Try to download TI2V-5B (Wan 2.2 unified text/image-to-video)
@@ -986,7 +986,7 @@ Each prompt will be smoothly connected using I2V continuity!"""
 
 def generate_wan_video(args, anim_args, video_args, frame_idx, turbo_mode, turbo_preroll, root, animation_prompts, loop_args, parseq_args, parseq_adapter, wan_args, frame_duration):
     """Generate Wan video using the new simple integration approach - called by Deforum internally"""
-    from .wan.wan_simple_integration import WanSimpleIntegration
+    from deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
     import time
     
     print("🎬 Wan video generation started with AUTO-DISCOVERY (Internal Call)")
@@ -994,7 +994,7 @@ def generate_wan_video(args, anim_args, video_args, frame_idx, turbo_mode, turbo
     
     # Ensure Qwen models are unloaded before video generation to free VRAM
     try:
-        from .wan.utils.qwen_manager import qwen_manager
+        from deforum_helpers.wan.utils.qwen_manager import qwen_manager
         if qwen_manager.is_model_loaded():
             print("🔄 Unloading Qwen models before video generation...")
             qwen_manager.ensure_model_unloaded()
@@ -1259,7 +1259,7 @@ The auto-discovery will find your models automatically!
         
         if wan_args.wan_movement_description and not wan_args.wan_motion_strength_override:
             try:
-                from .wan.utils.movement_analyzer import analyze_deforum_movement, generate_wan_motion_intensity_schedule
+                from deforum_helpers.wan.utils.movement_analyzer import analyze_deforum_movement, generate_wan_motion_intensity_schedule
                 
                 print("🎬 Calculating dynamic motion strength from movement schedules...")
                 
@@ -2116,7 +2116,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
     def check_flash_attention_status():
         """Check flash attention availability and return status"""
         try:
-            from .wan.wan_flash_attention_patch import get_flash_attention_status_html
+            from deforum_helpers.wan.wan_flash_attention_patch import get_flash_attention_status_html
             return get_flash_attention_status_html()
         except Exception as e:
             return f"❌ <span style='color: #f44336;'>Error checking status: {e}</span>"
@@ -2124,7 +2124,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
     def update_flash_attention_mode(mode):
         """Update flash attention mode and return updated status"""
         try:
-            from .wan.wan_flash_attention_patch import update_patched_flash_attention_mode, get_flash_attention_status_html
+            from deforum_helpers.wan.wan_flash_attention_patch import update_patched_flash_attention_mode, get_flash_attention_status_html
             update_patched_flash_attention_mode(mode)
             status = get_flash_attention_status_html()
             return f"{status} - Mode: {mode}"
@@ -2147,7 +2147,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
 
     # Initialize status on load
     try:
-        from .wan.wan_flash_attention_patch import get_flash_attention_status_html
+        from deforum_helpers.wan.wan_flash_attention_patch import get_flash_attention_status_html
         wan_flash_attention_status.value = get_flash_attention_status_html()
     except Exception:
         wan_flash_attention_status.value = "⚠️ <span style='color: #FF9800;'>Status check unavailable</span>"
@@ -2181,7 +2181,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
     # )
 
     # Connect model download buttons
-    from .wan.wan_model_downloader import download_wan_model
+    from deforum_helpers.wan.wan_model_downloader import download_wan_model
 
     download_ti2v_5b.click(
     fn=lambda: download_wan_model("TI2V-5B"),
@@ -2498,7 +2498,7 @@ def create_accordion_md_row(name, markdown, is_open=False):
 def enhance_prompts_handler(current_prompts, qwen_model, language, auto_download):
     """Handle prompt enhancement with QwenPromptExpander with progress feedback"""
     try:
-        from .wan.utils.qwen_manager import qwen_manager
+        from deforum_helpers.wan.utils.qwen_manager import qwen_manager
         import json
         
         print(f"🎨 AI Prompt Enhancement requested for {qwen_model}")
@@ -2716,7 +2716,7 @@ Model download started automatically. This may take a few minutes.
 def analyze_movement_handler(current_prompts, enable_shakify=True, sensitivity_override=False, manual_sensitivity=1.0):
     """Handle movement analysis from Deforum schedules with enhanced Camera Shakify integration and fine-grained sensitivity control"""
     try:
-        from .wan.utils.movement_analyzer import analyze_deforum_movement, generate_wan_motion_intensity_schedule, MovementAnalyzer
+        from deforum_helpers.wan.utils.movement_analyzer import analyze_deforum_movement, generate_wan_motion_intensity_schedule, MovementAnalyzer
         from types import SimpleNamespace
         import json
         
@@ -2846,7 +2846,7 @@ Movement descriptions will be added to your existing prompts."""
             analyzer = MovementAnalyzer(sensitivity=1.0)  # Start with baseline
             
             # Calculate movement ranges to determine optimal sensitivity
-            from .wan.utils.movement_analyzer import parse_schedule_string, interpolate_schedule
+            from deforum_helpers.wan.utils.movement_analyzer import parse_schedule_string, interpolate_schedule
             
             try:
                 # Parse all movement schedules
@@ -3028,7 +3028,7 @@ Contact support if this persists."""
 def check_qwen_models_handler(qwen_model):
     """Check Qwen model status and availability"""
     try:
-        from .wan.utils.qwen_manager import qwen_manager
+        from deforum_helpers.wan.utils.qwen_manager import qwen_manager
         
         print(f"🔍 Checking Qwen model status: {qwen_model}")
         
@@ -3113,7 +3113,7 @@ def check_qwen_models_handler(qwen_model):
 def download_qwen_model_handler(qwen_model, auto_download_enabled):
     """Download selected Qwen model"""
     try:
-        from .wan.utils.qwen_manager import qwen_manager
+        from deforum_helpers.wan.utils.qwen_manager import qwen_manager
         
         if not auto_download_enabled:
             return """❌ <span style='color: #f44336;'>Auto-download is disabled</span>
@@ -3178,7 +3178,7 @@ Use HuggingFace CLI or git to download the model"""
 def cleanup_qwen_cache_handler():
     """Cleanup Qwen model cache and free VRAM"""
     try:
-        from .wan.utils.qwen_manager import qwen_manager
+        from deforum_helpers.wan.utils.qwen_manager import qwen_manager
         
         print("🧹 Cleaning up Qwen model cache...")
         
