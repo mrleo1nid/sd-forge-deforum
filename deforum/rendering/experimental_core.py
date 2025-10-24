@@ -473,9 +473,9 @@ def check_render_conditions(data: RenderData):
                In case of problems, consider deactivating either one."
         dark_or_dist = "Resulting images may quickly end up looking dark or distorted."
         if data.has_optical_flow_cadence():
-            log_utils.warn(msg.format(method="optical flow cadence", results=dark_or_dist))
+            log_utils.warning(msg.format(method="optical flow cadence", results=dark_or_dist))
         if data.has_optical_flow_redo():
-            log_utils.warn(msg.format(method="optical flow generation", results=dark_or_dist))
+            log_utils.warning(msg.format(method="optical flow generation", results=dark_or_dist))
 
 
 def update_pseudo_cadence(data: RenderData, value: int):

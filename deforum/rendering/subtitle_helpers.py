@@ -77,10 +77,10 @@ def _check_and_log_subtitle_count(data, diffusion_frames, subtitle_count):
         return  # no check because subtitle frequency is expected to be irregular.
     max_frames = data.args.anim_args.max_frames
     if subtitle_count != max_frames:
-        log_utils.warn(f"Subtitle count {subtitle_count} is different from max. frames {max_frames}.")
+        log_utils.warning(f"Subtitle count {subtitle_count} is different from max. frames {max_frames}.")
     calculated_count = 1 + sum(len(ks.tweens) for ks in diffusion_frames)
     if subtitle_count != calculated_count:
-        log_utils.warn(f"Subtitle count {subtitle_count} is different from calculated count {calculated_count}.")
+        log_utils.warning(f"Subtitle count {subtitle_count} is different from calculated count {calculated_count}.")
 
 
 def _is_do_not_skip(subtitle_index, write_interval):

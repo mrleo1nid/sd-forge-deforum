@@ -24,7 +24,7 @@ class KeyFrameDistribution(Enum):
                 return KeyFrameDistribution.REDISTRIBUTED
             case _:
                 default = KeyFrameDistribution.default()
-                log_utils.warn(f"Invalid keyframe_distribution from UI: '{distribution}'. Falling back to '{default}'.")
+                log_utils.warning(f"Invalid keyframe_distribution from UI: '{distribution}'. Falling back to '{default}'.")
                 return default
 
     @staticmethod
@@ -36,7 +36,7 @@ class KeyFrameDistribution(Enum):
         match self:
             case KeyFrameDistribution.OFF:
                 # To get here on purpose, override `is_use_new_render_core` in render.py
-                log_utils.warn("Called new core without keyframe distribution. Using uniform from cadence'.")
+                log_utils.warning("Called new core without keyframe distribution. Using uniform from cadence'.")
                 return self.uniform_indexes(start_index, max_frames, diffusion_frame_count)
             case KeyFrameDistribution.KEYFRAMES_ONLY:
                 return self.select_keyframes(data)
@@ -112,7 +112,7 @@ class KeyFrameDistribution(Enum):
         original_count = len(keyframes)
         keyframes = list(filter(lambda _: 1 <= _ <= max_frames, keyframes))
         if len(keyframes) < original_count:
-            log_utils.warn(f"Removed at least one prompt because its index is not between 0 and {max_frames}. "
+            log_utils.warning(f"Removed at least one prompt because its index is not between 0 and {max_frames}. "
                            f"Original count: {original_count}, New count: {len(keyframes)}")
         return keyframes
 

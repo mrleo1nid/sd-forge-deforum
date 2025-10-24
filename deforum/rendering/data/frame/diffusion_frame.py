@@ -102,7 +102,7 @@ class DiffusionFrame:
         if data.images.has_previous():  # skipping 1st iteration
             transformed_image = frame_tube(data, self)(data.images.previous)
             if transformed_image is None:
-                log_utils.warn("Image transformation failed, using fallback.")
+                log_utils.warning("Image transformation failed, using fallback.")
                 transformed_image = data.images.previous
             return self._generate_and_update_noise(data, transformed_image, contrasted_noise_tube)
         return None
@@ -301,7 +301,7 @@ class DiffusionFrame:
 
         # Check if index is within bounds
         if idx >= len(keys.strength_schedule_series) or idx >= len(keys.keyframe_strength_schedule_series):
-            log_utils.warn(f"Frame index {index} (0-indexed: {idx}) exceeds strength schedule series length, using default value.")
+            log_utils.warning(f"Frame index {index} (0-indexed: {idx}) exceeds strength schedule series length, using default value.")
             return 0.85  # Default strength value
 
         return (keys.strength_schedule_series[idx]
@@ -353,7 +353,7 @@ class DiffusionFrame:
             i = diffusion_frame.i - 1
             # Ensure i is within bounds of the series
             if i >= len(keys.seed_schedule_series):
-                log_utils.warn(f"Frame index {diffusion_frame.i} (0-indexed: {i}) exceeds max_frames, using fallback values.")
+                log_utils.warning(f"Frame index {diffusion_frame.i} (0-indexed: {i}) exceeds max_frames, using fallback values.")
                 diffusion_frame.seed = data.args.args.seed
                 diffusion_frame.subseed = -1
                 diffusion_frame.subseed_strength = 0.0
@@ -399,7 +399,7 @@ class DiffusionFrame:
             i = diffusion_frame.i
             keys = data.animation_keys.deform_keys
             if i >= len(keys.steps_schedule_series):
-                log_utils.warn(f"Frame index {i} exceeds max_frames length, using safe index for schedule creation.")
+                log_utils.warning(f"Frame index {i} exceeds max_frames length, using safe index for schedule creation.")
                 safe_i = min(i, len(keys.steps_schedule_series)-1)
                 diffusion_frame.schedule = Schedule.create(data, diffusion_frame.seed, safe_i)
             else:
@@ -415,7 +415,7 @@ class DiffusionFrame:
             i = diffusion_frame.i - 1
             # Check if index is within bounds
             if i >= len(keys.subseed_schedule_series):
-                log_utils.warn(f"Frame index {diffusion_frame.i} (0-indexed: {i}) exceeds subseed schedule series length, using default values.")
+                log_utils.warning(f"Frame index {diffusion_frame.i} (0-indexed: {i}) exceeds subseed schedule series length, using default values.")
                 diffusion_frame.subseed = -1
                 diffusion_frame.subseed_strength = 0.0
             else:
