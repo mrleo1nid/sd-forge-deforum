@@ -19,52 +19,48 @@ def temporarily_unpatch_hf_download():
     support the 'etag' parameter that newer diffusers/transformers uses.
     This context manager temporarily restores the original during model loading.
     """
+    patched_fn = None
+    restored = False
+
     try:
         from huggingface_hub import file_download
+
+        # Save current (patched) function
         patched_fn = file_download._download_to_tmp_and_move
 
-        # Try to get the original function (it's wrapped by the patch)
-        # The patch calls original_download_to_tmp_and_move, but we need to access it
-        if hasattr(patched_fn, '__wrapped__'):
-            original_fn = patched_fn.__wrapped__
-        else:
-            # Import the original directly from a fresh module
-            import importlib
-            import sys
-            # Remove cached module to force reimport
-            if 'huggingface_hub.file_download' in sys.modules:
-                cached_module = sys.modules['huggingface_hub.file_download']
-                # Save the patched version
-                patched_fn = cached_module._download_to_tmp_and_move
+        # Get the original function from the closure
+        # Forge's patch wraps the original: original_download_to_tmp_and_move
+        if hasattr(patched_fn, '__code__') and patched_fn.__code__.co_freevars:
+            # Try to extract original from closure
+            for cell in patched_fn.__closure__ or []:
+                try:
+                    obj = cell.cell_contents
+                    if callable(obj) and obj != patched_fn:
+                        # Found the original function
+                        file_download._download_to_tmp_and_move = obj
+                        restored = True
+                        print("  Temporarily using original HF download (avoiding Forge patch)")
+                        break
+                except (ValueError, AttributeError):
+                    continue
 
-                # Import fresh to get original
-                from huggingface_hub.file_download import _download_to_tmp_and_move as original_fn_fresh
-
-                # Temporarily replace with original
-                file_download._download_to_tmp_and_move = original_fn_fresh
-
-                yield
-
-                # Restore patched version
-                file_download._download_to_tmp_and_move = patched_fn
-                return
-            else:
-                # No patching detected, just yield
-                yield
-                return
-
-        # Restore original
-        file_download._download_to_tmp_and_move = original_fn
-
-        yield
-
-        # Restore patch
-        file_download._download_to_tmp_and_move = patched_fn
+        if not restored:
+            print("  Using patched HF download (couldn't restore original, may fail)")
 
     except Exception as e:
-        print(f"Warning: Could not unpatch HF download: {e}")
-        # Continue anyway
+        print(f"  Warning during HF download unpatch setup: {e}")
+
+    try:
         yield
+    finally:
+        # Always restore the patch if we changed it
+        if restored and patched_fn is not None:
+            try:
+                from huggingface_hub import file_download
+                file_download._download_to_tmp_and_move = patched_fn
+                print("  Restored Forge HF download patch")
+            except Exception as e:
+                print(f"  Warning: Could not restore HF patch: {e}")
 
 
 # Available Flux ControlNet models
