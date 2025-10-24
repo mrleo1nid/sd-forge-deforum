@@ -1,7 +1,7 @@
 import cv2
 from PIL import Image
 
-from ....composable_masks import compose_mask_with_check
+from deforum.core.masking.composable import compose_mask_with_check
 from ....image_sharpening import unsharp_mask
 
 
