@@ -1,6 +1,6 @@
 from cv2.typing import MatLike
 
-from .call.anim import call_anim_frame_warp
+from deforum.rendering.calls.anim import call_anim_frame_warp
 from deforum.animation.optical_flow_utils import (get_flow_from_images, image_transform_optical_flow,
                                    abs_flow_to_rel_flow, rel_flow_to_abs_flow)
 

@@ -10,7 +10,7 @@ import os
 import cv2
 from cv2.typing import MatLike
 
-from . import filename_utils
+from deforum.rendering import filename_helpers as filename_utils
 from deforum.rendering.data.render_data import RenderData
 
 # Import pure conversion functions from refactored utils module

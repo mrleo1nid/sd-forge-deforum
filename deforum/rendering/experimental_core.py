@@ -12,7 +12,12 @@ from . import img_2_img_tubes
 from .data.frame import KeyFrameDistribution, DiffusionFrame
 from .data.render_data import RenderData
 from .data.taqaddumat import Taqaddumat
-from .util import filename_utils, image_utils, log_utils, memory_utils, subtitle_utils, web_ui_utils
+from deforum.rendering import filename_helpers as filename_utils
+from deforum.utils import image_utils
+from deforum.utils.logging import log as log_utils
+from deforum.rendering import memory as memory_utils
+from deforum.rendering import subtitle_helpers as subtitle_utils
+from deforum.rendering import webui_helpers as web_ui_utils
 
 IS_USE_PROFILER = False
 

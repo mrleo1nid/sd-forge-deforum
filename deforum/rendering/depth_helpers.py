@@ -1,6 +1,7 @@
 import os
 
-from . import filename_utils, memory_utils
+from deforum.rendering import filename_helpers as filename_utils
+from deforum.rendering import memory as memory_utils
 from deforum.depth import DepthModel
 
 
