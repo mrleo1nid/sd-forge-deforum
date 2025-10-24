@@ -84,7 +84,7 @@ pip install -r requirements.txt
    - Routes to appropriate rendering pipeline based on animation mode
 
 5. **Rendering Pipelines**
-   - **Standard mode (3D/Interpolation):** `scripts/deforum_helpers/rendering/experimental_core.py:22` - `render_animation()`
+   - **Standard mode (3D/Interpolation):** `deforum/rendering/core.py:22` - `render_animation()`
    - **Flux/Wan mode:** `scripts/deforum_helpers/rendering/render_wan_flux.py` - `render_wan_flux()` - Flux keyframes + Wan FLF2V interpolation
 
 ### Core Systems
@@ -98,7 +98,7 @@ pip install -r requirements.txt
   - `tween_frame.py` - Interpolated frames between keyframes
 - **Integration:** Works with or without Parseq for precise timing
 
-**2. Animation Pipeline** (`scripts/deforum_helpers/rendering/experimental_core.py`)
+**2. Animation Pipeline** (`deforum/rendering/core.py`)
 - Central render loop that:
   1. Creates `RenderData` object (central state container)
   2. Generates subtitle .srt file asynchronously
@@ -106,7 +106,7 @@ pip install -r requirements.txt
   4. Applies transformations (2D/3D movement, depth warping)
   5. Handles masks, noise schedules, and color coherence
   6. Stitches final video with ffmpeg
-- **Note:** Legacy/stable core has been removed - experimental core is now the only render pipeline
+- **Note:** Legacy/stable core has been removed - render core is now the only render pipeline
 
 **3. Wan Video Pipeline** (`scripts/deforum_helpers/wan/`, `scripts/deforum_helpers/rendering/`)
 - **wan_simple_integration.py** - Wan FLF2V wrapper and utilities
@@ -172,7 +172,7 @@ scripts/
     │   ├── qwen_prompt_expander.py     # AI prompt enhancement
     │   └── ...
     ├── rendering/                      # Rendering pipeline
-    │   ├── experimental_core.py        # Main render loop
+    │   ├── core.py        # Main render loop
     │   ├── data/                       # Data structures
     │   │   ├── render_data.py          # Central state
     │   │   ├── frame/                  # Frame systems
@@ -213,7 +213,7 @@ pytest.ini                              # Pytest settings
 - Reduces diffusion steps while maintaining quality
 
 **Render Core:**
-- Experimental core is now the **only** render core (legacy/stable core has been removed)
+- Render core is now the **only** render core (legacy/stable core has been removed)
 - Keyframe distribution modes: Off, Keyframes Only, Additive, Redistributed
 - Incompatible with some features (Kohya HR Fix, FreeU, ControlNet)
 - Provides better synchronization and less jitter at high/no cadence
@@ -300,7 +300,7 @@ Arguments flow as: Raw args → `process_args()` → Structured namespaces
 **Frame Processing:**
 Each frame goes through: Prompt → Seed → Denoise strength → Transformation → Depth → Output
 - Keyframes: Full diffusion generation
-- Tween frames: Interpolated from neighboring keyframes (experimental core only)
+- Tween frames: Interpolated from neighboring keyframes (render core only)
 
 **Model Loading:**
 - Wan mode skips SD/Flux model loading entirely (check in `run_deforum.py:52`)
@@ -343,7 +343,7 @@ pytest tests/deforum_test.py::test_name -v
 When discussing code, use `file_path:line_number` format:
 - Extension init: `scripts/deforum.py:24`
 - Main orchestrator: `scripts/deforum_helpers/run_deforum.py:43`
-- Standard render pipeline (3D/Interpolation): `scripts/deforum_helpers/rendering/experimental_core.py:22`
+- Standard render pipeline (3D/Interpolation): `deforum/rendering/core.py:22`
 - Flux/Wan pipeline: `scripts/deforum_helpers/rendering/render_wan_flux.py:1`
 - Central state: `scripts/deforum_helpers/rendering/data/render_data.py:42`
 - Wan FLF2V wrapper: `scripts/deforum_helpers/wan/wan_simple_integration.py:1`
@@ -378,7 +378,7 @@ Known compatibility issues:
 - **Flux Schnell** - Limited precision with only 4 steps
 
 **Removed Features:**
-- **Legacy/Stable Core** - Removed in favor of experimental core only
+- **Legacy/Stable Core** - Removed in favor of render core only
 - **2D Animation Mode** - Removed (3D mode is now default and only depth-based mode)
 - **Wan Only Mode** - Removed (superseded by Flux/Wan mode)
 - **Hybrid Video Mode** - Removed completely
@@ -404,7 +404,7 @@ huggingface-cli download Wan-AI/Wan2.1-VACE-1.3B --local-dir models/wan
 - Select smaller model (3B instead of 7B/14B)
 - Check console for error messages
 
-**Generation fails with experimental core:**
+**Generation fails with render core:**
 - Disable Kohya HR Fix
 - Disable FreeU
 - Ensure keyframes align with prompt frame numbers
@@ -446,7 +446,7 @@ When writing or modifying code in this repository, follow **STRICT** functional 
 
 ### Key Architecture Components
 
-1. **Experimental Core** (`scripts/deforum_helpers/rendering/experimental_core.py:22`)
+1. **Experimental Core** (`deforum/rendering/core.py:22`)
    - This is the ONLY render core (legacy core removed)
    - Main render loop at `render_animation()`
    - Generates subtitle .srt file asynchronously
@@ -466,7 +466,7 @@ When writing or modifying code in this repository, follow **STRICT** functional 
    - `key_frame_distribution.py` - Distribution algorithms
    - `diffusion_frame.py` - Frame metadata and state
    - `tween_frame.py` - Interpolated frames between keyframes
-   - Central to experimental core operation
+   - Central to render core operation
 
 ### Tools and Commands
 

@@ -33,21 +33,32 @@ extensions/sd-forge-deforum/
 │   │   ├── defaults.py         # Default values
 │   │   ├── settings.py         # Settings management
 │   │   └── default_settings.txt  # Default configuration template
-│   ├── utils/                  # ✅ Pure utility functions
-│   │   ├── seed_utils.py       # Seed generation logic
-│   │   ├── image_utils.py      # Image processing (sharpening, color matching)
-│   │   ├── noise_utils.py      # Perlin noise generation
-│   │   ├── prompt_utils.py     # Prompt parsing and interpolation
-│   │   └── transform_utils.py  # 3D transformations and matrix operations
+│   ├── utils/                  # ✅ Pure utility functions (organized)
+│   │   ├── generation/         # Seeds, noise, prompts
+│   │   ├── image/              # Processing, geometry, transforms, color
+│   │   ├── media/              # Depth, optical flow, subtitles
+│   │   ├── parsing/            # Schedules, expressions, strings
+│   │   ├── filesystem/         # Paths, files, URLs
+│   │   ├── math/               # Core math, interpolation, resolution
+│   │   ├── system/             # Logging, HTTP, opts_overrider
+│   │   ├── camera/             # Camera analysis
+│   │   ├── conversion/         # Type conversion, formats, hashing
+│   │   ├── ui/                 # Progress bars, console
+│   │   ├── validation/         # Validators, deprecation
+│   │   ├── functional.py       # Functional programming helpers
+│   │   └── general.py          # General utilities
 │   ├── core/                   # ✅ Core business logic
 │   │   ├── keyframes.py        # Keyframe scheduling
 │   │   ├── prompts.py          # Prompt scheduling
 │   │   ├── seeds.py            # Seed iteration
 │   │   └── masking/            # Masking subsystem
 │   ├── rendering/              # ✅ Rendering pipeline
-│   │   ├── experimental_core.py  # Main render loop
+│   │   ├── core.py             # Main render loop (THE render core)
+│   │   ├── img_2_img_tubes.py  # Functional img2img pipeline
 │   │   ├── wan_flux.py         # Flux/Wan hybrid mode
 │   │   ├── noise.py            # Noise application
+│   │   ├── options.py          # Rendering options
+│   │   ├── helpers/            # Helper modules (organized)
 │   │   └── data/               # Render data structures
 │   ├── integrations/           # ✅ External integrations
 │   │   ├── wan/                # Wan AI video integration
@@ -68,7 +79,7 @@ extensions/sd-forge-deforum/
 │   └── deforum_extend_paths.py  # sys.path setup
 ├── tests/                      # ✅ Test suite
 ├── preload.py                  # ✅ Extension preload hook
-├── REFACTORING_RULES.md        # This document
+├── CODING_GUIDE.md             # This document
 └── README.md                   # User documentation
 ```
 
@@ -80,30 +91,41 @@ extensions/sd-forge-deforum/
 3. **Forge Pattern**: Matches ControlNet's `lib_controlnet/` pattern
 4. **Clean Separation**: Distinguishes new clean code from legacy `scripts/deforum_helpers/`
 
-**Migration Strategy (Gradual)**
-- **Phase 1** ✅ COMPLETE: Extract pure functions in-place from legacy files
-- **Phase 2** 🔄 IN PROGRESS: Move pure functions to `deforum/utils/`
-- **Phase 3**: Migrate core logic to `deforum/core/`
-- **Phase 4**: Migrate rendering to `deforum/rendering/`
-- **Phase 5**: Remove `scripts/deforum_helpers/` entirely
+**Migration Status: ✅ COMPLETE**
+- All code migrated from `scripts/deforum_helpers/` to `deforum/` package
+- Utils organized into logical subdirectories
+- Rendering helpers consolidated
+- "Experimental" terminology removed
 
 ### Package Organization
 
-**`deforum/utils/`** - Pure utility functions
-- **Criteria**: Side-effect free, mathematical/algorithmic, testable
-- **Examples**: Seed generation, matrix operations, prompt parsing
+**`deforum/utils/`** - Pure utility functions (organized into subdirectories)
+- **generation/**: Seeds, noise, prompts
+- **image/**: Image processing, geometry, transforms, color
+- **media/**: Depth, optical flow, subtitles
+- **parsing/**: Schedules, expressions, strings
+- **filesystem/**: Paths, files, URLs
+- **math/**: Core math, interpolation, resolution
+- **system/**: Logging, HTTP, opts_overrider, startup banner
+- **camera/**: Camera analysis
+- **conversion/**: Type conversion, formats, hashing
+- **ui/**: Progress bars, console output
+- **validation/**: Validators, deprecation warnings
 
-**`deforum/core/`** (Future) - Core business logic
-- **Criteria**: Frame processing, keyframe distribution, depth estimation
-- **Examples**: `frame_processor.py`, `keyframe_engine.py`
+**`deforum/core/`** - Core business logic
+- Keyframe scheduling, prompt handling, seed iteration
+- Masking subsystem for selective generation
 
-**`deforum/rendering/`** (Future) - Rendering pipeline
-- **Criteria**: Video generation, diffusion integration, output handling
-- **Examples**: `render_loop.py`, `video_encoder.py`
+**`deforum/rendering/`** - Rendering pipeline
+- **core.py**: Main render loop (frame iteration, transformations, video output)
+- **img_2_img_tubes.py**: Functional img2img pipeline
+- **wan_flux.py**: Flux + Wan hybrid mode
+- **helpers/**: Helper modules (depth, filename, flux_controlnet, image, memory, subtitle, turbo, webui)
+- **data/**: Data structures (RenderData, DiffusionFrame, etc.)
 
-**`scripts/deforum_helpers/`** (Legacy) - To be migrated
-- Keep minimal: WebUI integration, backward compatibility shims
-- Delete files as they're fully migrated to `deforum/`
+**`scripts/`** - Forge integration layer ONLY
+- **deforum.py**: Main WebUI script (Forge entry point)
+- **deforum_extend_paths.py**: sys.path setup
 
 ## Functional Programming Principles (Python-Adapted)
 
