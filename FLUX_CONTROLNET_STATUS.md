@@ -63,71 +63,50 @@ User → Deforum → Forge's loaded Flux + ControlNet model → Generate
 - No HuggingFace authentication needed
 - Integrate with Forge's backend patching system
 
-### Challenges
-1. **Format incompatibility**:
-   - Forge: Single `.safetensors` file (`flux1-dev-bnb-nf4-v2.safetensors`)
-   - Diffusers: Full model repo with `config.json`, multiple files
-   - No direct conversion path
+### The Challenge
 
-2. **Forge backend limitations**:
-   - No Flux ControlNet support in `backend/patcher/controlnet.py`
-   - Would need to implement Flux-specific ControlNet patcher
-   - Forge project is semi-abandoned (no official updates expected)
+Forge's Flux transformer (`backend/nn/flux.py:372-398`) does NOT have ControlNet parameters. Diffusers' Flux transformer accepts `controlnet_block_samples` and `controlnet_single_block_samples`, but Forge's implementation is missing this.
 
-3. **Complexity**:
-   - Need to understand Flux transformer internals
-   - Need to understand how ControlNet conditioning works for Flux
-   - Need to patch Forge's backend from extension (not ideal)
-
-### Possible Approaches
-
-**Option A: Wait for community support**
-- Monitor for community Flux ControlNet implementations for Forge
-- Unlikely given Forge's abandoned status
-
-**Option B: Implement Forge backend patcher**
-- Study ComfyUI's Flux ControlNet implementation
-- Port to Forge's backend architecture
-- Significant effort, requires deep understanding
-
-**Option C: Hybrid approach**
-- Load ControlNet model only (not full pipeline)
-- Manually compute control hints
-- Inject into Forge's Flux generation somehow
-- Requires experimentation
-
-**Option D: Accept current state**
-- v1 works, just uses more VRAM
-- Document authentication requirement
-- Focus on other features
-- Revisit when we have more time/knowledge
+We need to inject control samples into Forge's Flux without duplicating the base model.
 
 ## Decision: Implement v2 (Forge-native integration)
 
 **v1 is REJECTED** - double VRAM usage makes it unusable for target users (16GB VRAM).
 
-**Must implement v2** (Option C - Hybrid approach) to make this feature viable. This is a multi-session task.
+**Must implement v2** to make this feature viable. This is a multi-session task.
 
 ## V2 Implementation Roadmap
 
-### Phase 1: Research & Understanding (Next Session)
+### Phase 1: Research & Understanding ✅ COMPLETED
 
-**1. Study Forge's ControlNet Backend** (`backend/patcher/controlnet.py`)
-- How does `apply_controlnet_advanced()` work for SD/SDXL?
-- How are control hints injected into UNet?
-- What is the `set_cond_hint()` API?
-- How does `add_patched_controlnet()` work?
+**1. Forge's ControlNet Backend** (`backend/patcher/controlnet.py`)
+- `apply_controlnet_advanced()` works at lines 11-83
+- Uses `ControlBase` class (lines 175-279) and `ControlNet` class (lines 282-358)
+- Control model called at line 338: `self.control_model(x=x_noisy, hint=self.cond_hint, timesteps=timestep, context=context, y=y)`
+- Control signals merged via `add_patched_controlnet()` into UNet
+- ⚠️ **This system is SD/SDXL only - no Flux support**
 
-**2. Study FluxControlNetModel Internals**
-- How does FluxControlNetModel compute control hints?
-- What's the forward pass signature?
-- Can we extract control tensors without full pipeline?
-- What conditioning format does Flux expect?
+**2. FluxControlNetModel Internals** (`diffusers/models/controlnets/controlnet_flux.py`)
+- Forward signature at lines 213-280:
+  ```python
+  forward(hidden_states, controlnet_cond, conditioning_scale=1.0,
+          encoder_hidden_states, pooled_projections, timestep,
+          img_ids, txt_ids, guidance, ...)
+  ```
+- Returns: `FluxControlNetOutput(controlnet_block_samples, controlnet_single_block_samples)`
+- ✅ **Can be called directly without full pipeline** - just need proper inputs
 
-**3. Understand Forge's Flux Loading**
-- How does Forge load `flux1-dev-bnb-nf4-v2.safetensors`?
-- Where is the Flux transformer in `p.sd_model.forge_objects`?
-- Can we access the Flux UNet/transformer directly?
+**3. How Diffusers Uses Control Samples** (`diffusers/pipelines/flux/pipeline_flux_controlnet.py`)
+- Line 1082: Computes control samples via `self.controlnet(...)`
+- Lines 1108-1127: Passes `controlnet_block_samples` and `controlnet_single_block_samples` to `self.transformer()`
+- Control samples are injected into transformer's double_blocks and single_blocks
+
+**4. Forge's Flux Architecture** (`backend/nn/flux.py`)
+- Main forward at lines 400-422
+- Inner forward at lines 372-398 with signature: `inner_forward(img, img_ids, txt, txt_ids, timesteps, y, guidance=None)`
+- Line 388: `for block in self.double_blocks:` - ⚠️ **NO ControlNet injection here**
+- Line 391: `for block in self.single_blocks:` - ⚠️ **NO ControlNet injection here**
+- ❌ **Critical finding**: Forge's Flux transformer is missing `controlnet_block_samples` and `controlnet_single_block_samples` parameters
 
 ### Phase 2: Minimal Integration (After Research)
 
@@ -142,10 +121,27 @@ User → Deforum → Forge's loaded Flux + ControlNet model → Generate
 - Extract control tensors/embeddings
 - Format for Forge injection
 
-**3. Inject into Forge's Processing**
-- Option A: Modify `generate.py` to add control to Forge's Flux processing
-- Option B: Create Flux-specific ControlNet patcher in Forge backend
-- Option C: Inject control tensors directly into `p.sd_model.forge_objects.unet`
+**3. Inject Control into Forge's Flux**
+
+Based on Phase 1 research, we have three implementation options:
+
+**Option A: Patch Forge's Flux Transformer** (backend/nn/flux.py)
+- Modify `inner_forward()` to accept `controlnet_block_samples` and `controlnet_single_block_samples` parameters
+- Update line 388 loop: inject control from `controlnet_block_samples` into `double_blocks`
+- Update line 391 loop: inject control from `controlnet_single_block_samples` into `single_blocks`
+- ⚠️ Requires modifying Forge core code (not ideal but most direct)
+
+**Option B: Wrapper/Interceptor Pattern**
+- Create wrapper around Forge's Flux transformer that intercepts calls
+- Compute control samples before calling original transformer
+- Manually apply control to latents between block calls
+- ✅ Avoids modifying Forge core, but more complex
+
+**Option C: High-Level Pipeline Injection**
+- Hook into Forge's processing pipeline before transformer is called
+- Compute control samples and store in processing context
+- Find injection point where we can modify latents with control signals
+- ❓ Need to verify if Forge exposes suitable hooks
 
 ### Phase 3: Testing & Refinement
 
@@ -164,25 +160,27 @@ User → Deforum → Forge's loaded Flux + ControlNet model → Generate
 - Update documentation
 - Add usage examples
 
-### Open Questions for Next Session
+### Phase 1 Questions - ANSWERED ✅
 
 1. **Can we call FluxControlNetModel.forward() directly?**
-   - Need to check diffusers source code
-   - What inputs does it expect?
-   - What outputs does it produce?
+   - ✅ YES - Found at `diffusers/models/controlnets/controlnet_flux.py:213-280`
+   - Inputs: `hidden_states, controlnet_cond, conditioning_scale, encoder_hidden_states, pooled_projections, timestep, img_ids, txt_ids, guidance`
+   - Outputs: `FluxControlNetOutput(controlnet_block_samples, controlnet_single_block_samples)`
 
 2. **Where in Forge's Flux pipeline can we inject control?**
-   - During text encoding?
-   - During transformer forward pass?
-   - Via custom attention injection?
+   - ✅ Need to inject during transformer forward pass
+   - Specifically: `backend/nn/flux.py:388` (double_blocks) and line 391 (single_blocks)
+   - Diffusers injects control samples directly into transformer blocks
 
 3. **Does Forge's backend support Flux at all?**
-   - Check `backend/nn/` for Flux-specific code
-   - May need to implement from scratch
+   - ✅ YES - Flux implementation at `backend/nn/flux.py`
+   - ❌ NO ControlNet support - transformer missing controlnet parameters
+   - Need to add ControlNet capability ourselves
 
 4. **Can we reuse any code from archive/crazy-flux-controlnet-monkeypatch?**
-   - Was it attempting v2-style integration?
-   - Any useful patterns to extract?
+   - ⚠️ That branch was 3958 lines of complex monkey-patching
+   - User preference: "we like to do it better and avoid patching Forge from its own extension if possible"
+   - Better to implement cleanly with new knowledge
 
 ### Success Criteria
 
