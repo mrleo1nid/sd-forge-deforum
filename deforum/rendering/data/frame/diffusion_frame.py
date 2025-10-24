@@ -13,9 +13,9 @@ from tqdm import tqdm
 
 from . import DiffusionFrameData, KeyFrameDistribution
 from .tween_frame import Tween
-from .. import RenderData, Schedule
-from ..taqaddumat import Taqaddumat
-from ... import img_2_img_tubes
+from deforum.rendering.data import RenderData, Schedule
+from deforum.rendering.data.taqaddumat import Taqaddumat
+from deforum.rendering import img_2_img_tubes
 from deforum.rendering import depth_helpers as depth_utils
 from deforum.rendering import filename_helpers as filename_utils
 from deforum.utils.logging import log as log_utils

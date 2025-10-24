@@ -4,8 +4,8 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from ...data.render_data import RenderData
-from ... import img_2_img_tubes
+from deforum.rendering.data.render_data import RenderData
+from deforum.rendering import img_2_img_tubes
 from deforum.rendering import image_helpers as image_utils
 from deforum.utils.logging import log as log_utils
 from deforum.rendering import turbo_helpers as turbo_utils
