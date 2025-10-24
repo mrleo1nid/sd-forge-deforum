@@ -28,7 +28,7 @@ from scripts.deforum_extend_paths import deforum_sys_extend
 import gradio as gr
 
 def get_latest_frames():
-    """Poll for latest frame and depth map during generation"""
+    """Poll for latest frame and depth map preview files during generation"""
     import glob
     from pathlib import Path
 
@@ -41,17 +41,13 @@ def get_latest_frames():
 
     latest_dir = max(subdirs, key=os.path.getmtime)
 
-    # Get latest frame (any image file in main directory)
-    frame_pattern = os.path.join(latest_dir, "*.png")
-    frame_files = [f for f in glob.glob(frame_pattern) if not f.endswith('_depth.png')]
-    latest_frame = max(frame_files, key=os.path.getmtime) if frame_files else None
+    # Look for fixed preview filenames instead of scanning all files
+    frame_preview = os.path.join(latest_dir, "frame-preview.png")
+    depth_preview = os.path.join(latest_dir, "depth-raft-preview.png")
 
-    # Get latest depth map
-    depth_dir = os.path.join(latest_dir, "depth-maps")
-    latest_depth = None
-    if os.path.exists(depth_dir):
-        depth_files = glob.glob(os.path.join(depth_dir, "*_depth.png"))
-        latest_depth = max(depth_files, key=os.path.getmtime) if depth_files else None
+    # Return paths if files exist, otherwise None
+    latest_frame = frame_preview if os.path.exists(frame_preview) else None
+    latest_depth = depth_preview if os.path.exists(depth_preview) else None
 
     return latest_frame, latest_depth
 
@@ -134,9 +130,23 @@ def on_ui_tabs():
         min-height: 200px !important;
     }
 
-    /* Ensure depth gallery stays compact */
-    #deforum_depth_preview_image {
+    /* Style both preview images consistently with rounded corners */
+    #deforum_live_preview, #deforum_depth_preview {
         max-height: 200px !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+
+    #deforum_live_preview .image-container,
+    #deforum_depth_preview .image-container {
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+
+    #deforum_live_preview img,
+    #deforum_depth_preview img {
+        border-radius: 8px !important;
+        display: block !important;
     }
     """
 
@@ -165,12 +175,13 @@ def on_ui_tabs():
 
                 # Live preview - show latest frame during generation
                 live_preview_image = gr.Image(
-                    label="Latest Frame",
+                    label="Frame Preview",
                     show_label=True,
                     elem_id="deforum_live_preview",
                     type="filepath",
                     interactive=False,
-                    visible=True
+                    visible=True,
+                    height=200
                 )
 
                 # Buttons and Depth Preview side by side
@@ -203,7 +214,7 @@ def on_ui_tabs():
                     # Right: Depth preview (compact, beside buttons)
                     with gr.Column(scale=2):
                         depth_preview_image = gr.Image(
-                            label="Latest Depth Map",
+                            label="Depth & Flow Preview",
                             show_label=True,
                             elem_id="deforum_depth_preview",
                             type="filepath",

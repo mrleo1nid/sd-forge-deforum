@@ -507,9 +507,31 @@ def DeforumAnimArgs():
         "optical_flow_cadence": {
             "label": "Optical flow cadence",
             "type": "dropdown",
-            "choices": ['None', 'RAFT', 'DIS Medium', 'DIS Fine', 'Farneback'],
+            "choices": ['None', 'RAFT'],
             "value": "None",
-            "info": "use optical flow estimation for your in-between (cadence) frames"
+            "info": "Use optical flow estimation for in-between (cadence) frames. ⚠️ WARNING: Can produce 'smear-core' artifacts with many cadence frames. Works best with low cadence (2-3 frames). Experimental feature - use with caution."
+        },
+        "raft_model_size": {
+            "label": "RAFT model size",
+            "type": "dropdown",
+            "choices": ['Large', 'Small'],
+            "value": "Small",
+            "info": "RAFT model size - Large (best quality, slower) or Small (faster, good quality)"
+        },
+        "raft_flow_iterations": {
+            "label": "RAFT flow iterations",
+            "type": "slider",
+            "minimum": 6,
+            "maximum": 50,
+            "step": 1,
+            "value": 12,
+            "info": "Number of flow refinement iterations - Higher values are more accurate but slower (12 is default, 20-30 for best quality)"
+        },
+        "show_flow_arrows": {
+            "label": "Show flow arrows on depth preview",
+            "type": "checkbox",
+            "value": True,
+            "info": "Draw green arrows on depth maps showing optical flow motion vectors (helps visualize tween movement)"
         },
         "cadence_flow_factor_schedule": {
             "label": "Cadence flow factor schedule",
@@ -520,7 +542,7 @@ def DeforumAnimArgs():
         "optical_flow_redo_generation": {
             "label": "Optical flow generation",
             "type": "dropdown",
-            "choices": ['None', 'RAFT', 'DIS Medium', 'DIS Fine', 'Farneback'],
+            "choices": ['None', 'RAFT'],
             "value": "None",
             "info": "this option takes twice as long because it generates twice in order to capture the optical flow from the previous image to the first generation, then warps the previous image and redoes the generation"
         },
@@ -612,6 +634,68 @@ def DeforumAnimArgs():
             "type": "checkbox",
             "value": False,
             "info": "save animation's depth maps as extra files"
+        },
+        "enable_flux_controlnet": {
+            "label": "Enable Flux ControlNet",
+            "type": "checkbox",
+            "value": False,
+            "info": "Use Flux ControlNet for keyframe generation (Canny or Depth control)"
+        },
+        "flux_controlnet_type": {
+            "label": "ControlNet Type",
+            "type": "dropdown",
+            "choices": ['canny', 'depth'],
+            "value": "canny",
+            "info": "Canny: edge detection from previous frame, Depth: use Depth-Anything V2 depth maps"
+        },
+        "flux_controlnet_model": {
+            "label": "ControlNet Model",
+            "type": "dropdown",
+            "choices": ['instantx', 'xlabs', 'bfl', 'shakker'],
+            "value": "instantx",
+            "info": "Model provider: InstantX (default), XLabs-AI, BFL (official), Shakker Labs (Depth recommended)"
+        },
+        "flux_controlnet_strength": {
+            "label": "ControlNet Strength",
+            "type": "slider",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "step": 0.05,
+            "value": 0.7,
+            "info": "How strongly ControlNet influences generation (0.0 = no influence, 1.0 = full control)"
+        },
+        "flux_controlnet_canny_low": {
+            "label": "Canny Low Threshold",
+            "type": "slider",
+            "minimum": 0,
+            "maximum": 255,
+            "step": 5,
+            "value": 100,
+            "info": "Canny edge detection low threshold (lower = more edges)"
+        },
+        "flux_controlnet_canny_high": {
+            "label": "Canny High Threshold",
+            "type": "slider",
+            "minimum": 0,
+            "maximum": 255,
+            "step": 5,
+            "value": 200,
+            "info": "Canny edge detection high threshold (higher = fewer edges)"
+        },
+        "flux_guidance_scale": {
+            "label": "Flux Guidance Scale",
+            "type": "slider",
+            "minimum": 1.0,
+            "maximum": 10.0,
+            "step": 0.5,
+            "value": 3.5,
+            "info": "Guidance scale for Flux generation (3.5 recommended)"
+        },
+        "flux_base_model": {
+            "label": "Flux Base Model",
+            "type": "textbox",
+            "value": "black-forest-labs/FLUX.1-dev",
+            "info": "HuggingFace model ID for Flux base - requires 'huggingface-cli login' and accepting FLUX.1-dev license at https://huggingface.co/black-forest-labs/FLUX.1-dev (TEMP: Will integrate with Forge's loaded model in future)"
         },
         "video_init_path": {
             "label": "Video init path/ URL",

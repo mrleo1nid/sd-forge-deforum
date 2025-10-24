@@ -232,16 +232,7 @@ def get_tab_keyframes(d, da, dloopArgs):
                     color_coherence_image_path = create_gr_elem(da.color_coherence_image_path)
                 with FormRow(visible=False) as color_coherence_video_every_N_frames_row:
                     color_coherence_video_every_N_frames = create_gr_elem(da.color_coherence_video_every_N_frames)
-                with FormRow() as optical_flow_cadence_row:
-                    with FormColumn(min_width=220) as optical_flow_cadence_column:
-                        optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
-                    with FormColumn(min_width=220, visible=False) as cadence_flow_factor_schedule_column:
-                        cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
-                with FormRow():
-                    with FormColumn(min_width=220):
-                        optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
-                    with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
-                        redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
+                # NOTE: Optical flow settings moved to 3D Depth tab
                 with FormRow():
                     contrast_schedule = gr.Textbox(
                         label="Contrast schedule", lines=1, value=da.contrast_schedule, interactive=True,
@@ -585,7 +576,7 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         depth_warp_msg_html = gr.HTML(
             value='Please switch to 3D animation mode to view this section.',
             elem_id='depth_warp_msg_html',
-            visible=is_info_visible
+            visible=False
         )
         with FormRow(visible=is_visible) as depth_warp_row_1:
             use_depth_warping = create_gr_elem(da.use_depth_warping)
@@ -600,6 +591,52 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         with FormRow(visible=is_visible) as depth_warp_row_2:
             padding_mode = create_gr_elem(da.padding_mode)
             sampling_mode = create_gr_elem(da.sampling_mode)
+
+    with gr.Accordion("🌊 Optical Flow / Cadence", open=False):
+        gr.Markdown("""
+        **Optical flow** estimates motion between frames for smooth in-between (cadence) frames.
+        Enable RAFT to generate only keyframes and use motion estimation for tweens (10x speedup).
+
+        ⚠️ **WARNING:** Can produce "smear-core" artifacts with many cadence frames.
+        Works best with low cadence (2-3 frames). Experimental feature - disabled by default.
+        """)
+        with FormRow(visible=is_visible) as optical_flow_cadence_row:
+            with FormColumn(min_width=220):
+                optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
+            with FormColumn(min_width=220):
+                optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
+        with FormRow(visible=is_visible) as optical_flow_row_2:
+            raft_model_size = create_gr_elem(da.raft_model_size)
+            raft_flow_iterations = create_gr_elem(da.raft_flow_iterations)
+            show_flow_arrows = create_gr_elem(da.show_flow_arrows)
+        with FormRow(visible=is_visible) as optical_flow_row_3:
+            with FormColumn(min_width=220, visible=False) as cadence_flow_factor_schedule_column:
+                cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
+        with FormRow(visible=is_visible) as optical_flow_row_4:
+            with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
+                redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
+
+    with gr.Accordion("🌐 Flux ControlNet", open=False):
+        gr.Markdown("""
+        **Flux ControlNet** adds structural control to keyframe generation using:
+        - **Canny edges** from previous frame (preserves shapes and lines)
+        - **Depth maps** from Depth-Anything V2 (preserves 3D structure)
+
+        ⚠️ **Only applies to keyframes** (not tween frames). Requires Flux model.
+        """)
+        with FormRow(visible=is_visible) as flux_controlnet_row_1:
+            enable_flux_controlnet = create_gr_elem(da.enable_flux_controlnet)
+            flux_controlnet_type = create_gr_elem(da.flux_controlnet_type)
+        with FormRow(visible=is_visible) as flux_controlnet_row_2:
+            flux_controlnet_model = create_gr_elem(da.flux_controlnet_model)
+            flux_controlnet_strength = create_gr_elem(da.flux_controlnet_strength)
+        with FormRow(visible=is_visible) as flux_controlnet_row_3:
+            flux_controlnet_canny_low = create_gr_elem(da.flux_controlnet_canny_low)
+            flux_controlnet_canny_high = create_gr_elem(da.flux_controlnet_canny_high)
+        with FormRow(visible=is_visible) as flux_controlnet_row_4:
+            flux_guidance_scale = create_gr_elem(da.flux_guidance_scale)
+        with FormRow(visible=is_visible) as flux_controlnet_row_5:
+            flux_base_model = create_gr_elem(da.flux_base_model)
 
     with gr.Accordion("⚙️ FOV & Advanced Settings", open=False):
         with FormRow(visible=is_visible) as depth_warp_row_3:
