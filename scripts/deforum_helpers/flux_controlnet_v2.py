@@ -214,8 +214,14 @@ class FluxControlNetV2Manager:
                         # Forge's backend.nn.vae.AutoencodingEngine
                         # Normalize to [-1, 1] for Forge's VAE
                         control_rgb_normalized = control_rgb * 2.0 - 1.0
+
+                        # Convert to VAE's dtype (likely bfloat16)
+                        # Get dtype from VAE's first conv layer
+                        vae_dtype = next(self.vae.parameters()).dtype
+                        control_rgb_normalized = control_rgb_normalized.to(dtype=vae_dtype)
+
                         control_latent = self.vae.encode(control_rgb_normalized, regulation='none')
-                        print(f"   Using Forge's backend VAE encoder")
+                        print(f"   Using Forge's backend VAE encoder (dtype: {vae_dtype})")
                     else:
                         # Fallback to diffusers-style (shouldn't happen now)
                         control_latent = self.vae.encode(control_rgb).latent_dist.sample()
