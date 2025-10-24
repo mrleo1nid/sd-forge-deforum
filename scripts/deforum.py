@@ -37,8 +37,8 @@ def init_deforum():
     os.makedirs(ph.models_path + '/Deforum', exist_ok=True)
 
     # import our on_ui_tabs and on_ui_settings functions from the respected files
-    from deforum_helpers.ui_right import on_ui_tabs
-    from deforum_helpers.ui_settings import on_ui_settings
+    from deforum.ui.ui_right import on_ui_tabs
+    from deforum.ui.ui_settings import on_ui_settings
 
     # trigger webui's extensions mechanism using our imported main functions -
     # first to create the actual deforum gui, then to make the deforum tab in webui's settings section

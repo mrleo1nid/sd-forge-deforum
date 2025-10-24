@@ -17,12 +17,12 @@
 from types import SimpleNamespace
 import gradio as gr
 from deforum.config.defaults import get_gradio_html
-from .gradio_funcs import change_css, handle_change_functions
+from deforum.ui.gradio_funcs import change_css, handle_change_functions
 from deforum.config.args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, RootArgs, LoopArgs, WanArgs
-from .rendering.util import emoji_utils
+from scripts.deforum_helpers.rendering.util import emoji_utils
 # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
 # from .deforum_controlnet import setup_controlnet_ui
-from .ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
+from deforum.ui.ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
                           get_tab_output)
 
 def set_arg_lists():
@@ -46,7 +46,7 @@ def wan_generate_video():
         
         # Try to discover models to check if setup is complete
         try:
-            from .wan.wan_simple_integration import WanSimpleIntegration
+            from scripts.deforum_helpers.wan.wan_simple_integration import WanSimpleIntegration
             integration = WanSimpleIntegration()
             models = integration.discover_models()
             
