@@ -34,8 +34,8 @@ from deforum.utils.logging.log import UNDERLINE, YELLOW, ORANGE, RED, RESET_COLO
 from deforum.config.settings import save_settings_from_animation_run
 from deforum.integrations.controlnet.legacy_controlnet_stubs import num_of_models
 
-from scripts.deforum_api import JobStatusTracker
-from scripts.deforum_api_models import DeforumJobPhase
+from deforum.api.api import JobStatusTracker
+from deforum.api.models import DeforumJobPhase
 
 
 # this global param will contain the latest generated video HTML-data-URL info (for preview inside the UI when needed)

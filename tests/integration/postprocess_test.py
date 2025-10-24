@@ -23,7 +23,7 @@ import requests
 from moviepy.editor import VideoFileClip
 from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
 
-from scripts.deforum_api_models import (DeforumJobPhase,
+from deforum.api.models import (DeforumJobPhase,
                                         DeforumJobStatusCategory)
 from deforum.media.subtitle_handler import get_user_values
 

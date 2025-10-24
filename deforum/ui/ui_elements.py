@@ -3323,7 +3323,7 @@ def load_wan_prompts_handler():
         import os
         
         # Load prompts from default_settings.txt
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'default_settings.txt')
+        settings_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'default_settings.txt')
         
         if not os.path.exists(settings_path):
             print(f"❌ Default settings file not found: {settings_path}")
@@ -3360,7 +3360,7 @@ def load_deforum_prompts_handler():
         import os
         
         # Load prompts from default_settings.txt
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'default_settings.txt')
+        settings_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'default_settings.txt')
         
         if not os.path.exists(settings_path):
             print(f"❌ Default settings file not found: {settings_path}")
@@ -3439,7 +3439,7 @@ def load_wan_defaults_handler():
         import os
         
         # Load default prompts from settings
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'default_settings.txt')
+        settings_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'default_settings.txt')
         
         if not os.path.exists(settings_path):
             # Fallback to simple defaults

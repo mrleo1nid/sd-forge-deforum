@@ -35,7 +35,7 @@ def get_extension_base_dir():
 
 def get_default_settings_path():
     """Return the path to the default settings file in the extension directory"""
-    return os.path.join(get_extension_base_dir(), "scripts", "default_settings.txt")
+    return os.path.join(get_extension_base_dir(), "deforum", "config", "default_settings.txt")
 
 
 def get_keys_to_exclude():

@@ -332,7 +332,7 @@ pytest tests/deforum_test.py::test_name -v
 **Manual testing workflow:**
 1. Launch Forge with `python webui.py`
 2. Navigate to Deforum tab
-3. Load `scripts/default_settings.txt`
+3. Load `deforum/config/default_settings.txt`
 4. Modify settings as needed
 5. Click generate
 6. Check console output for errors
@@ -391,7 +391,7 @@ Known compatibility issues:
 Restart WebUI completely: `Ctrl+C` then `python launch.py`
 
 **Settings not loading correctly:**
-Download latest `scripts/default_settings.txt` from repo and load in UI
+Download latest `deforum/config/default_settings.txt` from repo and load in UI
 
 **Wan models not found:**
 ```bash

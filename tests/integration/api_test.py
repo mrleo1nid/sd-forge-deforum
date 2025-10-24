@@ -24,7 +24,7 @@ from moviepy.editor import VideoFileClip
 from .utils import (API_BASE_URL, wait_for_job_to_complete,
                     wait_for_job_to_enter_phase, wait_for_job_to_enter_status)
 
-from scripts.deforum_api_models import (DeforumJobPhase, DeforumJobStatus,
+from deforum.api.models import (DeforumJobPhase, DeforumJobStatus,
                                         DeforumJobStatusCategory)
 from deforum.media.subtitle_handler import get_user_values
 

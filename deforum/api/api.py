@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any, Dict, List
-from scripts.deforum_api_models import Batch, DeforumJobErrorType, DeforumJobStatusCategory, DeforumJobPhase, DeforumJobStatus
+from deforum.api.models import Batch, DeforumJobErrorType, DeforumJobStatusCategory, DeforumJobPhase, DeforumJobStatus
 from contextlib import contextmanager
 from scripts.deforum_extend_paths import deforum_sys_extend
 
@@ -424,7 +424,7 @@ def deforum_simple_api(_: gr.Blocks, app: FastAPI):
         try:
             allowed_params = allowed_params.split(';')
             deforum_settings = json.loads(settings_json)
-            with open(os.path.join(pathlib.Path(__file__).parent.absolute(), 'default_settings.txt'), 'r', encoding='utf-8') as f:
+            with open(os.path.join(pathlib.Path(__file__).parent.parent.absolute(), 'config', 'default_settings.txt'), 'r', encoding='utf-8') as f:
                 default_settings = json.loads(f.read())
             for k, _ in default_settings.items():
                 if k in deforum_settings and k in allowed_params:

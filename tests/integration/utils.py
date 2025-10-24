@@ -17,7 +17,7 @@
 from tenacity import retry, stop_after_delay, wait_fixed
 from pydantic_requests import PydanticSession
 import requests
-from scripts.deforum_api_models import DeforumJobStatus, DeforumJobStatusCategory, DeforumJobPhase
+from deforum.api.models import DeforumJobStatus, DeforumJobStatusCategory, DeforumJobPhase
 
 SERVER_BASE_URL = "http://localhost:7860"
 API_ROOT = "/deforum_api"

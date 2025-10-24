@@ -18,11 +18,11 @@
 import sys
 import os
 
-# Add scripts path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts', 'deforum_helpers'))
+# Legacy path no longer needed - all code migrated to deforum/ package
+# sys.path setup is done in scripts/deforum_extend_paths.py
 
 try:
-    from startup_banner import print_startup_banner
+    from deforum.utils.startup_banner import print_startup_banner
     print_startup_banner()
 except Exception as e:
     print(f"[Deforum] Warning: Could not print startup banner: {e}")
