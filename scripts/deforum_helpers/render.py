@@ -29,7 +29,7 @@ from .noise import add_noise
 from .animation import anim_frame_warp
 from .animation_key_frames import DeformAnimKeys, LooperAnimKeys
 from .video_audio_utilities import get_frame_name, get_next_frame, render_preview
-from .depth import DepthModel
+from deforum.depth import DepthModel
 from .colors import maintain_colors
 from deforum.integrations.parseq import ParseqAdapter
 from .seed import next_seed
