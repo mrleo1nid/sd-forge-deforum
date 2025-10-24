@@ -40,7 +40,7 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
         if video_args.soundtrack_path.startswith(('http://', 'https://')):
             print(f"Pre-downloading soundtrack at the beginning of the render process: {video_args.soundtrack_path}")
             try:
-                from ..video_audio_utilities import download_audio
+                from deforum.media.video_audio_utilities import download_audio
                 video_args.soundtrack_path = download_audio(video_args.soundtrack_path)
                 print(f"Audio successfully pre-downloaded to: {video_args.soundtrack_path}")
             except Exception as e:

@@ -25,7 +25,7 @@ from .rendering.util import emoji_utils
 from deforum.config.defaults import get_gradio_html, DeforumAnimPrompts
 from .gradio_funcs import (upload_vid_to_interpolate, upload_pics_to_interpolate,
                            ncnn_upload_vid_to_upscale, upload_vid_to_depth)
-from .video_audio_utilities import direct_stitch_vid_from_frames
+from deforum.media.video_audio_utilities import direct_stitch_vid_from_frames
 
 
 def create_gr_elem(d):

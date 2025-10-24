@@ -7,7 +7,7 @@ This module contains:
 
 from pathlib import Path
 
-from ...video_audio_utilities import get_frame_name
+from deforum.media.video_audio_utilities import get_frame_name
 
 # Import pure functions from refactored utils module
 from deforum.utils.filename_utils import (

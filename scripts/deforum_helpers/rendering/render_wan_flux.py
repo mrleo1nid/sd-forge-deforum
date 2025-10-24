@@ -23,7 +23,7 @@ from .data.frame import KeyFrameDistribution, DiffusionFrame
 from .data.taqaddumat import Taqaddumat
 from .util import log_utils, web_ui_utils, image_utils, filename_utils
 from ..wan.wan_simple_integration import WanSimpleIntegration
-from ..video_audio_utilities import ffmpeg_stitch_video
+from deforum.media.video_audio_utilities import ffmpeg_stitch_video
 
 
 def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root):
@@ -488,7 +488,7 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
 
 def stitch_wan_flux_video(data, frame_paths, video_args):
     """Stitch all frames into final video"""
-    from ..video_audio_utilities import get_ffmpeg_params
+    from deforum.media.video_audio_utilities import get_ffmpeg_params
 
     # Get ffmpeg parameters from settings
     ffmpeg_location, ffmpeg_crf, ffmpeg_preset = get_ffmpeg_params()

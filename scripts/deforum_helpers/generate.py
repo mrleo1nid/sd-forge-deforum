@@ -25,7 +25,7 @@ from modules import processing, sd_models
 from modules.shared import sd_model, state, cmd_opts
 from .deforum_controlnet import is_controlnet_enabled, get_controlnet_script_args
 from .prompt import split_weighted_subprompts
-from .load_images import load_img, prepare_mask, check_mask_for_errors
+from deforum.media.load_images import load_img, prepare_mask, check_mask_for_errors
 from .webui_sd_pipeline import get_webui_sd_pipeline
 from .rich import console
 from deforum.config.defaults import get_samplers_list, get_schedulers_list

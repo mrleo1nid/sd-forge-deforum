@@ -24,7 +24,7 @@ from modules import ui_components
 from modules.shared import opts, cmd_opts, OptionInfo, options_section
 
 from .subtitle_handler import get_user_values
-from .video_audio_utilities import find_ffmpeg_binary
+from deforum.media.video_audio_utilities import find_ffmpeg_binary
 
 
 def on_ui_settings():

@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from cv2.typing import MatLike
 
-from ...load_images import load_image
+from deforum.media.load_images import load_image
 
 
 @dataclass(init=True, frozen=False, repr=False, eq=True)

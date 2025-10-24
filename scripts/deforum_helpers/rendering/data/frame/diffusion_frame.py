@@ -24,7 +24,7 @@ from ...util.call.mask import call_compose_mask_with_check, call_unsharp_mask
 from ...util.call.subtitle import call_write_subtitle_from_to
 from ...util.call.video_and_audio import call_render_preview
 from ....colors import maintain_colors
-from ....save_images import save_image
+from deforum.media.save_images import save_image
 from ....seed import generate_next_seed
 
 
