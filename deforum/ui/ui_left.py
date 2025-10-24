@@ -19,7 +19,7 @@ import gradio as gr
 from deforum.config.defaults import get_gradio_html
 from deforum.ui.gradio_funcs import change_css, handle_change_functions
 from deforum.config.args import DeforumArgs, DeforumAnimArgs, ParseqArgs, DeforumOutputArgs, RootArgs, LoopArgs, WanArgs
-from deforum.utils.logging import emoji
+from deforum.utils.logging import emoji as emoji_utils
 # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
 # from .deforum_controlnet import setup_controlnet_ui
 from deforum.ui.ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
