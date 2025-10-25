@@ -139,9 +139,9 @@ def check_and_download_realesrgan_ncnn(models_folder, current_user_os):
 def make_upscale_v2(upscale_factor, upscale_model, keep_imgs, imgs_raw_path, imgs_batch_id, deforum_models_path, current_user_os, ffmpeg_location, ffmpeg_crf, ffmpeg_preset, fps, stitch_from_frame, stitch_to_frame, audio_path, add_soundtrack, srt_path=None):
     # get clean number from 'x2, x3' etc
     clean_num_r_up_factor = extract_number(upscale_factor)
-    # set paths
+    # set paths - match depth-maps naming convention (no batch ID in folder/filenames)
     realesrgan_ncnn_location = os.path.join(deforum_models_path, 'realesrgan_ncnn', 'realesrgan-ncnn-vulkan' + ('.exe' if current_user_os == 'Windows' else ''))
-    upscaled_folder_path = os.path.join(imgs_raw_path, f"{imgs_batch_id}_upscaled")
+    upscaled_folder_path = os.path.join(imgs_raw_path, "upscaled")
     temp_folder_to_keep_raw_ims = os.path.join(upscaled_folder_path, 'temp_raw_imgs_to_upscale')
     out_upscaled_mp4_path = os.path.join(imgs_raw_path, f"{imgs_batch_id}_Upscaled_{upscale_factor}.mp4")
     # download upscaling model if needed
@@ -153,16 +153,16 @@ def make_upscale_v2(upscale_factor, upscale_model, keep_imgs, imgs_raw_path, img
     # msg to print - need it to hide that text later on (!)
     msg_to_print = f"Upscaling raw output PNGs using {upscale_model} at {upscale_factor}..."
     # blink the msg in the cli until action is done
-    console.print(msg_to_print, style="blink yellow", end="") 
+    console.print(msg_to_print, style="blink yellow", end="")
     start_time = time.time()
     # make call to ncnn upscaling executble
     process = subprocess.run(cmd, capture_output=True, check=True, text=True, cwd=(os.path.join(deforum_models_path, 'realesrgan_ncnn') if current_user_os == 'Mac' else None))
     print("\r" + " " * len(msg_to_print), end="", flush=True)
     print(f"\r{msg_to_print}", flush=True)
     print(f"\rUpscaling \033[0;32mdone\033[0m in {time.time() - start_time:.2f} seconds!", flush=True)
-    # set custom path for ffmpeg func below
-    upscaled_imgs_path_for_ffmpeg = os.path.join(upscaled_folder_path, f"{imgs_batch_id}_%09d.png")
-    # stitch video from upscaled pngs 
+    # set custom path for ffmpeg func below - no batch ID in filename (matches depth-maps pattern)
+    upscaled_imgs_path_for_ffmpeg = os.path.join(upscaled_folder_path, "%09d.png")
+    # stitch video from upscaled pngs
     ffmpeg_stitch_video(ffmpeg_location=ffmpeg_location, fps=fps, outmp4_path=out_upscaled_mp4_path, stitch_from_frame=stitch_from_frame, stitch_to_frame=stitch_to_frame, imgs_path=upscaled_imgs_path_for_ffmpeg, add_soundtrack=add_soundtrack, audio_path=audio_path, crf=ffmpeg_crf, preset=ffmpeg_preset, srt_path=srt_path)
 
     # delete the duplicated raw imgs

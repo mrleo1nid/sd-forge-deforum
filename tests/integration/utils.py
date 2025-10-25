@@ -14,6 +14,7 @@
 
 # Contact the authors: https://deforum.github.io/
 
+from pathlib import Path
 from tenacity import retry, stop_after_delay, wait_fixed
 import requests
 from deforum.api.models import DeforumJobStatus, DeforumJobStatusCategory, DeforumJobPhase
@@ -21,6 +22,21 @@ from deforum.api.models import DeforumJobStatus, DeforumJobStatusCategory, Defor
 SERVER_BASE_URL = "http://localhost:7860"
 API_ROOT = "/deforum_api"
 API_BASE_URL = SERVER_BASE_URL + API_ROOT
+
+# Dedicated test output directory (not mixed with production outputs)
+TEST_OUTPUT_DIR = str(Path(__file__).parent.parent.parent.parent.parent / "outputs" / "test-deforum")
+
+def get_test_options_overrides():
+    """Get standard options_overrides for integration tests.
+
+    Returns dict with:
+    - outdir_samples: Dedicated test output directory
+
+    This ensures test outputs don't pollute production outputs.
+    """
+    return {
+        "outdir_samples": TEST_OUTPUT_DIR,
+    }
 
 @retry(wait=wait_fixed(2), stop=stop_after_delay(900))
 def wait_for_job_to_complete(id : str):

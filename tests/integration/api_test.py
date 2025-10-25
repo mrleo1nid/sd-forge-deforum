@@ -21,7 +21,8 @@ from pathlib import Path
 
 import requests
 from moviepy.editor import VideoFileClip
-from .utils import (API_BASE_URL, wait_for_job_to_complete,
+from .utils import (API_BASE_URL, get_test_options_overrides,
+                    wait_for_job_to_complete,
                     wait_for_job_to_enter_phase, wait_for_job_to_enter_status)
 
 from deforum.api.models import (DeforumJobPhase, DeforumJobStatus,
@@ -37,12 +38,16 @@ def test_simple_settings(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Merge test-specific overrides with standard test overrides
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -61,12 +66,15 @@ def test_simple_settings(snapshot):
     assert clip.fps == deforum_settings['fps'] , "Video FPS does not match input settings"
     assert clip.duration * clip.fps == deforum_settings['max_frames'] , "Video frame count does not match input settings"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"
-        
+
 
 def test_api_cancel_active_job():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         data = json.load(settings_file)
-        response = requests.post(API_BASE_URL+"/batches", json={"deforum_settings":[data]})
+        response = requests.post(API_BASE_URL+"/batches", json={
+            "deforum_settings":[data],
+            "options_overrides": get_test_options_overrides()
+        })
         response.raise_for_status()
         job_id = response.json()["job_ids"][0]
         wait_for_job_to_enter_phase(job_id, DeforumJobPhase.GENERATING)
