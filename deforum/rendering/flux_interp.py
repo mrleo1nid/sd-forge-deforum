@@ -291,22 +291,17 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         first_prompt = strip_negative_prompt(first_prompt_raw)
         last_prompt = strip_negative_prompt(last_prompt_raw)
 
-        # Load keyframe images (cv2 uses BGR, convert to RGB)
-        first_image_bgr = cv2.imread(keyframe_images[first_frame_idx])
-        last_image_bgr = cv2.imread(keyframe_images[last_frame_idx])
-        first_image_cv2 = image_utils.bgr_to_rgb(first_image_bgr)
-        last_image_cv2 = image_utils.bgr_to_rgb(last_image_bgr)
-
-        # Convert to PIL for Wan FLF2V
-        first_image = image_utils.numpy_to_pil(first_image_cv2)
-        last_image = image_utils.numpy_to_pil(last_image_cv2)
+        # Load keyframe images - use PIL since they were saved with PIL (RGB format)
+        # Using cv2.imread() on PIL-saved images causes BGR/RGB confusion
+        from PIL import Image
+        first_image = Image.open(keyframe_images[first_frame_idx])
+        last_image = Image.open(keyframe_images[last_frame_idx])
 
         # Resize keyframes if resolution changed (e.g., for VRAM savings)
         target_width = data.width()
         target_height = data.height()
         if first_image.size != (target_width, target_height):
             log_utils.info(f"   Resizing keyframes from {first_image.size} to {target_width}x{target_height}", log_utils.YELLOW)
-            from PIL import Image
             first_image = first_image.resize((target_width, target_height), Image.LANCZOS)
             last_image = last_image.resize((target_width, target_height), Image.LANCZOS)
 
@@ -684,8 +679,10 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
 
     finally:
         # Cleanup RIFE working directory
-        if os.path.exists(rife_work_dir):
-            shutil.rmtree(rife_work_dir, ignore_errors=True)
+        # TEMPORARILY DISABLED for debugging
+        pass
+        # if os.path.exists(rife_work_dir):
+        #     shutil.rmtree(rife_work_dir, ignore_errors=True)
 
 
 def generate_film_segment(first_image, last_image, num_frames, height, width,
