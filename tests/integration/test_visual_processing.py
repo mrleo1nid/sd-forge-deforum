@@ -43,7 +43,8 @@ def test_depth_map_generation():
     deforum_settings['save_depth_maps'] = True  # Save depth maps
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -82,7 +83,8 @@ def test_3d_depth_warping():
     deforum_settings['rotation_3d_x'] = "0:(0), 4:(5)"  # Tilt up slightly
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -118,7 +120,8 @@ def test_keyframe_distribution_keyframes_only():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -150,7 +153,8 @@ def test_prompt_scheduling():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -178,7 +182,8 @@ def test_seed_scheduling():
     deforum_settings['prompts'] = {"0": "a landscape"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -204,7 +209,8 @@ def test_strength_scheduling():
     deforum_settings['prompts'] = {"0": "a morphing sculpture"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -232,7 +238,8 @@ def test_camera_shakify():
     deforum_settings['shakify_magnitude'] = 0.5
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -259,7 +266,8 @@ def test_optical_flow_raft():
     deforum_settings['optical_flow_redo_generation'] = 'RAFT'
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -329,7 +337,8 @@ def test_video_stitching_basic():
     deforum_settings['fps'] = 10
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -372,7 +381,8 @@ def test_cfg_scale_schedule():
     deforum_settings['prompts'] = {"0": "a controlled generation"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -398,7 +408,8 @@ def test_color_coherence():
     deforum_settings['color_coherence'] = 'MatchColorHSV'
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -424,7 +435,8 @@ def test_noise_schedule():
     deforum_settings['prompts'] = {"0": "evolving noise patterns"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
