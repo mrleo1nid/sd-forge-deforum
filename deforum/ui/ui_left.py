@@ -62,7 +62,7 @@ For now, you can test model discovery is working.
 💡 Next steps:
 1. Ensure your prompts are configured in the Prompts tab
 2. Set your desired FPS in the Output tab
-3. Choose animation mode 'Flux/Wan' in the Keyframes tab
+3. Choose animation mode 'Flux + Interpolation' in the Keyframes tab
 4. Click the main Generate button in Deforum
 
 📁 Models found in: {models[0]['path']}"""
@@ -166,7 +166,7 @@ def setup_deforum_left_side_ui():
             )
             normal_strength = create_gr_elem(da.strength_schedule)
 
-        # Keyframe strength (New 3D, Keyframes Only, Flux/Wan)
+        # Keyframe strength (New 3D, Keyframes Only, Flux + Interpolation)
         with gr.Column(scale=1, visible=True) as keyframe_strength_column:
             keyframe_strength_slider = gr.Slider(
                 label="Keyframe Strength",
@@ -181,7 +181,7 @@ def setup_deforum_left_side_ui():
     # Keep legacy animation_mode hidden for backwards compatibility
     animation_mode = gr.Radio(
         label="Animation mode (Legacy - Hidden)",
-        choices=['3D', 'Interpolation', 'Flux/Wan'],
+        choices=['3D', 'Interpolation', 'Flux + Interpolation'],
         value="3D",
         visible=False
     )
@@ -205,10 +205,10 @@ def setup_deforum_left_side_ui():
             with gr.TabItem(f"{emoji_utils.masking()} Masking", visible=True) as tab_masking:
                 tab_masking_params = get_tab_masking(d, da, skip_tabitem=True)  # 7. Masking - all modes
 
-            # Flux/Wan mode only tab:
+            # Flux + Interpolation mode tab (Wan models - only needed when using Wan method):
             from .ui_elements import get_tab_wan
             with gr.TabItem(f"{emoji_utils.wan_video()} Wan Models", visible=True) as tab_wan:
-                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 8. Wan Models - Flux/Wan only
+                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 8. Wan Models - Flux + Interpolation mode
 
             # Always visible tabs:
             tab_run_params = get_tab_run(d, da)  # 8. Run - all modes

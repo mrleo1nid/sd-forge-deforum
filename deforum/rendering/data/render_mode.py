@@ -37,7 +37,7 @@ class RenderMode(Enum):
     CLASSIC_3D = "Classic 3D"
     NEW_3D = "New 3D"
     KEYFRAMES_ONLY = "Keyframes Only"
-    FLUX_WAN = "Flux/Wan"
+    FLUX_WAN = "Flux + Interpolation"
 
     @property
     def config(self) -> ModeConfig:
@@ -64,7 +64,8 @@ class RenderMode(Enum):
             "Classic 3D": RenderMode.CLASSIC_3D,
             "New 3D": RenderMode.NEW_3D,
             "Keyframes Only": RenderMode.KEYFRAMES_ONLY,
-            "Flux/Wan": RenderMode.FLUX_WAN,
+            "Flux + Interpolation": RenderMode.FLUX_WAN,
+            "Flux/Wan": RenderMode.FLUX_WAN,  # Legacy compatibility
         }
         return mode_map.get(mode_str, RenderMode.default())
 
@@ -75,10 +76,10 @@ class RenderMode(Enum):
         Used for backwards compatibility with existing code that checks animation_mode.
 
         Returns:
-            Legacy animation mode string: '3D', 'Interpolation', or 'Flux/Wan'
+            Legacy animation mode string: '3D', 'Interpolation', or 'Flux + Interpolation'
         """
         if self == RenderMode.FLUX_WAN:
-            return "Flux/Wan"
+            return "Flux + Interpolation"
         else:
             return "3D"
 
@@ -100,7 +101,7 @@ class RenderMode(Enum):
 
     def should_show_keyframe_strength(self) -> bool:
         """Return True if keyframe strength slider should be visible."""
-        # New 3D uses both, Keyframes Only and Flux/Wan use keyframe only
+        # New 3D uses both, Keyframes Only and Flux + Interpolation use keyframe only
         return self in [RenderMode.NEW_3D, RenderMode.KEYFRAMES_ONLY, RenderMode.FLUX_WAN]
 
     def should_show_normal_strength(self) -> bool:
@@ -167,21 +168,22 @@ _MODE_CONFIGS = {
     ),
 
     RenderMode.FLUX_WAN: ModeConfig(
-        display_name="Flux/Wan",
-        keyframe_distribution=None,  # Uses separate Flux/Wan pipeline
+        display_name="Flux + Interpolation",
+        keyframe_distribution=None,  # Uses separate Flux + Interpolation pipeline
         uses_dual_strength=False,
         default_fps=24,
         default_cadence=10,  # Not used for diffusion, but provides pseudo-cadence hint
         default_steps=20,  # Flux Dev for keyframes (Schnell=4, Dev=20)
         shows_pseudo_cadence=True,
         description=(
-            "Hybrid AI workflow: Flux generates keyframes, Wan FLF2V interpolates tweens. "
+            "Flux keyframes + choice of interpolation method (Wan/RIFE/FILM). "
             "Phase 1: Generate keyframes with Flux at prompt boundaries. "
-            "Phase 2: AI-interpolate tween frames with Wan FLF2V (guidance_scale=3.5). "
+            "Phase 2: Interpolate tweens with selected method (Wan FLF2V / RIFE v4.6 / FILM). "
             "Phase 3: Stitch final video. "
             "Best quality for dramatic changes between keyframes. "
             "Hides 3D-specific controls (RAFT, ControlNet, Shakify, Depth). "
-            "Shows Wan Models tab. Uses only keyframe strength schedule for I2V chaining. "
+            "Shows Wan Models tab (only needed when using Wan method). "
+            "Uses only keyframe strength schedule (for Wan I2V chaining). "
             "IMPORTANT: Strength resolution depends on steps. "
             "Flux Dev (20 steps) = 0.05 resolution. Flux Schnell (4 steps) = 0.25 resolution. "
             "Lower steps make strength harder to tune precisely."
