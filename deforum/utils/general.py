@@ -68,8 +68,11 @@ def duplicate_pngs_from_folder(from_folder, to_folder, img_batch_id, orig_vid_na
 
     frames_handled = 0
     for f in os.listdir(from_folder):
-        if ('png' in f or 'jpg' in f) and '-' not in f and '_depth_' not in f and (
-                (img_batch_id is not None and f.startswith(img_batch_id) or img_batch_id is None)):
+        # Match files that: start with batch ID, OR batch ID is None, OR start with a digit (numeric frame names)
+        is_frame = (img_batch_id is not None and f.startswith(img_batch_id)) or \
+                   (img_batch_id is None) or \
+                   (f[0].isdigit() if f else False)
+        if ('png' in f or 'jpg' in f) and '-' not in f and '_depth_' not in f and is_frame:
             frames_handled += 1
             original_img_path = os.path.join(from_folder, f)
             if orig_vid_name is not None:
