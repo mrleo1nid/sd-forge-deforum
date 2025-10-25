@@ -110,8 +110,9 @@ def prepare_film_inference(deforum_models_path, x_am, sl_enabled, sl_am, keep_im
     parent_folder = os.path.dirname(raw_output_imgs_path)
     grandparent_folder = os.path.dirname(parent_folder)
 
-    # Detect if we're interpolating upscaled frames by checking the path
-    is_upscaled = "_upscaled" in raw_output_imgs_path.lower()
+    # Detect if we're interpolating upscaled frames by checking the folder name
+    # The upscaled folder is named "upscaled" (without underscore prefix)
+    is_upscaled = os.path.basename(raw_output_imgs_path) == "upscaled"
     upscale_suffix = "_upscaled" if is_upscaled else ""
 
     if orig_vid_name is not None:

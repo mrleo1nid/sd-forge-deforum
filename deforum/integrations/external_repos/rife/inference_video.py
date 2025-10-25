@@ -252,8 +252,10 @@ def stitch_video(img_batch_id, fps, img_folder_path, audio_path, ffmpeg_location
     parent_folder = os.path.dirname(img_folder_path)
     grandparent_folder = os.path.dirname(parent_folder)
 
-    # Detect if we're interpolating upscaled frames by checking the path
-    is_upscaled = "_upscaled" in img_folder_path.lower()
+    # Detect if we're interpolating upscaled frames by checking parent folder name
+    # When interpolating upscaled frames, img_folder_path is like: {outdir}/upscaled/interpolated_frames_rife_{id}
+    # So we check if the parent folder (one level up) is named "upscaled"
+    is_upscaled = os.path.basename(parent_folder) == "upscaled"
     upscale_suffix = "_upscaled" if is_upscaled else ""
 
     if orig_vid_name is not None:
