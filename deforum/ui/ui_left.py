@@ -134,6 +134,8 @@ def setup_deforum_left_side_ui():
     with gr.Row(variant='compact'):
         from .ui_elements import create_gr_elem
         render_mode = create_gr_elem(da.render_mode)
+
+    with gr.Row(variant='compact'):
         fps = create_gr_elem(dv.fps)
         steps = create_gr_elem(d.steps)
 
@@ -147,18 +149,33 @@ def setup_deforum_left_side_ui():
             visible=False,
             info="Average frames between diffusions (calculated from keyframes)"
         )
-        strength_resolution_display = gr.Textbox(
-            label="Strength Resolution",
-            value="1/steps (adjust steps for finer control)",
-            interactive=False,
-            visible=True,
-            info="Strength resolution = 1/steps. More steps = finer strength tuning. Flux Dev (20) = 0.05, Flux Schnell (4) = 0.25"
-        )
 
-    # Strength schedules - visibility depends on render mode
+    # Strength schedules - smart sliders + textboxes
+    # Sliders for quick constant values, textboxes for complex schedules
     with gr.Row(variant='compact'):
-        normal_strength = create_gr_elem(da.strength_schedule)
-        keyframe_strength = create_gr_elem(da.keyframe_strength_schedule)
+        # Normal strength (all modes)
+        with gr.Column(scale=1):
+            normal_strength_slider = gr.Slider(
+                label="Normal Strength",
+                minimum=0.0,
+                maximum=1.0,
+                step=0.05,  # Will be updated dynamically based on steps
+                value=0.85,
+                info="Quick constant strength (sets '0:(value)'). Disabled if custom schedule entered."
+            )
+            normal_strength = create_gr_elem(da.strength_schedule)
+
+        # Keyframe strength (dual-strength modes only)
+        with gr.Column(scale=1, visible=True) as keyframe_strength_column:
+            keyframe_strength_slider = gr.Slider(
+                label="Keyframe Strength",
+                minimum=0.0,
+                maximum=1.0,
+                step=0.05,  # Will be updated dynamically based on steps
+                value=0.50,
+                info="Quick constant strength for keyframes (sets '0:(value)'). Disabled if custom schedule entered."
+            )
+            keyframe_strength = create_gr_elem(da.keyframe_strength_schedule)
 
     # Keep legacy animation_mode hidden for backwards compatibility
     animation_mode = gr.Radio(
@@ -209,9 +226,11 @@ def setup_deforum_left_side_ui():
             locals()['cadence'] = cadence
             locals()['diffusion_cadence'] = cadence  # Alias for backward compatibility with gradio_funcs
             locals()['pseudo_cadence_display'] = pseudo_cadence_display
-            locals()['strength_resolution_display'] = strength_resolution_display
             locals()['strength_schedule'] = normal_strength
             locals()['keyframe_strength_schedule'] = keyframe_strength
+            locals()['normal_strength_slider'] = normal_strength_slider
+            locals()['keyframe_strength_slider'] = keyframe_strength_slider
+            locals()['keyframe_strength_column'] = keyframe_strength_column
 
             # Store tab references for visibility control
             locals()['tab_depth'] = tab_depth
@@ -223,7 +242,7 @@ def setup_deforum_left_side_ui():
         """
         Update UI components when render mode changes.
         Returns updates for: tab_depth, tab_shakify, tab_wan, cadence, pseudo_cadence,
-                             fps, steps, strength_resolution, keyframe_strength, animation_mode
+                             fps, steps, sliders, keyframe_strength_column, animation_mode
         """
         from deforum.rendering.data.render_mode import RenderMode
 
@@ -241,9 +260,9 @@ def setup_deforum_left_side_ui():
         # Determine strength slider visibility
         show_keyframe_strength = render_mode_enum.should_show_keyframe_strength()
 
-        # Calculate strength resolution display
-        strength_res = 1.0 / config.default_steps
-        strength_res_text = f"1/{config.default_steps} = {strength_res:.4f} (Flux Dev=20→0.05, Schnell=4→0.25)"
+        # Calculate strength resolution (slider step size) based on steps
+        strength_step = 1.0 / config.default_steps
+        strength_info = f"Resolution: 1/{config.default_steps} = {strength_step:.4f}. Slider sets constant '0:(value)'. Disabled if custom schedule entered."
 
         # Mode-specific steps info text
         steps_info_map = {
@@ -267,8 +286,9 @@ def setup_deforum_left_side_ui():
             gr.update(value=config.default_fps),       # fps
             gr.update(value=config.default_steps,      # steps
                      info=steps_info),
-            gr.update(value=strength_res_text),        # strength_resolution_display
-            gr.update(visible=show_keyframe_strength), # keyframe_strength
+            gr.update(step=strength_step, info=strength_info),  # normal_strength_slider
+            gr.update(step=strength_step, info=strength_info),  # keyframe_strength_slider
+            gr.update(visible=show_keyframe_strength), # keyframe_strength_column
             gr.update(value=legacy_mode)               # animation_mode (hidden)
         ]
 
@@ -284,10 +304,83 @@ def setup_deforum_left_side_ui():
             pseudo_cadence_display,
             fps,
             steps,
-            strength_resolution_display,
-            keyframe_strength,
+            normal_strength_slider,
+            keyframe_strength_slider,
+            keyframe_strength_column,
             animation_mode
         ]
+    )
+
+    # Smart strength slider handlers
+    import re
+
+    def is_simple_schedule(schedule_str):
+        """Check if schedule is simple '0:(value)' format."""
+        if not schedule_str or not isinstance(schedule_str, str):
+            return False
+        # Match patterns like "0:(0.85)" or "0: (0.85)" or "0 : ( 0.85 )"
+        pattern = r'^\s*0\s*:\s*\(\s*([0-9.]+)\s*\)\s*$'
+        return bool(re.match(pattern, schedule_str))
+
+    def extract_simple_value(schedule_str):
+        """Extract value from simple '0:(value)' schedule."""
+        pattern = r'^\s*0\s*:\s*\(\s*([0-9.]+)\s*\)\s*$'
+        match = re.match(pattern, schedule_str)
+        return float(match.group(1)) if match else None
+
+    def update_slider_step_size(steps_value):
+        """Update slider step size based on steps value."""
+        step = 1.0 / max(1, steps_value)
+        info_text = f"Resolution: 1/{steps_value} = {step:.4f}. Slider sets constant '0:(value)'. Disabled if custom schedule entered."
+        return [
+            gr.update(step=step, info=info_text),  # normal_strength_slider
+            gr.update(step=step, info=info_text),  # keyframe_strength_slider
+        ]
+
+    def slider_to_textbox(slider_value):
+        """Convert slider value to schedule textbox format."""
+        return f"0: ({slider_value:.2f})"
+
+    def textbox_to_slider(schedule_str):
+        """Update slider based on textbox - disable if complex schedule."""
+        if is_simple_schedule(schedule_str):
+            value = extract_simple_value(schedule_str)
+            return gr.update(value=value, interactive=True)
+        else:
+            # Complex schedule - gray out slider
+            return gr.update(interactive=False)
+
+    # Connect steps change to update slider step size
+    steps.change(
+        fn=update_slider_step_size,
+        inputs=[steps],
+        outputs=[normal_strength_slider, keyframe_strength_slider]
+    )
+
+    # Connect sliders to textboxes (slider -> textbox)
+    normal_strength_slider.change(
+        fn=slider_to_textbox,
+        inputs=[normal_strength_slider],
+        outputs=[normal_strength]
+    )
+
+    keyframe_strength_slider.change(
+        fn=slider_to_textbox,
+        inputs=[keyframe_strength_slider],
+        outputs=[keyframe_strength]
+    )
+
+    # Connect textboxes to sliders (textbox -> slider enable/disable)
+    normal_strength.change(
+        fn=textbox_to_slider,
+        inputs=[normal_strength],
+        outputs=[normal_strength_slider]
+    )
+
+    keyframe_strength.change(
+        fn=textbox_to_slider,
+        inputs=[keyframe_strength],
+        outputs=[keyframe_strength_slider]
     )
 
     # Gradio's Change functions - hiding and renaming elements based on other elements
