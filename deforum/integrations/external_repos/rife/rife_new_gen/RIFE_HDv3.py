@@ -103,6 +103,6 @@ def download_rife_model(path, deforum_models_path):
         target_path = os.path.join(deforum_models_path, target_file)
         if not os.path.exists(target_path):
             from torch.hub import download_url_to_file
-            download_url_to_file(options[path][1], deforum_models_path)
+            download_url_to_file(options[path][1], target_path)
             if checksum(target_path) != options[path][0]:
                 raise Exception(f"Error while downloading {target_file}. Please download from here: {options[path][1]} and place in: " + deforum_models_path)

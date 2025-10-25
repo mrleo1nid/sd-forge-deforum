@@ -114,7 +114,7 @@ def check_and_download_realesrgan_ncnn(models_folder, current_user_os):
     try:
         os.makedirs(realesrgan_ncnn_folder, exist_ok=True)
         # download exec and model files from url
-        download_url_to_file(download_url, realesrgan_ncnn_folder)
+        download_url_to_file(download_url, realesrgan_zip_path)
         # check downloaded zip's hash
         with open(realesrgan_zip_path, 'rb') as f:
             file_hash = checksum(realesrgan_zip_path)
