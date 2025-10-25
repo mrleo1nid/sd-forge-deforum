@@ -23,7 +23,7 @@ from deforum.utils.system.logging import emoji as emoji_utils
 # TEMPORARILY DISABLED: ControlNet support disabled until Flux-specific reimplementation
 # from .deforum_controlnet import setup_controlnet_ui
 from deforum.ui.ui_elements import (get_tab_run, get_tab_keyframes, get_tab_prompts, get_tab_init,
-                          get_tab_output)
+                          get_tab_output, get_tab_masking)
 
 def set_arg_lists():
     # convert dicts to NameSpaces for easy working (args.param instead of args['param']
@@ -202,11 +202,13 @@ def setup_deforum_left_side_ui():
                 tab_depth_params = get_tab_depth_warping(da, skip_tabitem=True)  # 5. 3D Depth - 3D mode only
             with gr.TabItem(f"{emoji_utils.bicycle()} Shakify", visible=True) as tab_shakify:
                 tab_shakify_params = get_tab_shakify(da, skip_tabitem=True)  # 6. Shakify - 3D mode only
+            with gr.TabItem(f"🎭 Masking", visible=True) as tab_masking:
+                tab_masking_params = get_tab_masking(d, da, skip_tabitem=True)  # 7. Masking - all modes
 
             # Flux/Wan mode only tab:
             from .ui_elements import get_tab_wan
             with gr.TabItem(f"{emoji_utils.wan_video()} Wan Models", visible=True) as tab_wan:
-                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 7. Wan Models - Flux/Wan only
+                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 8. Wan Models - Flux/Wan only
 
             # Always visible tabs:
             tab_run_params = get_tab_run(d, da)  # 8. Run - all modes
@@ -216,7 +218,7 @@ def setup_deforum_left_side_ui():
             controlnet_dict = {}  # Empty dict for backwards compatibility
 
             # add returned gradio elements from main tabs to locals()
-            for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_shakify_params, **tab_depth_params, **tab_init_params, **controlnet_dict, **tab_wan_params, **tab_output_params}.items():
+            for key, value in {**tab_run_params, **tab_keyframes_params, **tab_distribution_params, **tab_prompts_params, **tab_shakify_params, **tab_masking_params, **tab_depth_params, **tab_init_params, **controlnet_dict, **tab_wan_params, **tab_output_params}.items():
                 locals()[key] = value
 
             # Add top-level settings to locals()
