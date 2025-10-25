@@ -82,6 +82,13 @@ def get_tab_run(d, da):
         # RUN FROM SETTING FILE ACCORD
         with gr.Accordion('Batch Mode, Resume and more', open=True):
             with gr.Tab('Batch Mode/ run from setting files'):
+                gr.HTML(value="""
+                    <div style="padding: 10px; background-color: #e7f3ff; border-left: 4px solid #2196F3; margin-bottom: 10px;">
+                        <strong>💡 Tip:</strong> For persistent default settings across all sessions,
+                        use Forge's built-in <strong>Settings → Defaults</strong> feature.
+                        Use this batch mode for running multiple setting files in sequence.
+                    </div>
+                """)
                 with gr.Row():  # TODO: handle this inside one of the args functions?
                     override_settings_with_file = gr.Checkbox(label="Enable batch mode", value=False, interactive=True,
                                                               elem_id='override_settings',
