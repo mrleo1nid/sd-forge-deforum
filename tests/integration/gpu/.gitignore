@@ -1,5 +1,0 @@
-# Ignore test outputs
-test_outputs/
-
-# But keep the directory structure
-!test_outputs/.gitkeep
