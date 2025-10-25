@@ -41,6 +41,7 @@ tests/
 **Examples:**
 - `api_test.py::test_simple_settings` - Generate 2D animation via API
 - `api_test.py::test_3d_mode` - Generate 3D depth-warped animation
+- `test_api_swagger.py` - Verify Swagger/OpenAPI documentation (fast, no GPU)
 - `postprocess_test.py::test_post_process_FILM` - Frame interpolation with FILM
 
 **When to run:** Before releases, after major refactoring, in CI
@@ -74,6 +75,26 @@ tests/
 
 ## Running Tests
 
+### Quick Manual API Test (No pytest required)
+For quick verification that the API and Swagger documentation are working:
+
+```bash
+# 1. Start server in one terminal
+cd ../../..  # Go to webui root
+python3 webui.py --deforum-api
+
+# 2. Run manual test in another terminal
+cd extensions/sd-forge-deforum
+python3 tests/manual_api_test.py
+```
+
+This runs fast verification tests without GPU/models:
+- ✓ Swagger UI accessible at /docs
+- ✓ OpenAPI schema properly generated
+- ✓ All endpoints documented
+- ✓ Response models defined
+- ✓ Basic endpoints work (list jobs/batches)
+
 ### API Integration Tests
 ```bash
 ./run-tests.sh                          # Run all API tests (starts server)
@@ -83,6 +104,12 @@ tests/
 ### Run Specific Test
 ```bash
 ./run-tests.sh tests/integration/api_test.py::test_simple_settings
+```
+
+### Run Swagger/OpenAPI Tests Only (Fast)
+```bash
+# Requires server running with --deforum-api
+pytest tests/integration/test_api_swagger.py -v
 ```
 
 ### Run Unit Tests Only (When Created)

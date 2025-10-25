@@ -423,6 +423,47 @@ Currently limited to **1 concurrent job** via ThreadPoolExecutor. Jobs queue aut
 
 Future: May support multiple concurrent jobs, but this requires careful memory management.
 
+## Testing the API
+
+### Quick Manual Test
+
+Verify the API is working without running full tests:
+
+```bash
+# In the extension directory
+python3 tests/manual_api_test.py
+```
+
+This script tests:
+- ✓ Swagger UI is accessible at http://localhost:7860/docs
+- ✓ OpenAPI schema is properly generated
+- ✓ All endpoints are documented
+- ✓ Response models are defined
+- ✓ Basic endpoints work (list jobs/batches, version info)
+- ✓ 404 responses for non-existent resources
+
+### Swagger UI Interactive Testing
+
+1. Open http://localhost:7860/docs in your browser
+2. Expand any endpoint (e.g., "POST /deforum_api/batches")
+3. Click "Try it out"
+4. Edit the request body with your settings
+5. Click "Execute"
+6. See the response with status code and data
+
+### Automated Tests
+
+Run the comprehensive test suite:
+
+```bash
+# Run all API tests (includes GPU tests, slow)
+cd ../../../  # Go to webui root
+pytest extensions/sd-forge-deforum/tests/integration/ -v
+
+# Run only fast Swagger tests (no GPU required)
+pytest extensions/sd-forge-deforum/tests/integration/test_api_swagger.py -v
+```
+
 ## See Also
 
 - [MCP Integration](./MCP_INTEGRATION.md) - Use with Claude Desktop
