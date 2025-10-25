@@ -7,12 +7,17 @@ Organized test suite following pytest best practices.
 ```
 tests/
 ├── integration/         # Integration tests
-│   ├── api_test.py              # API integration tests (require server + GPU)
-│   ├── postprocess_test.py      # Post-processing tests (FILM, RIFE, upscaling)
-│   ├── utils.py                 # Shared utilities for API tests
-│   ├── testdata/                # Test fixtures (settings files, videos)
-│   ├── __snapshots__/           # Snapshot data for regression testing
-│   └── conftest.py              # Integration test fixtures
+│   ├── api_test.py                  # API integration tests (require server + GPU)
+│   ├── test_api_swagger.py          # Swagger/OpenAPI tests (fast, no GPU)
+│   ├── test_visual_processing.py    # Visual processing tests (depth, RAFT, keyframes, etc.)
+│   ├── test_wan_flf2v.py            # Wan FLF2V tween generation tests
+│   ├── test_flux_integration.py     # Flux model integration tests
+│   ├── postprocess_test.py          # Post-processing tests (FILM, RIFE, upscaling)
+│   ├── test_parseq_adapter.py       # Parseq integration tests
+│   ├── utils.py                     # Shared utilities for API tests
+│   ├── testdata/                    # Test fixtures (settings files, videos)
+│   ├── __snapshots__/               # Snapshot data for regression testing
+│   └── conftest.py                  # Integration test fixtures
 │
 ├── unit/                # Fast unit tests (no server, no GPU, no external deps)
 │   └── (empty - to be created)
@@ -24,6 +29,7 @@ tests/
 │   └── (empty - reserved for future use)
 │
 ├── conftest.py          # Pytest fixtures and configuration
+├── manual_api_test.py   # Standalone manual API test script
 └── README.md            # This file
 ```
 
@@ -39,10 +45,20 @@ tests/
 - Slow (minutes per test)
 
 **Examples:**
-- `api_test.py::test_simple_settings` - Generate 2D animation via API
+- `api_test.py::test_simple_settings` - Generate animation via API
 - `api_test.py::test_3d_mode` - Generate 3D depth-warped animation
 - `test_api_swagger.py` - Verify Swagger/OpenAPI documentation (fast, no GPU)
+- `test_visual_processing.py::test_depth_map_generation` - Test Depth-Anything V2
+- `test_visual_processing.py::test_optical_flow_raft` - Test RAFT optical flow
+- `test_visual_processing.py::test_camera_shakify` - Test shakify patterns
+- `test_visual_processing.py::test_keyframe_distribution_*` - Test distribution modes
+- `test_wan_flf2v.py::test_wan_flf2v_tween_generation` - Test Wan AI tweens
+- `test_wan_flf2v.py::test_wan_flf2v_guidance_scale_variations` - Test guidance settings
+- `test_flux_integration.py::test_flux_basic_generation` - Test Flux.1 keyframes
+- `test_flux_integration.py::test_flux_controlnet_v2` - Test Flux ControlNet
+- `test_flux_integration.py::test_flux_wan_hybrid_mode` - Test Flux+Wan hybrid
 - `postprocess_test.py::test_post_process_FILM` - Frame interpolation with FILM
+- `postprocess_test.py::test_post_process_RIFE` - Frame interpolation with RIFE
 
 **When to run:** Before releases, after major refactoring, in CI
 
@@ -122,10 +138,41 @@ pytest tests/unit/ -v
 pytest tests/ -v
 ```
 
+### Run Tests by Category
+
+**Run only fast Swagger/API tests (no GPU):**
+```bash
+pytest tests/integration/test_api_swagger.py -v
+```
+
+**Run only visual processing tests:**
+```bash
+pytest tests/integration/test_visual_processing.py -v
+```
+
+**Run only Wan FLF2V tests:**
+```bash
+pytest tests/integration/test_wan_flf2v.py -v
+```
+
+**Run only Flux integration tests:**
+```bash
+pytest tests/integration/test_flux_integration.py -v
+```
+
 ### Run Tests by Marker
 ```bash
 pytest -m "not slow"             # Fast tests only
+pytest -m "flux"                 # Flux-specific tests only
+pytest -m "wan"                  # Wan-specific tests only
+pytest -m "visual"               # Visual processing tests only
 ```
+
+Available markers (see `pytest.ini`):
+- `slow` - Tests that take a long time (full generation)
+- `flux` - Tests requiring Flux model
+- `wan` - Tests requiring Wan model
+- `visual` - Tests for visual processing features
 
 ## Test Organization Principles
 
