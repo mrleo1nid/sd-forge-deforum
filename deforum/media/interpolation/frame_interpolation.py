@@ -190,9 +190,9 @@ def check_and_download_film_model(model_name, model_dest_folder):
         download_url_to_file(download_url, model_dest_path)
         # verify checksum
         if checksum(model_dest_path) != film_model_hash:
-            raise Exception(f"Error while downloading {model_name}. Please download from: {download_url}, and put in: {model_dest_folder}")
+            raise Exception(f"Checksum mismatch for {model_name}. Please download from: {download_url}, and put in: {model_dest_folder}")
     except Exception as e:
-        raise Exception(f"Error while downloading {model_name}. Please download from: {download_url}, and put in: {model_dest_folder}")
+        raise Exception(f"Error while downloading {model_name}: {str(e)}. Please download from: {download_url}, and put in: {model_dest_folder}") from e
 
 
 # calculate_frames_to_add imported from deforum.utils.math.interpolation
