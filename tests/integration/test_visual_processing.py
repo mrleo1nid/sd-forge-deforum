@@ -14,6 +14,7 @@ These tests verify the visual processing pipeline works correctly end-to-end.
 
 import glob
 import json
+import math
 import os
 from pathlib import Path
 

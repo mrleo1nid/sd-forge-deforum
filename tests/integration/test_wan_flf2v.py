@@ -6,6 +6,7 @@ This is a key feature of the sd-forge-deforum fork that enables high-quality twe
 
 import glob
 import json
+import math
 import os
 from pathlib import Path
 

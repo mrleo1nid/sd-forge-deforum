@@ -14,6 +14,7 @@
 
 # Contact the authors: https://deforum.github.io/
 
+import inspect
 from pathlib import Path
 from tenacity import retry, stop_after_delay, wait_fixed
 import requests
@@ -27,21 +28,40 @@ API_BASE_URL = SERVER_BASE_URL + API_ROOT
 TEST_OUTPUT_DIR = str(Path(__file__).parent.parent.parent.parent.parent / "outputs" / "deforum-tests")
 
 def get_test_batch_name(test_name: str) -> str:
-    """Get a batch name that includes the test name for easier identification.
+    """Get a batch name that includes the test module and test name for easier identification.
+
+    Automatically detects the calling test module using inspect to create hierarchical
+    directory names like: test_api-simple_settings_{timestring}
 
     Args:
         test_name: Name of the test function (e.g., 'test_simple_settings')
 
     Returns:
-        Batch name pattern like 'test_simple_settings_{timestring}'
+        Batch name pattern like 'test_api-simple_settings_{timestring}'
 
     Example:
+        # Called from tests/integration/api_test.py
         deforum_settings['batch_name'] = get_test_batch_name('test_simple_settings')
-        # Results in output directory: outputs/deforum-tests/test_simple_settings_20251025123456/
+        # Results in output directory: outputs/deforum-tests/api_test-simple_settings_20251025123456/
     """
-    # Remove 'test_' prefix for cleaner names
-    name = test_name.replace('test_', '', 1) if test_name.startswith('test_') else test_name
-    return f"{name}_{{timestring}}"
+    # Get the calling module name from the stack
+    frame = inspect.currentframe()
+    if frame and frame.f_back:
+        caller_module = inspect.getmodule(frame.f_back)
+        if caller_module and caller_module.__name__:
+            # Extract just the module name without package prefix
+            # e.g., 'tests.integration.api_test' -> 'api_test'
+            module_name = caller_module.__name__.split('.')[-1]
+        else:
+            module_name = "unknown"
+    else:
+        module_name = "unknown"
+
+    # Remove 'test_' prefix from test name for cleaner names
+    clean_test_name = test_name.replace('test_', '', 1) if test_name.startswith('test_') else test_name
+
+    # Format: module-testname_{timestring}
+    return f"{module_name}-{clean_test_name}_{{timestring}}"
 
 def get_test_options_overrides():
     """Get standard options_overrides for integration tests.
