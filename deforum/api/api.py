@@ -108,7 +108,7 @@ def run_deforum_batch(batch_id: str, job_ids: [str], deforum_settings_files: Lis
         traceback.print_exc()
         for job_id in job_ids:
             # Mark all jobs in this batch as failed
-            JobStatusTracker().fail_job(job_id, 'TERMINAL', {e})
+            JobStatusTracker().fail_job(job_id, 'TERMINAL', str(e))
 
 
 # API to allow a batch of jobs to be submitted to the deforum pipeline.
