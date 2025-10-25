@@ -605,8 +605,14 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
     try:
         # Save first and last keyframes to temp input directory
         # RIFE expects numbered frames: 0.png, 1.png
-        first_image.save(os.path.join(temp_input, "0000000.png"))
-        last_image.save(os.path.join(temp_input, "0000001.png"))
+        # IMPORTANT: RIFE uses cv2.imread() which expects BGR format, so we must save as BGR
+        import numpy as np
+        first_image_np = np.array(first_image)  # PIL RGB → numpy RGB
+        last_image_np = np.array(last_image)
+        first_image_bgr = cv2.cvtColor(first_image_np, cv2.COLOR_RGB2BGR)  # RGB → BGR for cv2
+        last_image_bgr = cv2.cvtColor(last_image_np, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(os.path.join(temp_input, "0000000.png"), first_image_bgr)
+        cv2.imwrite(os.path.join(temp_input, "0000001.png"), last_image_bgr)
 
         # Calculate interpolation amount
         # RIFE will generate interp_x_amount - 1 frames between each pair
@@ -629,7 +635,7 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
             fps=fps,
             deforum_models_path=os.path.join(os.getcwd(), "models", "Deforum"),
             raw_output_imgs_path=temp_input,
-            img_batch_id=None,
+            img_batch_id=f"segment_{first_frame_idx}",  # Unique ID for this segment
             ffmpeg_location=ffmpeg_location,
             audio_track=None,
             interp_x_amount=interp_amount,
@@ -638,7 +644,7 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
             ffmpeg_crf=17,
             ffmpeg_preset='veryslow',
             keep_imgs=True,  # Keep interpolated frames
-            orig_vid_name=None,  # None = PNG input (don't cleanup), non-None = video input (cleanup after stitch)
+            orig_vid_name=None,  # None = use img_batch_id for naming (don't cleanup raw frames)
             srt_path=None
         )
 
