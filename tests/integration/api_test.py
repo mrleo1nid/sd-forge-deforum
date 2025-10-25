@@ -96,6 +96,9 @@ def test_3d_mode(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_3d_mode')
+
     deforum_settings['animation_mode'] = "3D"
 
     options_overrides = get_test_options_overrides()
@@ -130,6 +133,9 @@ def test_3d_mode(snapshot):
 def test_with_parseq_inline_without_overrides(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_with_parseq_inline_without_overrides')
 
     with open(TESTDATA_DIR / 'parseq.json', 'r') as parseq_file:
         parseq_data = json.load(parseq_file)
@@ -169,6 +175,9 @@ def test_with_parseq_inline_without_overrides(snapshot):
 def test_with_parseq_inline_with_overrides(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_with_parseq_inline_with_overrides')
 
     with open(TESTDATA_DIR / 'parseq.json', 'r') as parseq_file:
         parseq_data = json.load(parseq_file)
