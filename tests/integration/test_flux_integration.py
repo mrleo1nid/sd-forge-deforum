@@ -10,6 +10,7 @@ Tests Flux.1 support which is a major feature of the sd-forge-deforum fork:
 import glob
 import json
 import os
+from pathlib import Path
 
 import pytest
 import requests
@@ -19,11 +20,15 @@ from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
 from deforum.api.models import DeforumJobStatusCategory
 
 
+# Path to testdata directory relative to this test file
+TESTDATA_DIR = Path(__file__).parent / 'testdata'
+
+
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 @pytest.mark.flux
 def test_flux_basic_generation():
     """Test basic Flux.1 keyframe generation."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Configure for Flux/Wan mode
@@ -66,7 +71,7 @@ def test_flux_basic_generation():
 @pytest.mark.flux
 def test_flux_controlnet_v2():
     """Test Flux with ControlNet V2 depth guidance."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Configure Flux with ControlNet
@@ -101,7 +106,7 @@ def test_flux_controlnet_v2():
 @pytest.mark.flux
 def test_flux_wan_hybrid_mode():
     """Test Flux/Wan hybrid mode: Flux keyframes + Wan FLF2V tweens."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Flux/Wan hybrid workflow
@@ -144,7 +149,7 @@ def test_flux_wan_hybrid_mode():
 @pytest.mark.flux
 def test_flux_qwen_prompt_enhancement():
     """Test Qwen AI prompt enhancement for Flux generation."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Enable Qwen enhancement
@@ -179,7 +184,7 @@ def test_flux_qwen_prompt_enhancement():
 @pytest.mark.flux
 def test_flux_resolution_512x512():
     """Test Flux generation at 512x512 resolution."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     deforum_settings['animation_mode'] = "Flux/Wan"
@@ -215,7 +220,7 @@ def test_flux_resolution_512x512():
 @pytest.mark.flux
 def test_flux_resolution_768x768():
     """Test Flux generation at 768x768 resolution."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     deforum_settings['animation_mode'] = "Flux/Wan"
@@ -251,7 +256,7 @@ def test_flux_resolution_768x768():
 @pytest.mark.flux
 def test_flux_with_movement_analysis():
     """Test Flux with Qwen movement analysis integration."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Use movement schedules that Qwen can analyze
@@ -286,7 +291,7 @@ def test_flux_with_movement_analysis():
 @pytest.mark.flux
 def test_flux_steps_configuration():
     """Test Flux with different step counts."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Test with minimal steps (Flux Schnell can do 4 steps)
@@ -316,7 +321,7 @@ def test_flux_steps_configuration():
 @pytest.mark.flux
 def test_flux_vae_integration():
     """Test that Flux uses correct VAE."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Flux requires specific VAE

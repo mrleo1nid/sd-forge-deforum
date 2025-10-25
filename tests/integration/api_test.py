@@ -29,8 +29,12 @@ from deforum.api.models import (DeforumJobPhase, DeforumJobStatus,
 from deforum.media.subtitle_handler import get_user_values
 
 
+# Path to testdata directory relative to this test file
+TESTDATA_DIR = Path(__file__).parent / 'testdata'
+
+
 def test_simple_settings(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     response = requests.post(API_BASE_URL+"/batches", json={
@@ -60,7 +64,7 @@ def test_simple_settings(snapshot):
         
 
 def test_api_cancel_active_job():
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         data = json.load(settings_file)
         response = requests.post(API_BASE_URL+"/batches", json={"deforum_settings":[data]})
         response.raise_for_status()
@@ -78,7 +82,7 @@ def test_api_cancel_active_job():
 
 
 def test_3d_mode(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
         
     deforum_settings['animation_mode'] = "3D"
@@ -110,10 +114,10 @@ def test_3d_mode(snapshot):
 
 
 def test_with_parseq_inline_without_overrides(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
-    with open('testdata/parseq.json', 'r') as parseq_file:
+    with open(TESTDATA_DIR / 'parseq.json', 'r') as parseq_file:
         parseq_data = json.load(parseq_file)
        
     deforum_settings['parseq_manifest'] = json.dumps(parseq_data)
@@ -146,10 +150,10 @@ def test_with_parseq_inline_without_overrides(snapshot):
 
 
 def test_with_parseq_inline_with_overrides(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
-    with open('testdata/parseq.json', 'r') as parseq_file:
+    with open(TESTDATA_DIR / 'parseq.json', 'r') as parseq_file:
         parseq_data = json.load(parseq_file)
        
     deforum_settings['parseq_manifest'] = json.dumps(parseq_data)

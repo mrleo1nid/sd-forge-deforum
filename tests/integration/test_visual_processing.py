@@ -27,10 +27,14 @@ from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
 from deforum.api.models import DeforumJobStatusCategory
 
 
+# Path to testdata directory relative to this test file
+TESTDATA_DIR = Path(__file__).parent / 'testdata'
+
+
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_depth_map_generation():
     """Test that Depth-Anything V2 generates depth maps correctly."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Configure for 3D mode with depth
@@ -68,7 +72,7 @@ def test_depth_map_generation():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_3d_depth_warping():
     """Test that 3D mode performs depth-based warping."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Configure 3D animation with camera movement
@@ -100,7 +104,7 @@ def test_3d_depth_warping():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_keyframe_distribution_keyframes_only():
     """Test keyframe distribution in 'Keyframes Only' mode."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set up keyframe distribution
@@ -134,7 +138,7 @@ def test_keyframe_distribution_keyframes_only():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_prompt_scheduling():
     """Test that prompt scheduling works across multiple keyframes."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set up prompt schedule with distinct prompts
@@ -165,7 +169,7 @@ def test_prompt_scheduling():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_seed_scheduling():
     """Test that seed scheduling works across frames."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set up seed schedule
@@ -191,7 +195,7 @@ def test_seed_scheduling():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_strength_scheduling():
     """Test that strength (denoise) scheduling works."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set up strength schedule
@@ -217,7 +221,7 @@ def test_strength_scheduling():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_camera_shakify():
     """Test that camera shakify patterns are applied."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Enable shakify
@@ -245,7 +249,7 @@ def test_camera_shakify():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_optical_flow_raft():
     """Test RAFT optical flow for color matching."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Enable RAFT optical flow
@@ -272,7 +276,7 @@ def test_optical_flow_raft():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_subtitle_generation():
     """Test that .srt subtitle files are generated correctly."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     deforum_settings['max_frames'] = 5
@@ -314,7 +318,7 @@ def test_subtitle_generation():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_video_stitching_basic():
     """Test that ffmpeg correctly stitches frames into video."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Basic settings for video stitching
@@ -356,7 +360,7 @@ def test_video_stitching_basic():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_cfg_scale_schedule():
     """Test that CFG scale scheduling works."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set up CFG scale schedule
@@ -382,7 +386,7 @@ def test_cfg_scale_schedule():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_color_coherence():
     """Test color coherence modes."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Test with MatchColorHSV
@@ -408,7 +412,7 @@ def test_color_coherence():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_noise_schedule():
     """Test noise scheduling across frames."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set up noise schedule

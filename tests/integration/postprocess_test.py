@@ -17,6 +17,7 @@
 import glob
 import json
 import os
+from pathlib import Path
 
 import pytest
 import requests
@@ -27,9 +28,14 @@ from deforum.api.models import (DeforumJobPhase,
                                         DeforumJobStatusCategory)
 from deforum.media.subtitle_handler import get_user_values
 
-@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
+
+# Path to testdata directory relative to this test file
+TESTDATA_DIR = Path(__file__).parent / 'testdata'
+
+
+@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_post_process_FILM(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
         
     deforum_settings["frame_interpolation_engine"] = "FILM"
@@ -66,7 +72,7 @@ def test_post_process_FILM(snapshot):
 
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
 def test_post_process_RIFE(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
         
     deforum_settings["frame_interpolation_engine"] = "RIFE v4.6"
@@ -103,7 +109,7 @@ def test_post_process_RIFE(snapshot):
 
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
 def test_post_process_UPSCALE(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
         
     deforum_settings["r_upscale_video"] = True
@@ -141,7 +147,7 @@ def test_post_process_UPSCALE(snapshot):
 
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
 def test_post_process_UPSCALE_FILM(snapshot):
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
         
     deforum_settings["r_upscale_video"] = True

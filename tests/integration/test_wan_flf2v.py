@@ -7,6 +7,7 @@ This is a key feature of the sd-forge-deforum fork that enables high-quality twe
 import glob
 import json
 import os
+from pathlib import Path
 
 import pytest
 import requests
@@ -16,10 +17,14 @@ from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
 from deforum.api.models import DeforumJobStatusCategory
 
 
+# Path to testdata directory relative to this test file
+TESTDATA_DIR = Path(__file__).parent / 'testdata'
+
+
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_tween_generation():
     """Test basic FLF2V tween generation between two keyframes."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Configure for FLF2V tween generation
@@ -57,7 +62,7 @@ def test_wan_flf2v_tween_generation():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_multiple_segments():
     """Test FLF2V with multiple tween segments."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Create multiple segments (need 4n+1 frames per segment)
@@ -91,7 +96,7 @@ def test_wan_flf2v_multiple_segments():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_guidance_scale_variations():
     """Test different guidance_scale values for FLF2V."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Test with balanced guidance (recommended)
@@ -120,7 +125,7 @@ def test_wan_flf2v_guidance_scale_variations():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_prompt_mode_blend():
     """Test FLF2V with 'blend' prompt mode."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Use blend mode to combine keyframe prompts
@@ -149,7 +154,7 @@ def test_wan_flf2v_prompt_mode_blend():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_with_seed_schedule():
     """Test FLF2V with seed scheduling for keyframes."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Use seed schedule to control keyframe generation
@@ -178,7 +183,7 @@ def test_wan_flf2v_with_seed_schedule():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_with_strength_schedule():
     """Test FLF2V with strength scheduling for I2V chaining."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Strength schedule affects how much previous frame influences next
@@ -208,7 +213,7 @@ def test_wan_flf2v_with_strength_schedule():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_frame_count_validation():
     """Test that FLF2V correctly handles 4n+1 frame count requirements."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Frame count between keyframes should follow 4n+1 rule
@@ -244,7 +249,7 @@ def test_wan_flf2v_frame_count_validation():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_model_selection():
     """Test that different Wan models can be selected for FLF2V."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Specify a particular Wan model (e.g., VACE variant)
@@ -278,7 +283,7 @@ def test_wan_flf2v_model_selection():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_fps_inheritance():
     """Test that FLF2V tweens inherit FPS from settings."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set specific FPS
@@ -315,7 +320,7 @@ def test_wan_flf2v_fps_inheritance():
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_wan_flf2v_redistributed_mode():
     """Test FLF2V with 'Redistributed' keyframe distribution mode."""
-    with open('testdata/simple.input_settings.txt', 'r') as settings_file:
+    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Redistributed mode intelligently places keyframes
