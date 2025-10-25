@@ -23,7 +23,7 @@ import traceback
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List
 from deforum.api.models import (
@@ -451,77 +451,72 @@ class JobStatusTracker(metaclass=Singleton):
         if job_id in self.statuses:
             current_status = self.statuses[job_id]
             now = datetime.now().timestamp()
-            new_status = replace(
-                current_status,
-                phase=phase,
-                phase_progress=progress,
-                last_updated=now,
-                execution_time=now-current_status.started_at,
-                update_interval_time=now-current_status.last_updated,
-                updates=current_status.updates+1
-            )
+            new_status = current_status.model_copy(update={
+                'phase': phase,
+                'phase_progress': progress,
+                'last_updated': now,
+                'execution_time': now-current_status.started_at,
+                'update_interval_time': now-current_status.last_updated,
+                'updates': current_status.updates+1
+            })
             self.statuses[job_id] = new_status
 
     def update_output_info(self, job_id: str, outdir: str, timestring: str):
         if job_id in self.statuses:
             current_status = self.statuses[job_id]
             now = datetime.now().timestamp()
-            new_status = replace(
-                current_status,
-                outdir=outdir,
-                timestring=timestring,
-                last_updated=now,
-                execution_time=now-current_status.started_at,
-                update_interval_time=now-current_status.last_updated,
-                updates=current_status.updates+1
-            )
+            new_status = current_status.model_copy(update={
+                'outdir': outdir,
+                'timestring': timestring,
+                'last_updated': now,
+                'execution_time': now-current_status.started_at,
+                'update_interval_time': now-current_status.last_updated,
+                'updates': current_status.updates+1
+            })
             self.statuses[job_id] = new_status
 
     def complete_job(self, job_id: str):
         if job_id in self.statuses:
             current_status = self.statuses[job_id]
             now = datetime.now().timestamp()
-            new_status = replace(
-                current_status,
-                status=DeforumJobStatusCategory.SUCCEEDED,
-                phase=DeforumJobPhase.DONE,
-                phase_progress=1.0,
-                last_updated=now,
-                execution_time=now-current_status.started_at,
-                update_interval_time=now-current_status.last_updated,
-                updates=current_status.updates+1
-            )
+            new_status = current_status.model_copy(update={
+                'status': DeforumJobStatusCategory.SUCCEEDED,
+                'phase': DeforumJobPhase.DONE,
+                'phase_progress': 1.0,
+                'last_updated': now,
+                'execution_time': now-current_status.started_at,
+                'update_interval_time': now-current_status.last_updated,
+                'updates': current_status.updates+1
+            })
             self.statuses[job_id] = new_status
 
     def fail_job(self, job_id: str, error_type: str, message: str):
         if job_id in self.statuses:
             current_status = self.statuses[job_id]
             now = datetime.now().timestamp()
-            new_status = replace(
-                current_status,
-                status=DeforumJobStatusCategory.FAILED,
-                error_type=error_type,
-                message=message,
-                last_updated=now,
-                execution_time=now-current_status.started_at,
-                update_interval_time=now-current_status.last_updated,
-                updates=current_status.updates+1
-            )
+            new_status = current_status.model_copy(update={
+                'status': DeforumJobStatusCategory.FAILED,
+                'error_type': error_type,
+                'message': message,
+                'last_updated': now,
+                'execution_time': now-current_status.started_at,
+                'update_interval_time': now-current_status.last_updated,
+                'updates': current_status.updates+1
+            })
             self.statuses[job_id] = new_status
 
     def cancel_job(self, job_id: str, message: str):
         if job_id in self.statuses:
             current_status = self.statuses[job_id]
             now = datetime.now().timestamp()
-            new_status = replace(
-                current_status,
-                status=DeforumJobStatusCategory.CANCELLED,
-                message=message,
-                last_updated=now,
-                execution_time=now-current_status.started_at,
-                update_interval_time=now-current_status.last_updated,
-                updates=current_status.updates+1
-            )
+            new_status = current_status.model_copy(update={
+                'status': DeforumJobStatusCategory.CANCELLED,
+                'message': message,
+                'last_updated': now,
+                'execution_time': now-current_status.started_at,
+                'update_interval_time': now-current_status.last_updated,
+                'updates': current_status.updates+1
+            })
             self.statuses[job_id] = new_status
 
 
