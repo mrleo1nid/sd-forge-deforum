@@ -99,12 +99,12 @@ def save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, co
             # Filter out methods and callables to avoid JSON serialization errors
             s.update({k: v for k, v in d.items() if k not in exclude_keys and not callable(v)})
         
-        # Handle SD model info (may not exist in Flux/Wan mode)
+        # Handle SD model info (may not exist in Flux + Interpolation mode)
         if hasattr(sh.sd_model, 'sd_checkpoint_info'):
             s["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name
             s["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash
         else:
-            s["sd_model_name"] = "N/A (Flux/Wan mode)"
+            s["sd_model_name"] = "N/A (Flux + Interpolation mode)"
             s["sd_model_hash"] = "N/A"
         
         s["deforum_git_commit_id"] = get_deforum_version()
@@ -166,7 +166,7 @@ def save_settings(*args, **kwargs):
         filtered_combined["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name
         filtered_combined["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash
     else:
-        filtered_combined["sd_model_name"] = "N/A (Flux/Wan mode)"
+        filtered_combined["sd_model_name"] = "N/A (Flux + Interpolation mode)"
         filtered_combined["sd_model_hash"] = "N/A"
     filtered_combined["deforum_git_commit_id"] = get_deforum_version()
     
