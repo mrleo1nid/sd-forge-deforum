@@ -46,12 +46,20 @@ def cmdopt(request):
 @retry(wait=wait_fixed(5), stop=stop_after_delay(60))
 def wait_for_service(url):
     response = requests.get(url, timeout=(5, 5))
-    print(f"Waiting for server to respond 200 at {url} (response: {response.status_code})...")    
+    print(f"Waiting for server to respond 200 at {url} (response: {response.status_code})...")
     assert response.status_code == 200
 
 @pytest.fixture(scope="session", autouse=True)
 def start_server(request):
-    if request.config.getoption("--start-server"):
+    # Check if --start-server option exists (may not be registered with certain pytest flags)
+    try:
+        should_start_server = request.config.getoption("--start-server")
+    except ValueError:
+        # Option not registered (e.g., when using --snapshot-update)
+        # Assume server is externally managed by run-api-tests.sh
+        should_start_server = False
+
+    if should_start_server:
 
         # Kick off server subprocess
         script_directory = os.path.dirname(__file__)
