@@ -585,16 +585,16 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
     Returns:
         List of paths to generated tween frames
     """
-    import tempfile
     import shutil
     from deforum.integrations.external_repos.rife.inference_video import run_rife_new_video_infer
 
     log_utils.info(f"   🔧 RIFE v4.6 interpolation: {num_frames} frames", log_utils.BLUE)
 
-    # Create temp directory for RIFE input
-    temp_dir = tempfile.mkdtemp(prefix="rife_segment_")
-    temp_input = os.path.join(temp_dir, "input")
-    temp_output = os.path.join(temp_dir, "output")
+    # Create working directory for RIFE in the output directory (not /tmp)
+    # This avoids cleanup issues and keeps intermediate files with the project
+    rife_work_dir = os.path.join(output_dir, f"_rife_segment_{first_frame_idx}_to_{first_frame_idx + num_frames + 1}")
+    temp_input = os.path.join(rife_work_dir, "input")
+    temp_output = os.path.join(rife_work_dir, "output")
     os.makedirs(temp_input, exist_ok=True)
     os.makedirs(temp_output, exist_ok=True)
 
@@ -634,7 +634,7 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
             ffmpeg_crf=17,
             ffmpeg_preset='veryslow',
             keep_imgs=True,  # Keep interpolated frames
-            orig_vid_name=f"segment_{first_frame_idx}",
+            orig_vid_name=None,  # None = PNG input (don't cleanup), non-None = video input (cleanup after stitch)
             srt_path=None
         )
 
@@ -673,8 +673,9 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
         return frame_paths
 
     finally:
-        # Cleanup temp directory
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        # Cleanup RIFE working directory
+        if os.path.exists(rife_work_dir):
+            shutil.rmtree(rife_work_dir, ignore_errors=True)
 
 
 def generate_film_segment(first_image, last_image, num_frames, height, width,
@@ -698,16 +699,16 @@ def generate_film_segment(first_image, last_image, num_frames, height, width,
     Returns:
         List of paths to generated tween frames
     """
-    import tempfile
     import shutil
     from deforum.integrations.film import film_interpolate
 
     log_utils.info(f"   🎬 FILM interpolation: {num_frames} frames", log_utils.BLUE)
 
-    # Create temp directory for FILM input
-    temp_dir = tempfile.mkdtemp(prefix="film_segment_")
-    temp_input = os.path.join(temp_dir, "input")
-    temp_output = os.path.join(temp_dir, "output")
+    # Create working directory for FILM in the output directory (not /tmp)
+    # This avoids cleanup issues and keeps intermediate files with the project
+    film_work_dir = os.path.join(output_dir, f"_film_segment_{first_frame_idx}_to_{first_frame_idx + num_frames + 1}")
+    temp_input = os.path.join(film_work_dir, "input")
+    temp_output = os.path.join(film_work_dir, "output")
     os.makedirs(temp_input, exist_ok=True)
     os.makedirs(temp_output, exist_ok=True)
 
@@ -757,5 +758,6 @@ def generate_film_segment(first_image, last_image, num_frames, height, width,
         return frame_paths
 
     finally:
-        # Cleanup temp directory
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        # Cleanup FILM working directory
+        if os.path.exists(film_work_dir):
+            shutil.rmtree(film_work_dir, ignore_errors=True)
