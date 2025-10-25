@@ -1537,26 +1537,26 @@ def auto_assign_keyframe_types_handler(animation_prompts_json, chunk_size):
 
 
 def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
-    """Wan Model & Settings Tab - FLF2V integration enabled in Keyframes → Distribution"""
+    """Interpolation Settings Tab - Multi-method interpolation (Wan/RIFE/FILM)"""
 
     gr.Markdown("""
-    ## Wan FLF2V Integration
+    ## 🎬 Interpolation Methods
 
-    **Wan is now fully integrated with the main Deforum workflow!**
+    **Choose your interpolation method for smooth transitions between keyframes:**
 
-    **To use Wan FLF2V for tween interpolation:**
-    1. Go to **Distribution** tab
-    2. Enable **"Wan FLF2V for Tweens"**
-    3. Configure your prompts in the **Prompts** tab as normal
-    4. Click the main **Generate** button
-
-    **This tab is only for:**
-    - Downloading and managing Wan models
-    - Configuring VRAM optimization settings
-    - Advanced Wan-specific settings
+    - **Wan FLF2V:** AI-generated video with semantic understanding (requires FLF2V model download)
+    - **RIFE v4.6:** Optical flow-based interpolation for natural motion (works out of the box)
+    - **FILM:** Google's Frame Interpolation for Large Motion (works out of the box)
 
     ---
     """)
+
+    # INTERPOLATION METHOD SELECTOR - ALWAYS VISIBLE AT TOP
+    gr.Markdown("### 🎯 Select Interpolation Method")
+    with gr.Row():
+        flux_flf2v_interpolation_method = create_gr_elem(dw.flux_flf2v_interpolation_method)
+
+    gr.Markdown("---")
 
     # Deforum Integration Info - Shows what settings are used
     with gr.Accordion("🔗 Deforum Integration Details", open=False):
@@ -1811,22 +1811,11 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
             wan_guidance_override = create_gr_elem(dw.wan_guidance_override)
             wan_guidance_scale = create_gr_elem(dw.wan_guidance_scale)
     
-    with gr.Accordion(f"{emoji_utils.frames()} Flux Interpolation Settings", open=True):
+    with gr.Accordion(f"{emoji_utils.frames()} Wan FLF2V Settings", open=False):
         gr.Markdown("""
-        **Choose your interpolation method for smooth transitions between Flux keyframes:**
+        **⚠️ These settings only apply when Wan is selected as interpolation method above!**
 
-        - **Wan FLF2V (default):** AI-generated video with semantic understanding (requires FLF2V model)
-        - **RIFE v4.6:** Optical flow-based interpolation for natural motion (no extra model needed)
-        - **FILM:** Google's Frame Interpolation for Large Motion (no extra model needed)
-        """)
-
-        with FormRow():
-            flux_flf2v_interpolation_method = create_gr_elem(dw.flux_flf2v_interpolation_method)
-
-        gr.Markdown("""
-        **Wan FLF2V Settings** (only applies when using Wan method):
-
-        **⚠️ MODEL REQUIREMENT:** You MUST use a FLF2V-specific model!
+        **MODEL REQUIREMENT:** You MUST use a FLF2V-specific model!
         - **TI2V models (e.g., Wan2.2-TI2V-5B) CANNOT do FLF2V** - they will extend the first frame
         - **Use:** Wan2.1-FLF2V-14B (only FLF2V model available)
         - TI2V models were not trained on first-last-frame data, so they ignore `last_image` parameter
