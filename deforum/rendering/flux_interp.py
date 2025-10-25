@@ -1,14 +1,19 @@
 """
-Flux/Wan Mode: Flux Keyframes + Wan FLF2V Interpolation
+Flux + Interpolation Mode: Flux Keyframes + Choice of Interpolation
+
+Supports three interpolation methods:
+- Wan FLF2V (default): AI-generated video interpolation with semantic understanding
+- RIFE v4.6: Optical flow-based interpolation for natural motion
+- FILM: Google's Frame Interpolation for Large Motion model
 
 Architecture:
   Phase 1: Generate ALL keyframes with Flux/SD
-  Phase 2: Batch run Wan FLF2V between each consecutive keyframe pair
+  Phase 2: Batch interpolation between each consecutive keyframe pair (Wan/RIFE/FILM)
   Phase 3: Stitch final video
 
 This combines the best of both worlds:
 - High-quality Flux-generated keyframes
-- Smooth Wan FLF2V interpolation between keyframes
+- Smooth interpolation between keyframes using your choice of method
 """
 
 import os
@@ -177,47 +182,53 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         log_utils.info(f"   (All {newly_generated} keyframes newly generated with Flux/SD)", log_utils.GREEN)
 
     # ====================
-    # PHASE 2: Batch Wan FLF2V Interpolation
+    # PHASE 2: Batch Frame Interpolation (Wan/RIFE/FILM)
     # ====================
     log_utils.info("\n" + "="*60, log_utils.BLUE)
-    log_utils.info("PHASE 2: Batch Wan FLF2V Interpolation", log_utils.BLUE)
+    log_utils.info("PHASE 2: Batch Frame Interpolation", log_utils.BLUE)
     log_utils.info("="*60, log_utils.BLUE)
 
-    # Unload Flux model to free GPU memory for Wan
+    # Get interpolation method (check once for all segments)
+    interp_method = getattr(args, 'flux_flf2v_interpolation_method', 'Wan')
+    log_utils.info(f"📊 Interpolation method: {interp_method}", log_utils.BLUE)
+
+    # Unload Flux model to free GPU memory
     log_utils.info("🗑️  Unloading Flux model to free GPU memory...", log_utils.BLUE)
     from backend import memory_management
     memory_management.unload_all_models()
     memory_management.soft_empty_cache()
     log_utils.info("✅ GPU memory freed", log_utils.GREEN)
 
-    # Initialize Wan
-    wan_integration = WanSimpleIntegration(device='cuda')
+    # Initialize Wan only if needed
+    wan_integration = None
+    if interp_method == "Wan":
+        wan_integration = WanSimpleIntegration(device='cuda')
 
-    # Discover and load Wan model
-    log_utils.info("🔍 Discovering Wan FLF2V models...", log_utils.BLUE)
-    discovered_models = wan_integration.discover_models()
+        # Discover and load Wan model
+        log_utils.info("🔍 Discovering Wan FLF2V models...", log_utils.BLUE)
+        discovered_models = wan_integration.discover_models()
 
-    if not discovered_models:
-        raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
+        if not discovered_models:
+            raise RuntimeError("No Wan models found. Please download a Wan model to models/wan directory first.")
 
-    # Use best available FLF2V model
-    flf2v_models = [m for m in discovered_models if m['type'] == 'FLF2V']
-    if not flf2v_models:
-        ti2v_models = [m['name'] for m in discovered_models if m['type'] in ('TI2V', 'T2V', 'I2V')]
-        log_utils.error("❌ No FLF2V model found!", log_utils.RED)
-        if ti2v_models:
-            log_utils.warning(f"   Found T2V/TI2V models: {', '.join(ti2v_models)}", log_utils.YELLOW)
-            log_utils.warning("   ⚠️  TI2V/T2V models CANNOT do FLF2V interpolation!", log_utils.YELLOW)
-        log_utils.info("   Download FLF2V model: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B", log_utils.BLUE)
-        raise RuntimeError("FLF2V model required but not found. TI2V models cannot do FLF2V interpolation.")
+        # Use best available FLF2V model
+        flf2v_models = [m for m in discovered_models if m['type'] == 'FLF2V']
+        if not flf2v_models:
+            ti2v_models = [m['name'] for m in discovered_models if m['type'] in ('TI2V', 'T2V', 'I2V')]
+            log_utils.error("❌ No FLF2V model found!", log_utils.RED)
+            if ti2v_models:
+                log_utils.warning(f"   Found T2V/TI2V models: {', '.join(ti2v_models)}", log_utils.YELLOW)
+                log_utils.warning("   ⚠️  TI2V/T2V models CANNOT do FLF2V interpolation!", log_utils.YELLOW)
+            log_utils.info("   Download FLF2V model: huggingface-cli download Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers --local-dir models/wan/Wan2.1-FLF2V-14B", log_utils.BLUE)
+            raise RuntimeError("FLF2V model required but not found. TI2V models cannot do FLF2V interpolation.")
 
-    model_info = flf2v_models[0]
-    log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
+        model_info = flf2v_models[0]
+        log_utils.info(f"📦 Loading Wan model: {model_info['name']}", log_utils.BLUE)
 
-    # Load the Wan pipeline
-    success = wan_integration.load_simple_wan_pipeline(model_info, wan_args)
-    if not success:
-        raise RuntimeError(f"Failed to load Wan model: {model_info['name']}")
+        # Load the Wan pipeline
+        success = wan_integration.load_simple_wan_pipeline(model_info, wan_args)
+        if not success:
+            raise RuntimeError(f"Failed to load Wan model: {model_info['name']}")
 
     # Generate FLF2V segments
     all_segment_frames = []
@@ -316,28 +327,56 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         else:
             flf2v_prompt = ""  # Default to no prompt
         
-        log_utils.info(f"   🎯 FLF2V Settings:", log_utils.BLUE)
-        log_utils.info(f"      Guidance scale: {flf2v_guidance} {'(pure interpolation)' if flf2v_guidance == 0.0 else ''}", log_utils.BLUE)
-        log_utils.info(f"      Prompt mode: {flf2v_prompt_mode}", log_utils.BLUE)
-        log_utils.info(f"      First keyframe prompt: {first_prompt[:60]}...", log_utils.BLUE)
-        log_utils.info(f"      Last keyframe prompt: {last_prompt[:60]}...", log_utils.BLUE)
-        log_utils.info(f"      → Using: '{flf2v_prompt[:80]}...' {'(empty = pure interpolation)' if not flf2v_prompt else ''}", log_utils.BLUE)
-        log_utils.info(f"      Inference steps: {wan_args.wan_inference_steps}", log_utils.BLUE)
+        log_utils.info(f"   🎯 Interpolation Settings:", log_utils.BLUE)
+        log_utils.info(f"      Method: {interp_method}", log_utils.BLUE)
 
-        # Call Wan FLF2V
-        segment_frames = generate_flf2v_segment(
-            wan_integration=wan_integration,
-            first_image=first_image,
-            last_image=last_image,
-            prompt=flf2v_prompt,
-            num_frames=num_tween_frames,
-            height=data.height(),
-            width=data.width(),
-            num_inference_steps=wan_args.wan_inference_steps,
-            guidance_scale=flf2v_guidance,
-            first_frame_idx=first_frame_idx,
-            output_dir=data.output_directory
-        )
+        # Route to appropriate interpolation function
+        if interp_method == "RIFE v4.6":
+            log_utils.info(f"      Using RIFE v4.6 optical flow interpolation", log_utils.BLUE)
+            segment_frames = generate_rife_segment(
+                first_image=first_image,
+                last_image=last_image,
+                num_frames=num_tween_frames,
+                height=data.height(),
+                width=data.width(),
+                first_frame_idx=first_frame_idx,
+                output_dir=data.output_directory,
+                fps=video_args.fps
+            )
+        elif interp_method == "FILM":
+            log_utils.info(f"      Using FILM (Frame Interpolation for Large Motion)", log_utils.BLUE)
+            segment_frames = generate_film_segment(
+                first_image=first_image,
+                last_image=last_image,
+                num_frames=num_tween_frames,
+                height=data.height(),
+                width=data.width(),
+                first_frame_idx=first_frame_idx,
+                output_dir=data.output_directory,
+                fps=video_args.fps
+            )
+        else:  # Default: Wan
+            log_utils.info(f"      Guidance scale: {flf2v_guidance} {'(pure interpolation)' if flf2v_guidance == 0.0 else ''}", log_utils.BLUE)
+            log_utils.info(f"      Prompt mode: {flf2v_prompt_mode}", log_utils.BLUE)
+            log_utils.info(f"      First keyframe prompt: {first_prompt[:60]}...", log_utils.BLUE)
+            log_utils.info(f"      Last keyframe prompt: {last_prompt[:60]}...", log_utils.BLUE)
+            log_utils.info(f"      → Using: '{flf2v_prompt[:80]}...' {'(empty = pure interpolation)' if not flf2v_prompt else ''}", log_utils.BLUE)
+            log_utils.info(f"      Inference steps: {wan_args.wan_inference_steps}", log_utils.BLUE)
+
+            # Call Wan FLF2V
+            segment_frames = generate_flf2v_segment(
+                wan_integration=wan_integration,
+                first_image=first_image,
+                last_image=last_image,
+                prompt=flf2v_prompt,
+                num_frames=num_tween_frames,
+                height=data.height(),
+                width=data.width(),
+                num_inference_steps=wan_args.wan_inference_steps,
+                guidance_scale=flf2v_guidance,
+                first_frame_idx=first_frame_idx,
+                output_dir=data.output_directory
+            )
 
         all_segment_frames.extend(segment_frames)
 
@@ -521,3 +560,195 @@ def stitch_wan_flux_video(data, frame_paths, video_args):
 
     return output_path
 
+
+def generate_rife_segment(first_image, last_image, num_frames, height, width,
+                         first_frame_idx, output_dir, fps=30):
+    """
+    Generate frames for one RIFE v4.6 interpolation segment.
+
+    Uses optical flow-based frame interpolation to generate smooth transitions
+    between two keyframes.
+
+    Args:
+        first_image: PIL Image of first keyframe
+        last_image: PIL Image of last keyframe
+        num_frames: Number of tween frames to generate (excluding keyframes)
+        height: Frame height
+        width: Frame width
+        first_frame_idx: Global index of first keyframe
+        output_dir: Directory to save generated frames
+        fps: Target FPS for interpolation
+
+    Returns:
+        List of paths to generated tween frames
+    """
+    import tempfile
+    import shutil
+    from deforum.integrations.external_repos.rife.inference_video import run_rife_new_video_infer
+
+    log_utils.info(f"   🔧 RIFE v4.6 interpolation: {num_frames} frames", log_utils.BLUE)
+
+    # Create temp directory for RIFE input
+    temp_dir = tempfile.mkdtemp(prefix="rife_segment_")
+    temp_input = os.path.join(temp_dir, "input")
+    temp_output = os.path.join(temp_dir, "output")
+    os.makedirs(temp_input, exist_ok=True)
+    os.makedirs(temp_output, exist_ok=True)
+
+    try:
+        # Save first and last keyframes to temp input directory
+        # RIFE expects numbered frames: 0.png, 1.png
+        first_image.save(os.path.join(temp_input, "0000000.png"))
+        last_image.save(os.path.join(temp_input, "0000001.png"))
+
+        # Calculate interpolation amount
+        # RIFE will generate interp_x_amount - 1 frames between each pair
+        # So interp_x_amount = num_frames + 1
+        interp_amount = num_frames + 1
+
+        log_utils.info(f"   Temp input: {temp_input}", log_utils.YELLOW)
+        log_utils.info(f"   Interpolation factor: {interp_amount}x", log_utils.YELLOW)
+
+        # Call RIFE inference
+        from deforum.media.video_audio_utilities import get_ffmpeg_params
+        ffmpeg_location, _, _ = get_ffmpeg_params()
+
+        run_rife_new_video_infer(
+            output=temp_output,
+            model="RIFE46",
+            fp16=False,
+            UHD=(height >= 2048 or width >= 2048),
+            scale=1.0,
+            fps=fps,
+            deforum_models_path=os.path.join(os.getcwd(), "models", "Deforum"),
+            raw_output_imgs_path=temp_input,
+            img_batch_id=None,
+            ffmpeg_location=ffmpeg_location,
+            audio_track=None,
+            interp_x_amount=interp_amount,
+            slow_mo_enabled=False,
+            slow_mo_x_amount=2,
+            ffmpeg_crf=17,
+            ffmpeg_preset='veryslow',
+            keep_imgs=True,  # Keep interpolated frames
+            orig_vid_name=f"segment_{first_frame_idx}",
+            srt_path=None
+        )
+
+        # Find RIFE output directory
+        rife_output_dirs = [d for d in os.listdir(temp_output) if d.startswith("interpolated_frames_rife")]
+        if not rife_output_dirs:
+            raise RuntimeError("RIFE output directory not found")
+
+        rife_output_dir = os.path.join(temp_output, rife_output_dirs[0])
+
+        # RIFE generates: first_kf, tween1, tween2, ..., tweenN, last_kf
+        # We want only the tweens (frames between keyframes)
+        rife_frames = sorted([f for f in os.listdir(rife_output_dir) if f.endswith('.png')])
+
+        # Skip first and last frame (those are the keyframes)
+        tween_frames = rife_frames[1:-1] if len(rife_frames) > 2 else rife_frames
+
+        # Move tween frames to output directory with correct naming
+        frame_paths = []
+        for local_idx, rife_filename in enumerate(tween_frames[:num_frames]):
+            # Calculate global frame index (start after first keyframe)
+            global_frame_idx = first_frame_idx + 1 + local_idx
+            target_filename = f"{global_frame_idx:09d}.png"
+            target_path = os.path.join(output_dir, target_filename)
+
+            # Copy frame from RIFE output to final output directory
+            rife_frame_path = os.path.join(rife_output_dir, rife_filename)
+            shutil.copy2(rife_frame_path, target_path)
+            frame_paths.append(target_path)
+
+        log_utils.info(f"   ✅ RIFE generated {len(frame_paths)} tween frames", log_utils.GREEN)
+        return frame_paths
+
+    finally:
+        # Cleanup temp directory
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def generate_film_segment(first_image, last_image, num_frames, height, width,
+                         first_frame_idx, output_dir, fps=30):
+    """
+    Generate frames for one FILM (Frame Interpolation for Large Motion) segment.
+
+    Uses Google's ML-based frame interpolation to generate smooth transitions
+    between two keyframes.
+
+    Args:
+        first_image: PIL Image of first keyframe
+        last_image: PIL Image of last keyframe
+        num_frames: Number of tween frames to generate (excluding keyframes)
+        height: Frame height
+        width: Frame width
+        first_frame_idx: Global index of first keyframe
+        output_dir: Directory to save generated frames
+        fps: Target FPS for interpolation
+
+    Returns:
+        List of paths to generated tween frames
+    """
+    import tempfile
+    import shutil
+    from deforum.integrations.film import film_interpolate
+
+    log_utils.info(f"   🎬 FILM interpolation: {num_frames} frames", log_utils.BLUE)
+
+    # Create temp directory for FILM input
+    temp_dir = tempfile.mkdtemp(prefix="film_segment_")
+    temp_input = os.path.join(temp_dir, "input")
+    temp_output = os.path.join(temp_dir, "output")
+    os.makedirs(temp_input, exist_ok=True)
+    os.makedirs(temp_output, exist_ok=True)
+
+    try:
+        # Save first and last keyframes to temp input directory
+        # FILM expects numbered frames: 0.png, 1.png
+        first_image.save(os.path.join(temp_input, "0000000.png"))
+        last_image.save(os.path.join(temp_input, "0000001.png"))
+
+        # Calculate interpolation amount (FILM uses 2^n recursion)
+        # For num_frames, find nearest power of 2
+        import math
+        recursion_depth = max(1, math.ceil(math.log2(num_frames + 1)))
+        total_frames_generated = 2 ** recursion_depth + 1  # Includes keyframes
+
+        log_utils.info(f"   Temp input: {temp_input}", log_utils.YELLOW)
+        log_utils.info(f"   Recursion depth: {recursion_depth} (generates {total_frames_generated - 2} tweens)", log_utils.YELLOW)
+
+        # Call FILM interpolation
+        film_interpolate(
+            input_dir=temp_input,
+            output_dir=temp_output,
+            times_to_interpolate=recursion_depth,
+            fps=fps
+        )
+
+        # Find FILM output frames
+        film_frames = sorted([f for f in os.listdir(temp_output) if f.endswith('.png')])
+
+        # Skip first and last frame (those are the keyframes)
+        tween_frames = film_frames[1:-1] if len(film_frames) > 2 else film_frames
+
+        # Move tween frames to output directory with correct naming
+        frame_paths = []
+        for local_idx, film_filename in enumerate(tween_frames[:num_frames]):
+            # Calculate global frame index (start after first keyframe)
+            global_frame_idx = first_frame_idx + 1 + local_idx
+            target_filename = f"{global_frame_idx:09d}.png"
+            target_path = os.path.join(output_dir, target_filename)
+
+            # Copy frame from FILM output to final output directory
+            film_frame_path = os.path.join(temp_output, film_filename)
+            shutil.copy2(film_frame_path, target_path)
+            frame_paths.append(target_path)
+
+        log_utils.info(f"   ✅ FILM generated {len(frame_paths)} tween frames", log_utils.GREEN)
+        return frame_paths
+
+    finally:
+        # Cleanup temp directory
+        shutil.rmtree(temp_dir, ignore_errors=True)

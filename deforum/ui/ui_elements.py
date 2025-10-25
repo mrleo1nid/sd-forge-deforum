@@ -1811,9 +1811,20 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
             wan_guidance_override = create_gr_elem(dw.wan_guidance_override)
             wan_guidance_scale = create_gr_elem(dw.wan_guidance_scale)
     
-    with gr.Accordion(f"{emoji_utils.frames()} FLF2V Interpolation Settings", open=True):
+    with gr.Accordion(f"{emoji_utils.frames()} Flux Interpolation Settings", open=True):
         gr.Markdown("""
-        **FLF2V interpolates smooth transitions between keyframes.**
+        **Choose your interpolation method for smooth transitions between Flux keyframes:**
+
+        - **Wan FLF2V (default):** AI-generated video with semantic understanding (requires FLF2V model)
+        - **RIFE v4.6:** Optical flow-based interpolation for natural motion (no extra model needed)
+        - **FILM:** Google's Frame Interpolation for Large Motion (no extra model needed)
+        """)
+
+        with FormRow():
+            flux_flf2v_interpolation_method = create_gr_elem(dw.flux_flf2v_interpolation_method)
+
+        gr.Markdown("""
+        **Wan FLF2V Settings** (only applies when using Wan method):
 
         **⚠️ MODEL REQUIREMENT:** You MUST use a FLF2V-specific model!
         - **TI2V models (e.g., Wan2.2-TI2V-5B) CANNOT do FLF2V** - they will extend the first frame

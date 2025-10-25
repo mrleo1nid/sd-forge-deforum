@@ -1141,6 +1141,13 @@ def WanArgs():
             "value": "blend",
             "info": "How to use prompts for FLF2V interpolation: 'blend' (RECOMMENDED - combine both prompts describing transition), 'last' (use end keyframe prompt as target), 'first' (use start keyframe prompt), 'none' (empty prompt, may not interpolate correctly)"
         },
+        "flux_flf2v_interpolation_method": {
+            "label": "FLF2V Interpolation Method",
+            "type": "dropdown",
+            "choices": ["Wan", "RIFE v4.6", "FILM"],
+            "value": "Wan",
+            "info": "Interpolation method for Flux FLF2V mode: 'Wan' (AI-generated video, default), 'RIFE v4.6' (Real-Time Intermediate Flow Estimation, optical flow-based), 'FILM' (Frame Interpolation for Large Motion, Google's ML model)"
+        },
 
         # Advanced Generation Settings
         "wan_negative_prompt": {

@@ -231,8 +231,8 @@ def run_deforum(*args):
             elif anim_args.animation_mode == 'Interpolation':
                 render_interpolation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, root)
             elif anim_args.animation_mode == 'Flux/Wan':
-                # Flux/Wan mode: Flux generates keyframes + Wan FLF2V for interpolation
-                from deforum.rendering.wan_flux import render_wan_flux
+                # Flux + Interpolation mode: Flux keyframes + choice of interpolation (Wan/RIFE/FILM)
+                from deforum.rendering.flux_interp import render_wan_flux
                 render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root)
             else:
                 print('Other modes are not available yet!')
