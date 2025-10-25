@@ -11,10 +11,12 @@ class A1111OptionsOverrider(object):
     def __enter__(self):
         if self.opts_overrides is not None and len(self.opts_overrides)>0:
             self.original_opts = {k: opts.data[k] for k in self.opts_overrides.keys() if k in opts.data}
-            log.debug(f"Captured options to override: {self.original_opts}")                
+            log.debug(f"Captured options to override: {self.original_opts}")
             log.info(f"Setting options: {self.opts_overrides}")
             for k, v in self.opts_overrides.items():
                 setattr(opts, k, v)
+                # Also set in opts.data dict for compatibility
+                opts.data[k] = v
         else:
             self.original_opts = None
         return self
