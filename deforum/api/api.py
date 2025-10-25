@@ -26,7 +26,11 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any, Dict, List
-from deforum.api.models import Batch, DeforumJobErrorType, DeforumJobStatusCategory, DeforumJobPhase, DeforumJobStatus
+from deforum.api.models import (
+    Batch, DeforumJobErrorType, DeforumJobStatusCategory, DeforumJobPhase, DeforumJobStatus,
+    BatchSubmitResponse, BatchCancelResponse, JobCancelResponse, ErrorResponse, VersionResponse,
+    SimpleRunResponse
+)
 from contextlib import contextmanager
 from scripts.deforum_extend_paths import deforum_sys_extend
 
@@ -132,16 +136,52 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
 
     apiState = ApiState()
 
-    # Submit a new batch
-    @app.post("/deforum_api/batches")
+    @app.post(
+        "/deforum_api/batches",
+        response_model=BatchSubmitResponse,
+        status_code=status.HTTP_202_ACCEPTED,
+        tags=["Batches"],
+        summary="Submit a new batch of Deforum generation jobs",
+        responses={
+            202: {"description": "Batch accepted and queued for processing"},
+            400: {"model": ErrorResponse, "description": "Invalid settings provided"}
+        }
+    )
     async def run_batch(batch: Batch, response: Response):
+        """Submit one or more Deforum generation jobs as a batch.
 
+        Each job in the batch will generate a complete animation based on the provided settings.
+        Jobs are queued and processed sequentially (currently limited to 1 concurrent job).
+
+        **Request Body:**
+        - `deforum_settings`: Single settings object or list of settings objects
+        - `options_overrides`: Optional Forge settings to override (e.g., save_gen_info_as_srt)
+
+        **Returns:**
+        - `batch_id`: Unique identifier for this batch
+        - `job_ids`: List of job IDs (one per settings object)
+
+        **Example:**
+        ```python
+        {
+            "deforum_settings": {
+                "animation_mode": "3D",
+                "max_frames": 120,
+                "prompts": {"0": "a beautiful landscape"},
+                "W": 512,
+                "H": 512
+            }
+        }
+        ```
+        """
         # Extract the settings files from the request
         deforum_settings_data = batch.deforum_settings
         if not deforum_settings_data:
             response.status_code = status.HTTP_400_BAD_REQUEST
-            return {"message": "No settings files provided. Please provide an element 'deforum_settings' of type list in the request JSON payload."}
-        
+            return ErrorResponse(
+                message="No settings files provided. Please provide 'deforum_settings' in the request."
+            )
+
         if not isinstance(deforum_settings_data, list):
             # Allow input deforum_settings to be top-level object as well as single object list
             deforum_settings_data = [deforum_settings_data]
@@ -152,39 +192,93 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
             json.dump(data, temp_file)
             temp_file.close()
             deforum_settings_tempfiles.append(temp_file)
-        
+
         job_count = len(deforum_settings_tempfiles)
         [batch_id, job_ids] = make_ids(job_count)
         apiState.submit_job(batch_id, job_ids, deforum_settings_tempfiles, batch.options_overrides)
 
         for idx, job_id in enumerate(job_ids):
-            JobStatusTracker().accept_job(batch_id=batch_id, job_id=job_id, deforum_settings=deforum_settings_data[idx], options_overrides=batch.options_overrides)
+            JobStatusTracker().accept_job(
+                batch_id=batch_id,
+                job_id=job_id,
+                deforum_settings=deforum_settings_data[idx],
+                options_overrides=batch.options_overrides
+            )
 
         response.status_code = status.HTTP_202_ACCEPTED
-        return {"message": "Job(s) accepted", "batch_id": batch_id, "job_ids": job_ids }
+        return BatchSubmitResponse(
+            message="Job(s) accepted",
+            batch_id=batch_id,
+            job_ids=job_ids
+        )
 
-    # List all batches and theit job ids
-    @app.get("/deforum_api/batches")
-    async def list_batches(id: str):
+    @app.get(
+        "/deforum_api/batches",
+        response_model=Dict[str, List[str]],
+        tags=["Batches"],
+        summary="List all batches and their job IDs"
+    )
+    async def list_batches():
+        """Get a dictionary mapping batch IDs to their job IDs.
+
+        **Returns:**
+        Dictionary where keys are batch IDs and values are lists of job IDs.
+        """
         return JobStatusTracker().batches
 
-    # Show the details of all jobs in a batch
-    @app.get("/deforum_api/batches/{id}")
+    @app.get(
+        "/deforum_api/batches/{id}",
+        response_model=List[DeforumJobStatus],
+        tags=["Batches"],
+        summary="Get detailed status of all jobs in a batch",
+        responses={
+            200: {"description": "Batch found and job statuses returned"},
+            404: {"model": ErrorResponse, "description": "Batch not found"}
+        }
+    )
     async def get_batch(id: str, response: Response):
-        jobsForBatch = JobStatusTracker().batches[id]
+        """Get detailed status information for all jobs in a specific batch.
+
+        **Parameters:**
+        - `id`: Batch identifier
+
+        **Returns:**
+        List of DeforumJobStatus objects for each job in the batch.
+        """
+        jobsForBatch = JobStatusTracker().batches.get(id)
         if not jobsForBatch:
             response.status_code = status.HTTP_404_NOT_FOUND
-            return {"id": id, "status": "NOT FOUND"}
+            return ErrorResponse(id=id, status="NOT FOUND", message=f"Batch {id} not found")
         return [JobStatusTracker().get(job_id) for job_id in jobsForBatch]
 
-    # Cancel all jobs in a batch
-    @app.delete("/deforum_api/batches/{id}")
+    @app.delete(
+        "/deforum_api/batches/{id}",
+        response_model=BatchCancelResponse,
+        tags=["Batches"],
+        summary="Cancel all jobs in a batch",
+        responses={
+            200: {"description": "Jobs cancelled successfully"},
+            404: {"model": ErrorResponse, "description": "Batch not found"}
+        }
+    )
     async def cancel_batch(id: str, response: Response):
-        jobsForBatch = JobStatusTracker().batches[id]
+        """Cancel all jobs in a specific batch.
+
+        Jobs that are currently generating will be interrupted.
+        Queued jobs will be marked as cancelled.
+
+        **Parameters:**
+        - `id`: Batch identifier
+
+        **Returns:**
+        List of cancelled job IDs and count.
+        """
+        jobsForBatch = JobStatusTracker().batches.get(id)
         cancelled_jobs = []
         if not jobsForBatch:
             response.status_code = status.HTTP_404_NOT_FOUND
-            return {"id": id, "status": "NOT FOUND"}
+            return ErrorResponse(id=id, status="NOT FOUND", message=f"Batch {id} not found")
+
         for job_id in jobsForBatch:
             try:
                 cancelled = _cancel_job(job_id)
@@ -192,35 +286,87 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
                     cancelled_jobs.append(job_id)
             except:
                 log.warning(f"Failed to cancel job {job_id}")
-       
-        return {"ids": cancelled_jobs, "message:": f"{len(cancelled_jobs)} job(s) cancelled." }
 
-    # Show details of all jobs across al batches
-    @app.get("/deforum_api/jobs")
+        return BatchCancelResponse(
+            ids=cancelled_jobs,
+            message=f"{len(cancelled_jobs)} job(s) cancelled."
+        )
+
+    @app.get(
+        "/deforum_api/jobs",
+        response_model=Dict[str, DeforumJobStatus],
+        tags=["Jobs"],
+        summary="List all jobs across all batches"
+    )
     async def list_jobs():
+        """Get status information for all jobs.
+
+        **Returns:**
+        Dictionary mapping job IDs to their DeforumJobStatus objects.
+        """
         return JobStatusTracker().statuses
 
-    # Show details of a single job
-    @app.get("/deforum_api/jobs/{id}")
+    @app.get(
+        "/deforum_api/jobs/{id}",
+        response_model=DeforumJobStatus,
+        tags=["Jobs"],
+        summary="Get detailed status of a specific job",
+        responses={
+            200: {"description": "Job found and status returned"},
+            404: {"model": ErrorResponse, "description": "Job not found"}
+        }
+    )
     async def get_job(id: str, response: Response):
+        """Get detailed status information for a specific job.
+
+        **Parameters:**
+        - `id`: Job identifier
+
+        **Returns:**
+        DeforumJobStatus object with current job state, progress, and output info.
+        """
         jobStatus = JobStatusTracker().get(id)
         if not jobStatus:
             response.status_code = status.HTTP_404_NOT_FOUND
-            return {"id": id, "status": "NOT FOUND"}
+            return ErrorResponse(id=id, status="NOT FOUND", message=f"Job {id} not found")
         return jobStatus
 
-    # Cancel a single job
-    @app.delete("/deforum_api/jobs/{id}")
+    @app.delete(
+        "/deforum_api/jobs/{id}",
+        response_model=JobCancelResponse,
+        tags=["Jobs"],
+        summary="Cancel a specific job",
+        responses={
+            200: {"description": "Job cancelled successfully"},
+            400: {"model": ErrorResponse, "description": "Job not in cancellable state"},
+            404: {"model": ErrorResponse, "description": "Job not found"}
+        }
+    )
     async def cancel_job(id: str, response: Response):
-        try: 
+        """Cancel a specific job.
+
+        Jobs currently generating will be interrupted.
+        Queued jobs will be marked as cancelled.
+        Completed jobs cannot be cancelled.
+
+        **Parameters:**
+        - `id`: Job identifier
+
+        **Returns:**
+        Confirmation message with job ID.
+        """
+        try:
             if _cancel_job(id):
-                return {"id": id, "message": "Job cancelled."}
+                return JobCancelResponse(id=id, message="Job cancelled.")
             else:
                 response.status_code = status.HTTP_400_BAD_REQUEST
-                return {"id": id, "message": f"Job with ID {id} not in a cancellable state. Has it already finished?"}
+                return ErrorResponse(
+                    id=id,
+                    message=f"Job {id} not in a cancellable state. Has it already finished?"
+                )
         except FileNotFoundError as e:
             response.status_code = status.HTTP_404_NOT_FOUND
-            return {"id": id, "message": f"Job with ID {id} not found."}
+            return ErrorResponse(id=id, message=f"Job {id} not found.")
 
     # Shared logic for job cancellation
     def _cancel_job(job_id:str):
@@ -411,42 +557,108 @@ def deforum_simple_api(_: gr.Blocks, app: FastAPI):
             content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
         )
 
-    @app.get("/deforum/api_version")
+    @app.get(
+        "/deforum/api_version",
+        response_model=VersionResponse,
+        tags=["Simple API"],
+        summary="Get Deforum Simple API version"
+    )
     async def deforum_api_version():
-        return JSONResponse(content={"version": '1.0'})
-    
-    @app.get("/deforum/version")
+        """Get the version of the Deforum Simple API.
+
+        **Returns:**
+        API version string.
+        """
+        return VersionResponse(version='1.0')
+
+    @app.get(
+        "/deforum/version",
+        response_model=VersionResponse,
+        tags=["Simple API"],
+        summary="Get Deforum extension version"
+    )
     async def deforum_version():
-        return JSONResponse(content={"version": get_deforum_version()})
+        """Get the version of the Deforum extension.
+
+        **Returns:**
+        Deforum version string.
+        """
+        return VersionResponse(version=get_deforum_version())
     
-    @app.post("/deforum/run")
-    async def deforum_run(settings_json:str, allowed_params:str = ""):
+    @app.post(
+        "/deforum/run",
+        response_model=SimpleRunResponse,
+        tags=["Simple API"],
+        summary="Run a Deforum generation with limited parameters (safer)",
+        responses={
+            200: {"description": "Generation started successfully"},
+            500: {"model": ErrorResponse, "description": "Error processing video"}
+        }
+    )
+    async def deforum_run(settings_json: str, allowed_params: str = ""):
+        """Run a Deforum generation using the simplified API.
+
+        This endpoint is safer than the full API because it only allows specific
+        parameters to be overridden. All other parameters use defaults.
+
+        **Parameters:**
+        - `settings_json`: JSON string with Deforum settings
+        - `allowed_params`: Semicolon-delimited list of parameter names that can be overridden
+
+        **How it works:**
+        1. Loads default settings from config/default_settings.txt
+        2. Only parameters in `allowed_params` are overridden with values from `settings_json`
+        3. All other parameters remain at their default values
+        4. Generates a unique batch_name automatically
+
+        **Example:**
+        ```
+        POST /deforum/run
+        settings_json='{"max_frames": 120, "prompts": {"0": "landscape"}}'
+        allowed_params='max_frames;prompts;W;H'
+        ```
+
+        **Returns:**
+        Output directory path where generated files will be saved.
+        """
         try:
-            allowed_params = allowed_params.split(';')
+            allowed_params_list = allowed_params.split(';')
             deforum_settings = json.loads(settings_json)
-            with open(os.path.join(pathlib.Path(__file__).parent.parent.absolute(), 'config', 'default_settings.txt'), 'r', encoding='utf-8') as f:
+            with open(
+                os.path.join(pathlib.Path(__file__).parent.parent.absolute(), 'config', 'default_settings.txt'),
+                'r',
+                encoding='utf-8'
+            ) as f:
                 default_settings = json.loads(f.read())
+
             for k, _ in default_settings.items():
-                if k in deforum_settings and k in allowed_params:
+                if k in deforum_settings and k in allowed_params_list:
                     default_settings[k] = deforum_settings[k]
+
             deforum_settings = default_settings
             run_id = uuid.uuid4().hex
             deforum_settings['batch_name'] = run_id
-            deforum_settings = json.dumps(deforum_settings, indent=4, ensure_ascii=False)
+            deforum_settings_str = json.dumps(deforum_settings, indent=4, ensure_ascii=False)
             settings_file = f"{run_id}.txt"
+
             with open(settings_file, 'w', encoding='utf-8') as f:
-                f.write(deforum_settings)
+                f.write(deforum_settings_str)
+
             class SettingsWrapper:
                 def __init__(self, filename):
                     self.name = filename
+
             [batch_id, job_ids] = make_ids(1)
             outdir = os.path.join(os.getcwd(), opts.outdir_samples or opts.outdir_img2img_samples, str(run_id))
             run_deforum_batch(batch_id, job_ids, [SettingsWrapper(settings_file)], None)
-            return JSONResponse(content={"outdir": outdir})
+            return SimpleRunResponse(outdir=outdir)
         except Exception as e:
-            print(e)
+            log.error(f"Simple API error: {e}")
             traceback.print_exc()
-            return JSONResponse(status_code=500, content={"detail": "An error occurred while processing the video."},)
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "An error occurred while processing the video."}
+            )
 
 # Setup A1111 initialisation hooks
 try:
