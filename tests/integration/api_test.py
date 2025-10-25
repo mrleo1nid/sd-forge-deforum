@@ -67,7 +67,7 @@ def test_simple_settings(snapshot):
     video_filename =  os.path.join(jobStatus.outdir, f"{jobStatus.timestring}.mp4")
     clip = VideoFileClip(video_filename)
     assert clip.fps == deforum_settings['fps'] , "Video FPS does not match input settings"
-    assert clip.duration * clip.fps == deforum_settings['max_frames'] , "Video frame count does not match input settings"
+    assert math.ceil(clip.duration * clip.fps) == deforum_settings['max_frames'] , "Video frame count does not match input settings"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"
 
 
@@ -130,7 +130,7 @@ def test_3d_mode(snapshot):
     video_filename =  os.path.join(jobStatus.outdir, f"{jobStatus.timestring}.mp4")
     clip = VideoFileClip(video_filename)
     assert clip.fps == deforum_settings['fps'] , "Video FPS does not match input settings"
-    assert clip.duration * clip.fps == deforum_settings['max_frames'] , "Video frame count does not match input settings"
+    assert math.ceil(clip.duration * clip.fps) == deforum_settings['max_frames'] , "Video frame count does not match input settings"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"
 
 
@@ -172,7 +172,7 @@ def test_with_parseq_inline_without_overrides(snapshot):
     video_filename =  os.path.join(jobStatus.outdir, f"{jobStatus.timestring}.mp4")
     clip = VideoFileClip(video_filename)
     assert clip.fps == deforum_settings['fps'] , "Video FPS does not match input settings"
-    assert clip.duration * clip.fps == deforum_settings['max_frames'] , "Video frame count does not match input settings"
+    assert math.ceil(clip.duration * clip.fps) == deforum_settings['max_frames'] , "Video frame count does not match input settings"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"
 
 

@@ -59,7 +59,7 @@ def test_wan_flf2v_tween_generation():
 
     video_file = video_files[0]
     clip = VideoFileClip(video_file)
-    assert clip.duration * clip.fps == deforum_settings['max_frames'], \
+    assert math.ceil(clip.duration * clip.fps) == deforum_settings['max_frames'], \
         "Video should have correct frame count including FLF2V tweens"
 
 

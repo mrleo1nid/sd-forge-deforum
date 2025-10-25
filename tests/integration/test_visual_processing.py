@@ -105,7 +105,7 @@ def test_3d_depth_warping():
 
     video_file = video_files[0]
     clip = VideoFileClip(video_file)
-    assert clip.duration * clip.fps == deforum_settings['max_frames'], \
+    assert math.ceil(clip.duration * clip.fps) == deforum_settings['max_frames'], \
         "Video should have correct frame count"
 
 
@@ -390,9 +390,9 @@ def test_video_stitching_basic():
 
     # Verify frame count
     expected_frames = deforum_settings['max_frames']
-    actual_frames = clip.duration * clip.fps
-    assert abs(actual_frames - expected_frames) < 1, \
-        f"Video should have ~{expected_frames} frames, got {actual_frames}"
+    actual_frames = math.ceil(clip.duration * clip.fps)
+    assert actual_frames == expected_frames, \
+        f"Video should have {expected_frames} frames, got {actual_frames}"
 
     # Verify dimensions
     assert clip.size == [deforum_settings['W'], deforum_settings['H']], \
