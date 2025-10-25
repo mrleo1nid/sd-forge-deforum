@@ -92,15 +92,18 @@ def test_api_cancel_active_job():
 def test_3d_mode(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
-        
+
     deforum_settings['animation_mode'] = "3D"
-    
+
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -127,16 +130,19 @@ def test_with_parseq_inline_without_overrides(snapshot):
 
     with open(TESTDATA_DIR / 'parseq.json', 'r') as parseq_file:
         parseq_data = json.load(parseq_file)
-       
+
     deforum_settings['parseq_manifest'] = json.dumps(parseq_data)
     deforum_settings["parseq_non_schedule_overrides"] = False
-    
+
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -163,16 +169,19 @@ def test_with_parseq_inline_with_overrides(snapshot):
 
     with open(TESTDATA_DIR / 'parseq.json', 'r') as parseq_file:
         parseq_data = json.load(parseq_file)
-       
+
     deforum_settings['parseq_manifest'] = json.dumps(parseq_data)
     deforum_settings["parseq_non_schedule_overrides"] = True
-    
+
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
