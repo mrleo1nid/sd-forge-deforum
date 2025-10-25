@@ -75,7 +75,8 @@ def test_post_process_FILM(snapshot):
     assert clip.fps == deforum_settings['fps'] * deforum_settings["frame_interpolation_x_amount"]  , "Video FPS does not match input settings (fps * interpolation amount)"
     # FILM interpolation: N frames + (N-1) gaps × (x-1) interpolated frames per gap
     expected_frame_count = deforum_settings['max_frames'] + (deforum_settings['max_frames'] - 1) * (deforum_settings["frame_interpolation_x_amount"] - 1)
-    assert clip.duration * clip.fps == expected_frame_count, f"Video frame count does not match FILM interpolation formula (expected {expected_frame_count})"
+    actual_frame_count = round(clip.duration * clip.fps)
+    assert actual_frame_count == expected_frame_count, f"Video frame count does not match FILM interpolation formula (expected {expected_frame_count}, got {actual_frame_count})"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"    
 
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
@@ -120,7 +121,8 @@ def test_post_process_RIFE(snapshot):
     assert clip.fps == deforum_settings['fps'] * deforum_settings["frame_interpolation_x_amount"]  , "Video FPS does not match input settings (fps * interpolation amount)"
     # RIFE interpolation: N frames + (N-1) gaps × (x-1) interpolated frames per gap
     expected_frame_count = deforum_settings['max_frames'] + (deforum_settings['max_frames'] - 1) * (deforum_settings["frame_interpolation_x_amount"] - 1)
-    assert clip.duration * clip.fps == expected_frame_count, f"Video frame count does not match RIFE interpolation formula (expected {expected_frame_count})"
+    actual_frame_count = round(clip.duration * clip.fps)
+    assert actual_frame_count == expected_frame_count, f"Video frame count does not match RIFE interpolation formula (expected {expected_frame_count}, got {actual_frame_count})"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"        
 
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
@@ -214,5 +216,6 @@ def test_post_process_UPSCALE_FILM(snapshot):
     # FILM may use different interpolation strategy - check actual frame count
     # For now, use same formula as RIFE: N frames + (N-1) gaps × (x-1) interpolated frames per gap
     expected_frame_count = deforum_settings['max_frames'] + (deforum_settings['max_frames'] - 1) * (deforum_settings["frame_interpolation_x_amount"] - 1)
-    assert clip.duration * clip.fps == expected_frame_count, f"Video frame count does not match interpolation formula (expected {expected_frame_count})"
+    actual_frame_count = round(clip.duration * clip.fps)
+    assert actual_frame_count == expected_frame_count, f"Video frame count does not match interpolation formula (expected {expected_frame_count}, got {actual_frame_count})"
     assert clip.size == [deforum_settings['W']*4, deforum_settings['H']*4] , "Video dimensions are not as expected (including upscaling)"    
