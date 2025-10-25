@@ -117,8 +117,8 @@ Hybrid AI workflow combining Flux keyframes with multi-method interpolation (Wan
   - **Phase 2:** AI-interpolate tweens with Wan FLF2V (guidance_scale=3.5)
   - **Phase 3:** Stitch final video
   - Integrated Qwen prompt enhancement for movement analysis
-- **UI Changes:** Hides 3D tabs (Depth, Shakify), shows Wan Models tab
-- **Separate Step Controls:** Flux steps (top-level) and Wan steps (Wan Models tab)
+- **UI Changes:** Hides 3D tabs (Depth, Shakify), shows Interpolation tab
+- **Separate Step Controls:** Flux steps (top-level) and Wan steps (Interpolation tab)
 
 #### **Mode Selection**
 - Top-level render mode selector updates UI automatically
@@ -232,7 +232,7 @@ The extension includes **Wan 2.1** (Alibaba's state-of-the-art video generation 
    - Set prompts in **Prompts tab** with frame numbers
    - Set FPS in **Output tab**
    - Use **AI Prompt Enhancement** accordion in Prompts tab for Qwen enhancement
-   - Configure Wan models and settings in **Wan Models tab**
+   - Configure Wan models and settings in **Interpolation tab**
 
 #### 🎨 **AI Prompt Enhancement Workflow**
 
@@ -380,7 +380,7 @@ When guidance_scale is 0.0, the Wan model ignores ALL conditioning inputs, inclu
 
 **Where to Configure:**
 - Distribution tab → "Enable Wan FLF2V for Tweens" accordion (for 2D/3D modes)
-- Wan Models tab → FLF2V settings (for Wan Only and Wan Flux modes)
+- Interpolation tab → FLF2V settings (for Wan Only and Wan Flux modes)
 
 ## Default Bunny Testrun
 

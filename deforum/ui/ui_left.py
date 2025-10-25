@@ -205,10 +205,10 @@ def setup_deforum_left_side_ui():
             with gr.TabItem(f"{emoji_utils.masking()} Masking", visible=True) as tab_masking:
                 tab_masking_params = get_tab_masking(d, da, skip_tabitem=True)  # 7. Masking - all modes
 
-            # Flux + Interpolation mode tab (Wan models - only needed when using Wan method):
+            # Flux + Interpolation mode tab:
             from .ui_elements import get_tab_wan
-            with gr.TabItem(f"{emoji_utils.wan_video()} Wan Models", visible=True) as tab_wan:
-                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 8. Wan Models - Flux + Interpolation mode
+            with gr.TabItem(f"{emoji_utils.wan_video()} Interpolation", visible=True) as tab_wan:
+                tab_wan_params = get_tab_wan(dw, skip_tabitem=True)  # 8. Interpolation - Flux + Interpolation mode
 
             # Always visible tabs:
             tab_run_params = get_tab_run(d, da)  # 8. Run - all modes

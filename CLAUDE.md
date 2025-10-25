@@ -229,7 +229,7 @@ The extension now uses a unified `RenderMode` system that replaces the old anima
    - Strength schedules: Single (keyframe strength for I2V chaining with Wan)
    - Default: 24 FPS, pseudo-cadence display, 20 steps
    - Best for: Dramatic changes, choice of interpolation method
-   - Shows: Wan Models tab (if using Wan), Flux Interpolation Settings, pseudo-cadence display (read-only)
+   - Shows: Interpolation tab (if using Wan), Flux Interpolation Settings, pseudo-cadence display (read-only)
    - Hides: 3D tabs (Depth, Shakify, RAFT, ControlNet)
    - Phase 1: Generate ALL keyframes with Flux at prompt boundaries
    - Phase 2: Interpolate tweens with selected method (Wan FLF2V / RIFE v4.6 / FILM)
