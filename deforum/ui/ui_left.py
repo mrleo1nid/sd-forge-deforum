@@ -245,6 +245,15 @@ def setup_deforum_left_side_ui():
         strength_res = 1.0 / config.default_steps
         strength_res_text = f"1/{config.default_steps} = {strength_res:.4f} (Flux Dev=20→0.05, Schnell=4→0.25)"
 
+        # Mode-specific steps info text
+        steps_info_map = {
+            RenderMode.CLASSIC_3D: "Sampling steps for all diffusions (every cadence frames)",
+            RenderMode.NEW_3D: "Sampling steps for all diffusions (keyframes + cadence frames)",
+            RenderMode.KEYFRAMES_ONLY: "Sampling steps for keyframe diffusions only",
+            RenderMode.FLUX_WAN: "Sampling steps for Flux keyframe generation (Wan FLF2V steps in Wan Models tab)",
+        }
+        steps_info = steps_info_map.get(render_mode_enum, "Sampling steps for diffusion")
+
         # Update legacy animation_mode for backward compatibility
         legacy_mode = render_mode_enum.to_legacy_animation_mode()
 
@@ -256,7 +265,8 @@ def setup_deforum_left_side_ui():
                      value=config.default_cadence),
             gr.update(visible=show_pseudo_cadence),    # pseudo_cadence_display
             gr.update(value=config.default_fps),       # fps
-            gr.update(value=config.default_steps),     # steps
+            gr.update(value=config.default_steps,      # steps
+                     info=steps_info),
             gr.update(value=strength_res_text),        # strength_resolution_display
             gr.update(visible=show_keyframe_strength), # keyframe_strength
             gr.update(value=legacy_mode)               # animation_mode (hidden)
