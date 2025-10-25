@@ -1519,7 +1519,8 @@ def process_args(args_dict_main, run_id):
     current_arg_list = [args, anim_args, video_args, parseq_args, root, additional_substitutions]
 
     # Use dedicated Deforum output directory instead of img2img folder
-    deforum_outpath = os.path.join(os.getcwd(), 'outputs', 'deforum')
+    # Allow override via outdir_samples for test isolation
+    deforum_outpath = getattr(sh.opts, 'outdir_samples', None) or os.path.join(os.getcwd(), 'outputs', 'deforum')
     full_base_folder_path = deforum_outpath
     root.raw_batch_name = args.batch_name
     args.batch_name = substitute_placeholders(args.batch_name, current_arg_list, full_base_folder_path)
