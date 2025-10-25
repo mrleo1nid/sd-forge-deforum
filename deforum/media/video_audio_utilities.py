@@ -271,10 +271,13 @@ def ffmpeg_stitch_video(ffmpeg_location=None, fps=None, outmp4_path=None, stitch
     
     print(f"Got a request to stitch frames to video using FFmpeg.\nFrames:\n{imgs_path}\nTo Video:\n{outmp4_path}")
     msg_to_print = f"Stitching *video*..."
-    console.print(msg_to_print, style="blink yellow", end="") 
+    console.print(msg_to_print, style="blink yellow", end="")
     if stitch_to_frame == -1:
         stitch_to_frame = 999999999
     try:
+        # Build FFmpeg command
+        # Note: We don't use -vf fps= filter because it causes frame dropping due to duration-based resampling
+        # The -r parameter before -i sets the input framerate correctly
         cmd = [
             ffmpeg_location,
             '-y',
@@ -283,8 +286,6 @@ def ffmpeg_stitch_video(ffmpeg_location=None, fps=None, outmp4_path=None, stitch
             '-i', imgs_path,
             '-frames:v', str(stitch_to_frame),
             '-c:v', 'libx264',
-            '-vf',
-            f'fps={float(fps)}',
             '-pix_fmt', 'yuv420p',
             '-crf', str(crf),
             '-preset', preset,
