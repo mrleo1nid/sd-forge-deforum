@@ -152,7 +152,8 @@ else
     cd "$FORGE_DIR"
 
     # Start server and capture PID
-    nohup python3 webui.py \
+    # Use venv's Python to ensure dependencies are available
+    nohup "$FORGE_DIR/venv/bin/python" webui.py \
         --skip-prepare-environment \
         --api \
         --deforum-api \
