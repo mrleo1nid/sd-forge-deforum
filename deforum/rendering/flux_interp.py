@@ -242,7 +242,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         last_frame_idx = last_kf.i
         num_tween_frames = last_frame_idx - first_frame_idx - 1  # ONLY in-between frames (exclude both keyframes)
 
-        log_utils.info(f"\n🎞️ FLF2V Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.RED)
+        log_utils.info(f"\n🎞️ Interpolation Segment {idx + 1}/{len(keyframes) - 1}:", log_utils.RED)
         log_utils.info(f"   From keyframe: {first_frame_idx}", log_utils.RED)
         log_utils.info(f"   To keyframe: {last_frame_idx}", log_utils.RED)
         log_utils.info(f"   In-between frames to generate: {num_tween_frames} (frames {first_frame_idx+1} to {last_frame_idx-1})", log_utils.RED)
@@ -385,7 +385,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
 
         log_utils.info(f"✅ Segment {idx + 1} complete: {len(segment_frames)} frames", log_utils.GREEN)
 
-    log_utils.info(f"\n✅ Phase 2 Complete: {len(all_segment_frames)} total frames from FLF2V", log_utils.GREEN)
+    log_utils.info(f"\n✅ Phase 2 Complete: {len(all_segment_frames)} total frames from {interp_method}", log_utils.GREEN)
 
     # ====================
     # PHASE 3: Stitch Final Video
@@ -398,14 +398,16 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     output_video_path = stitch_wan_flux_video(
         data=data,
         frame_paths=all_segment_frames,
-        video_args=video_args
+        video_args=video_args,
+        interp_method=interp_method
     )
 
-    log_utils.info(f"\n🎉 Flux/Wan Generation Complete!", log_utils.GREEN)
+    log_utils.info(f"\n🎉 Flux + Interpolation Generation Complete!", log_utils.GREEN)
     log_utils.info(f"📁 Output: {output_video_path}", log_utils.GREEN)
 
-    # Cleanup
-    wan_integration.unload_model()
+    # Cleanup Wan if it was loaded
+    if wan_integration is not None:
+        wan_integration.unload_model()
 
 
 def save_keyframe(data: RenderData, frame: DiffusionFrame, image):
@@ -531,15 +533,17 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
     return frame_paths
 
 
-def stitch_wan_flux_video(data, frame_paths, video_args):
+def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
     """Stitch all frames into final video"""
     from deforum.media.video_audio_utilities import get_ffmpeg_params
 
     # Get ffmpeg parameters from settings
     ffmpeg_location, ffmpeg_crf, ffmpeg_preset = get_ffmpeg_params()
 
-    # Output video path
-    output_filename = f"{data.args.root.timestring}_wan_flux.mp4"
+    # Output video path - use interpolation method in filename
+    # Wan → flux_wan, RIFE → flux_rife, FILM → flux_film
+    method_suffix = interp_method.lower()  # "wan", "rife", "film"
+    output_filename = f"{data.args.root.timestring}_flux_{method_suffix}.mp4"
     output_path = os.path.join(data.output_directory, output_filename)
 
     # Build frame pattern (frames are named 000000001.png, 000000002.png, etc.)
