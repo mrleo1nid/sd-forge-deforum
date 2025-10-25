@@ -171,7 +171,8 @@ def test_post_process_UPSCALE(snapshot):
 
 @pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_post_process_UPSCALE_FILM(snapshot):
-    with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
+    # Use smaller resolution to avoid OOM when running FILM on upscaled frames
+    with open(TESTDATA_DIR / 'simple_small.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
     # Set test-specific batch name for easier output identification
