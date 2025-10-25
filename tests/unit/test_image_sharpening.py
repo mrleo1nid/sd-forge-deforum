@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from deforum.utils.image_utils import (
+from deforum.utils.image.processing import (
     clamp_to_uint8,
     calculate_sharpened_image,
     apply_threshold_mask,

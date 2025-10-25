@@ -195,16 +195,48 @@ pytest.ini                              # Pytest settings
 
 ### Key Concepts
 
-**Animation Modes:**
-1. **3D** (Default) - Depth-based warping with 3D camera movement
-   - Optional Wan FLF2V integration for AI tween interpolation (via Distribution tab)
-   - Keyframe distribution: Off, Keyframes Only, Additive, Redistributed
-2. **Flux/Wan** - Hybrid Flux + Wan workflow
-   - Phase 1: Keyframes with Flux
-   - Phase 2: Tweens with Wan FLF2V (guidance_scale=3.5 default)
+**Render Modes (New 4-Mode System):**
+The extension now uses a unified `RenderMode` system that replaces the old animation_mode + keyframe_distribution combinations. Each mode has specific characteristics and default settings:
+
+1. **Classic 3D** - Traditional Deforum with fixed low cadence
+   - Keyframe distribution: OFF (uniform cadence)
+   - Strength schedules: Single (normal strength only)
+   - Default: 24 FPS, cadence=2, 20 steps
+   - Best for: RAFT, ControlNet, maximum stability
+   - Shows: 3D tabs (Depth, Shakify), real cadence slider
+
+2. **New 3D** (Default) - Modern keyframe redistribution
+   - Keyframe distribution: REDISTRIBUTED
+   - Strength schedules: Dual (normal + keyframe strength)
+   - Default: 60 FPS, cadence=5, 20 steps
+   - Best for: Balanced quality, speed, and stability
+   - Shows: 3D tabs (Depth, Shakify), real cadence slider
+
+3. **Keyframes Only** - Pure keyframe diffusion with depth tweening
+   - Keyframe distribution: KEYFRAMES_ONLY
+   - Strength schedules: Single (keyframe strength only)
+   - Default: 60 FPS, pseudo-cadence display, 20 steps
+   - Best for: Fastest rendering, slow movements, pure depth transforms
+   - Shows: 3D tabs (Depth, Shakify), pseudo-cadence display (read-only)
+   - Not compatible with: RAFT, ControlNet (too many non-diffused frames)
+
+4. **Flux/Wan** - Hybrid AI workflow
+   - Keyframe distribution: None (separate Flux/Wan pipeline)
+   - Strength schedules: Single (keyframe strength for I2V chaining)
+   - Default: 24 FPS, pseudo-cadence display, 20 steps
+   - Best for: Dramatic changes, highest quality AI interpolation
+   - Shows: Wan Models tab, pseudo-cadence display (read-only)
+   - Hides: 3D tabs (Depth, Shakify, RAFT, ControlNet)
+   - Phase 1: Generate keyframes with Flux at prompt boundaries
+   - Phase 2: AI-interpolate tweens with Wan FLF2V (guidance_scale=3.5)
    - Phase 3: Stitch final video
    - Integrated Qwen prompt enhancement
-3. **Interpolation** - Generate smooth transition between two prompts
+
+**Mode Selection Impact:**
+- Top-level UI controls adapt based on selected mode
+- FPS, steps, and cadence/pseudo-cadence visibility auto-adjust
+- Strength sliders (1 or 2) show/hide based on mode requirements
+- Tab visibility (3D vs Wan) changes automatically
 
 **Keyframe Distribution:**
 - Replaces traditional cadence-based rendering
@@ -214,7 +246,8 @@ pytest.ini                              # Pytest settings
 
 **Render Core:**
 - Render core is now the **only** render core (legacy/stable core has been removed)
-- Keyframe distribution modes: Off, Keyframes Only, Additive, Redistributed
+- Now integrated into the 4 render modes (see above) instead of separate distribution selection
+- Keyframe distribution modes (internal): OFF, KEYFRAMES_ONLY, REDISTRIBUTED (ADDITIVE removed)
 - Incompatible with some features (Kohya HR Fix, FreeU, ControlNet)
 - Provides better synchronization and less jitter at high/no cadence
 
@@ -232,6 +265,19 @@ pytest.ini                              # Pytest settings
 - VACE models (Video Adaptive Conditional Enhancement) recommended for best continuity
 - Strength schedule controls how much previous frame influences next clip
 - Automatically handles 4n+1 frame requirements per Wan spec
+
+**Strength Resolution (Steps Dependency):**
+- **Critical Relationship:** Strength resolution = 1/steps
+- The number of sampling steps determines the precision of strength tuning
+- **Flux Dev (20 steps):** 1/20 = 0.05 resolution (fine control, easier to tune)
+- **Flux Schnell (4 steps):** 1/4 = 0.25 resolution (coarse control, harder to tune)
+- **Strength Values:**
+  - **0.0** - Cut (no previous frame feed, complete regeneration)
+  - **1.0** - Fully feed previous image (maximum continuity/restriction)
+  - **Too High (>0.8)** - Risk of artifacts, overly constrained generation
+  - **Too Low (<0.2)** - Risk of discontinuity, jitter, poor frame coherence
+- **Best Practice:** Use Flux Dev (20 steps) for strength-based workflows (I2V chaining, keyframe interpolation) to get finer control
+- Displayed in UI as "Strength Resolution" component showing current 1/steps calculation
 
 **FLF2V (First-Last-Frame-to-Video):**
 - AI-powered interpolation between two keyframes using Wan's FLF2V pipeline

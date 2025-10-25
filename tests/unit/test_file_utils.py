@@ -4,7 +4,7 @@ import pytest
 import os
 import tempfile
 
-from deforum.utils.file_utils import (
+from deforum.utils.filesystem.files import (
     get_max_path_length,
     count_files_in_folder,
 )

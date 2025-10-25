@@ -4,7 +4,7 @@ import pytest
 import torch
 import numpy as np
 
-from deforum.utils.depth_utils import (
+from deforum.utils.media.depth import (
     normalize_depth_tensor,
     equalize_depth_histogram,
     prepare_depth_tensor,

@@ -98,14 +98,10 @@ def get_tab_run(d, da):
 def get_tab_keyframes(d, da, dloopArgs):
     components = {}
     with gr.TabItem(f"{emoji_utils.key()} Keyframes"):  # TODO make a some sort of the original dictionary parsing
-        # animation_mode moved to top-level setting in ui_left.py
+        # NOTE: animation_mode, cadence, strength_schedule, keyframe_strength_schedule moved to top-level in ui_left.py
         with FormRow():
             border = create_gr_elem(da.border)
-        diffusion_cadence, max_frames = create_row(da, 'diffusion_cadence', 'max_frames')
-
-        # Strength settings - moved from subtab for better visibility
-        strength_schedule = create_row(da.strength_schedule)
-        keyframe_strength_schedule = create_row(da.keyframe_strength_schedule)
+            max_frames = create_gr_elem(da.max_frames)
         # GUIDED IMAGES ACCORD
         with gr.Accordion('Guided Images', open=False, elem_id='guided_images_accord') as guided_images_accord:
             # GUIDED IMAGES INFO ACCORD

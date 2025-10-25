@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from deforum.utils.hash_utils import (
+from deforum.utils.conversion.hashing import (
     compute_file_checksum,
     compute_file_checksum_with_factory,
     compute_string_hash,

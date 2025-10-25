@@ -3,7 +3,7 @@
 from decimal import Decimal
 import pytest
 
-from deforum.utils.subtitle_utils import (
+from deforum.utils.media.subtitles import (
     time_to_srt_format,
     calculate_frame_duration,
     frame_time,

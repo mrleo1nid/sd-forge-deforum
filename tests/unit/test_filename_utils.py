@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.filename_utils import (
+from deforum.utils.filesystem.filenames import (
     FileFormat,
     format_frame_index,
     format_frame_filename,

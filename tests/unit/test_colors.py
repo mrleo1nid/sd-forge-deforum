@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from deforum.utils.image_utils import (
+from deforum.utils.image.processing import (
     match_in_rgb,
     match_in_hsv,
     match_in_lab,

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from deforum.utils.image_utils import (
+from deforum.utils.image.processing import (
     bgr_to_rgb,
     numpy_to_pil,
     pil_to_numpy,

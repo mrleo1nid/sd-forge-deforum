@@ -227,14 +227,6 @@ class DiffusionFrame:
                     else len(data.args.root.prompt_keyframes) + 1)  # +1 because last frame is not defined in prompts
         elif keyframe_distribution is KeyFrameDistribution.REDISTRIBUTED:
             return 1 + int((data.args.anim_args.max_frames - start_index) / data.cadence())
-        elif keyframe_distribution is KeyFrameDistribution.ADDITIVE:
-            # TODO refactor to make pre-calc obsolete.
-            temp_diffusion_frame_count = 1 + int((data.args.anim_args.max_frames - start_index) / data.cadence())
-            uniform_indices = KeyFrameDistribution.uniform_indexes(start_index, max_frames, temp_diffusion_frame_count)
-            keyframes = KeyFrameDistribution.select_keyframes(data)
-
-            precalculated_diffusion_frames = list(set(set(uniform_indices) | set(keyframes)))
-            return len(precalculated_diffusion_frames)
         else:
             raise ValueError(f"Invalid keyframe_distribution: {keyframe_distribution}")
 

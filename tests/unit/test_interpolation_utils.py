@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.interpolation_utils import (
+from deforum.utils.math.interpolation import (
     extract_rife_name,
     clean_folder_name,
     set_interp_out_fps,

@@ -5,7 +5,7 @@ Supports Canny and Depth ControlNet models.
 """
 
 import torch
-from diffusers import FluxControlNetModel, FluxControlNetPipeline
+from diffusers import FluxControlNetModel
 from typing import Optional, Dict
 import os
 from contextlib import contextmanager
@@ -78,9 +78,8 @@ FLUX_CONTROLNET_MODELS = {
     }
 }
 
-# Model cache
+# Model cache (only for ControlNet models, not full pipelines)
 _model_cache: Dict[str, FluxControlNetModel] = {}
-_pipeline_cache: Optional[FluxControlNetPipeline] = None
 
 
 def get_available_models(control_type: str) -> Dict[str, str]:
@@ -154,61 +153,15 @@ def load_flux_controlnet_model(
         raise
 
 
-def load_flux_controlnet_pipeline(
-    base_model: str = "black-forest-labs/FLUX.1-dev",
-    controlnet: Optional[FluxControlNetModel] = None,
-    control_type: str = "canny",
-    model_name: str = "instantx",
-    torch_dtype: torch.dtype = torch.bfloat16,
-    device: str = "cuda"
-) -> FluxControlNetPipeline:
-    """Load or create a Flux ControlNet pipeline.
-
-    Args:
-        base_model: Base Flux model repo ID
-        controlnet: Pre-loaded ControlNet model (optional)
-        control_type: "canny" or "depth" (if controlnet not provided)
-        model_name: Model provider name (if controlnet not provided)
-        torch_dtype: Torch data type
-        device: Device to load on
-
-    Returns:
-        FluxControlNetPipeline ready for inference
-    """
-    global _pipeline_cache
-
-    # Load ControlNet if not provided
-    if controlnet is None:
-        controlnet = load_flux_controlnet_model(control_type, model_name, torch_dtype, device)
-
-    # Check if we can reuse cached pipeline (for now, always create new)
-    # TODO: Implement pipeline caching with hot-swappable ControlNet
-
-    print(f"Creating Flux ControlNet pipeline with base model: {base_model}")
-
-    try:
-        with temporarily_unpatch_hf_download():
-            pipe = FluxControlNetPipeline.from_pretrained(
-                base_model,
-                controlnet=controlnet,
-                torch_dtype=torch_dtype
-            )
-        pipe.to(device)
-
-        print("✓ Flux ControlNet pipeline created successfully")
-        return pipe
-
-    except Exception as e:
-        print(f"Error creating Flux ControlNet pipeline: {e}")
-        raise
-
-
 def unload_controlnet_models():
-    """Clear cached models to free VRAM."""
-    global _model_cache, _pipeline_cache
+    """Clear cached ControlNet models to free VRAM.
+
+    Note: This only clears ControlNet models (~3.6GB each), not full pipelines.
+    We use Forge's already-loaded Flux model, so no pipeline caching needed.
+    """
+    global _model_cache
 
     _model_cache.clear()
-    _pipeline_cache = None
 
     if torch.cuda.is_available():
         torch.cuda.empty_cache()

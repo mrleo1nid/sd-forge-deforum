@@ -11,6 +11,7 @@
     "scheduler": "Simple",
     "steps": 20,
     "batch_name": "Deforum_{timestring}",
+    "render_mode": "New 3D",
     "keyframe_distribution": "Keyframes Only",
     "seed_behavior": "iter",
     "seed_iter_N": 1,

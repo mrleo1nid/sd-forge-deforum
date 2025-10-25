@@ -109,15 +109,82 @@ Error: {str(e)}
 
 def setup_deforum_left_side_ui():
     d, da, dp, dv, dr, dw, dloopArgs = set_arg_lists()
+
+    # FLUX AVAILABILITY CHECK - All Deforum modes require Flux
+    from deforum.utils.system.flux_check import should_show_flux_blocker, get_flux_setup_message
+
+    if should_show_flux_blocker():
+        # Show blocker message and minimal UI
+        with gr.Row(variant='compact'):
+            show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True, visible=False)
+
+        gr.HTML(value=get_flux_setup_message())
+
+        # Return minimal component set for compatibility
+        return {
+            'show_info_on_ui': show_info_on_ui,
+        }
+
+    # Normal UI setup continues if Flux is available
     # show button to hide/ show gradio's info texts for each element in the UI
     with gr.Row(variant='compact'):
         show_info_on_ui = gr.Checkbox(label="Show more info", value=d.show_info_on_ui, interactive=True)
 
-    # Top-level essential settings before tabs
+    # Top-level essential settings before tabs - NEW RENDER MODE SYSTEM
     with gr.Row(variant='compact'):
         from .ui_elements import create_gr_elem
-        animation_mode = create_gr_elem(da.animation_mode)
+        render_mode = create_gr_elem(da.render_mode)
+
+    with gr.Row(variant='compact'):
         fps = create_gr_elem(dv.fps)
+        steps = create_gr_elem(d.steps)
+
+    # Mode-dependent controls row - cadence OR pseudo-cadence (mutually exclusive)
+    with gr.Row(variant='compact'):
+        with gr.Column(scale=1, visible=True) as cadence_column:
+            cadence = create_gr_elem(da.diffusion_cadence)
+        with gr.Column(scale=1, visible=False) as pseudo_cadence_column:
+            pseudo_cadence_display = gr.Textbox(
+                label="Calculated Pseudo-Cadence",
+                value="Will be calculated on render",
+                interactive=False,
+                info="Average frames between diffusions (calculated from keyframes)"
+            )
+
+    # Strength schedules - smart sliders + textboxes
+    # Sliders for quick constant values, textboxes for complex schedules
+    with gr.Row(variant='compact'):
+        # Normal strength (Classic 3D, New 3D)
+        with gr.Column(scale=1, visible=True) as normal_strength_column:
+            normal_strength_slider = gr.Slider(
+                label="Normal Strength",
+                minimum=0.0,
+                maximum=1.0,
+                step=0.05,  # Will be updated dynamically based on steps
+                value=0.85,
+                info="Resolution: 1/20 = 0.05. Slider sets constant '0:(value)'. Edit textbox for complex schedules."
+            )
+            normal_strength = create_gr_elem(da.strength_schedule)
+
+        # Keyframe strength (New 3D, Keyframes Only, Flux/Wan)
+        with gr.Column(scale=1, visible=True) as keyframe_strength_column:
+            keyframe_strength_slider = gr.Slider(
+                label="Keyframe Strength",
+                minimum=0.0,
+                maximum=1.0,
+                step=0.05,  # Will be updated dynamically based on steps
+                value=0.50,
+                info="Resolution: 1/20 = 0.05. Slider sets constant '0:(value)'. Edit textbox for complex schedules."
+            )
+            keyframe_strength = create_gr_elem(da.keyframe_strength_schedule)
+
+    # Keep legacy animation_mode hidden for backwards compatibility
+    animation_mode = gr.Radio(
+        label="Animation mode (Legacy - Hidden)",
+        choices=['3D', 'Interpolation', 'Flux/Wan'],
+        value="3D",
+        visible=False
+    )
 
     with gr.Blocks():
         with gr.Tabs() as main_tabs:
@@ -153,30 +220,138 @@ def setup_deforum_left_side_ui():
                 locals()[key] = value
 
             # Add top-level settings to locals()
+            locals()['render_mode'] = render_mode
             locals()['animation_mode'] = animation_mode
             locals()['fps'] = fps
+            locals()['steps'] = steps
+            locals()['cadence'] = cadence
+            locals()['diffusion_cadence'] = cadence  # Alias for backward compatibility with gradio_funcs
+            locals()['cadence_column'] = cadence_column
+            locals()['pseudo_cadence_display'] = pseudo_cadence_display
+            locals()['pseudo_cadence_column'] = pseudo_cadence_column
+            locals()['strength_schedule'] = normal_strength
+            locals()['keyframe_strength_schedule'] = keyframe_strength
+            locals()['normal_strength_slider'] = normal_strength_slider
+            locals()['keyframe_strength_slider'] = keyframe_strength_slider
+            locals()['normal_strength_column'] = normal_strength_column
+            locals()['keyframe_strength_column'] = keyframe_strength_column
 
             # Store tab references for visibility control
             locals()['tab_depth'] = tab_depth
             locals()['tab_shakify'] = tab_shakify
             locals()['tab_wan'] = tab_wan
 
-    # Tab visibility based on animation mode
-    def update_tab_visibility(mode):
-        """Show/hide tabs based on animation mode"""
-        is_3d = mode == '3D'
-        is_flux_wan = mode == 'Flux/Wan'
+    # Mode change handler - updates all UI based on selected render mode
+    def handle_render_mode_change(mode):
+        """
+        Update UI components when render mode changes.
+        Returns updates for: tab_depth, tab_shakify, tab_wan, cadence, pseudo_cadence,
+                             fps, steps, sliders, strength_columns, animation_mode
+        """
+        from deforum.rendering.data.render_mode import RenderMode
+
+        render_mode_enum = RenderMode.from_string(mode)
+        config = render_mode_enum.config
+
+        # Determine tab visibility
+        show_3d_tabs = render_mode_enum.should_show_3d_tabs()
+        show_wan_tab = render_mode_enum.should_show_wan_tab()
+
+        # Determine cadence/pseudo-cadence visibility
+        show_real_cadence = render_mode_enum.should_show_cadence_slider()
+        show_pseudo_cadence = config.shows_pseudo_cadence
+
+        # Determine strength slider visibility
+        show_normal_strength = render_mode_enum.should_show_normal_strength()
+        show_keyframe_strength = render_mode_enum.should_show_keyframe_strength()
+
+        # Calculate strength resolution (slider step size) based on steps
+        strength_step = 1.0 / config.default_steps
+        strength_info = f"Resolution: 1/{config.default_steps} = {strength_step:.4f}. Slider sets constant '0:(value)'. Edit textbox for complex schedules."
+
+        # Mode-specific steps info text
+        steps_info_map = {
+            RenderMode.CLASSIC_3D: "Sampling steps for all diffusions (every cadence frames)",
+            RenderMode.NEW_3D: "Sampling steps for all diffusions (keyframes + cadence frames)",
+            RenderMode.KEYFRAMES_ONLY: "Sampling steps for keyframe diffusions only",
+            RenderMode.FLUX_WAN: "Sampling steps for Flux keyframe generation (Wan FLF2V steps in Wan Models tab)",
+        }
+        steps_info = steps_info_map.get(render_mode_enum, "Sampling steps for diffusion")
+
+        # Update legacy animation_mode for backward compatibility
+        legacy_mode = render_mode_enum.to_legacy_animation_mode()
 
         return [
-            gr.update(visible=is_3d),      # tab_depth
-            gr.update(visible=is_3d),      # tab_shakify
-            gr.update(visible=is_flux_wan) # tab_wan
+            gr.update(visible=show_3d_tabs),           # tab_depth
+            gr.update(visible=show_3d_tabs),           # tab_shakify
+            gr.update(visible=show_wan_tab),           # tab_wan
+            gr.update(visible=show_real_cadence),      # cadence_column
+            gr.update(visible=show_pseudo_cadence),    # pseudo_cadence_column
+            gr.update(value=config.default_fps),       # fps
+            gr.update(value=config.default_steps,      # steps
+                     info=steps_info),
+            gr.update(step=strength_step, info=strength_info),  # normal_strength_slider
+            gr.update(step=strength_step, info=strength_info),  # keyframe_strength_slider
+            gr.update(visible=show_normal_strength),   # normal_strength_column
+            gr.update(visible=show_keyframe_strength), # keyframe_strength_column
+            gr.update(value=legacy_mode)               # animation_mode (hidden)
         ]
 
-    animation_mode.change(
-        fn=update_tab_visibility,
-        inputs=[animation_mode],
-        outputs=[tab_depth, tab_shakify, tab_wan]
+    # Connect render mode change handler
+    render_mode.change(
+        fn=handle_render_mode_change,
+        inputs=[render_mode],
+        outputs=[
+            tab_depth,
+            tab_shakify,
+            tab_wan,
+            cadence_column,
+            pseudo_cadence_column,
+            fps,
+            steps,
+            normal_strength_slider,
+            keyframe_strength_slider,
+            normal_strength_column,
+            keyframe_strength_column,
+            animation_mode
+        ]
+    )
+
+    # Smart strength slider handlers - ONE-WAY SYNC to prevent infinite loops
+    # Slider -> Textbox ONLY. Textbox is source of truth.
+
+    def update_slider_step_size(steps_value):
+        """Update slider step size based on steps value."""
+        step = 1.0 / max(1, steps_value)
+        info_text = f"Resolution: 1/{steps_value} = {step:.4f}. Slider sets constant '0:(value)'. Edit textbox for complex schedules."
+        return [
+            gr.update(step=step, info=info_text),  # normal_strength_slider
+            gr.update(step=step, info=info_text),  # keyframe_strength_slider
+        ]
+
+    def slider_to_textbox(slider_value):
+        """Convert slider value to schedule textbox format."""
+        return f"0: ({slider_value:.2f})"
+
+    # Connect steps change to update slider step size
+    steps.change(
+        fn=update_slider_step_size,
+        inputs=[steps],
+        outputs=[normal_strength_slider, keyframe_strength_slider]
+    )
+
+    # Connect sliders to textboxes (ONE-WAY: slider -> textbox only)
+    # This prevents infinite loops. Textbox is the source of truth.
+    normal_strength_slider.change(
+        fn=slider_to_textbox,
+        inputs=[normal_strength_slider],
+        outputs=[normal_strength]
+    )
+
+    keyframe_strength_slider.change(
+        fn=slider_to_textbox,
+        inputs=[keyframe_strength_slider],
+        outputs=[keyframe_strength]
     )
 
     # Gradio's Change functions - hiding and renaming elements based on other elements

@@ -52,39 +52,79 @@ This fork has undergone significant refactoring and modernization:
 The Deforum UI is organized into main tabs for easy navigation:
 
 ### Main Tabs
+
+**Top-Level Controls** (before tabs):
+- **Render Mode** - Select workflow: Classic 3D, New 3D, Keyframes Only, or Flux/Wan
+- **FPS** - Frame rate (auto-adjusts based on mode: 24 or 60)
+- **Steps** - Sampling steps (mode-specific info shows what it controls)
+- **Cadence/Pseudo-Cadence** - Shows real cadence slider or calculated pseudo-cadence
+- **Strength Schedules** - 1 or 2 sliders depending on mode (normal + keyframe)
+
+**Tabs:**
 1. **Run** - Main controls for starting generation
-2. **Keyframes** - Motion, Strength, CFG, Seed, Step, Sampler, Scheduler, Checkpoint, Noise, Coherence, Anti Blur
+2. **Keyframes** - Motion, CFG, Seed, Step, Sampler, Scheduler, Checkpoint, Noise, Coherence, Anti Blur
    - Flattened single-level tab navigation for easier access
-3. **Distribution** - Render mode selection (Keyframes Only vs Cadence), Wan FLF2V integration
+   - NOTE: Strength schedules moved to top-level
+3. **Distribution** - Wan FLF2V tween integration for 3D modes (experimental)
+   - Enables AI video interpolation between keyframes instead of depth warping
+   - Advanced keyframe type scheduling
 4. **Prompts** - Text prompts with frame numbers
    - **AI Prompt Enhancement** accordion with Qwen integration for automatic prompt expansion
-5. **Shakify** - Camera shake effects from Blender Camera Shakify patterns
-6. **3D Depth** - Depth warping settings and FOV configuration for 3D animation mode
+5. **Shakify** - Camera shake effects from Blender Camera Shakify patterns (3D modes only)
+6. **3D Depth** - Depth warping settings and FOV configuration (3D modes only)
 7. **Init** - Initialization settings
-8. **Wan Models** - Wan model selection and configuration
+8. **Wan Models** - Wan model selection and configuration (Flux/Wan mode only)
 9. **Output** - Video settings (FPS, resolution, audio, etc.)
 
-### Animation Modes
+### Render Modes
 
-Deforum supports three animation workflows:
+Deforum now uses a unified 4-mode system that simplifies workflow selection. Each mode has specific characteristics optimized for different use cases:
 
-#### **3D Mode** (Default)
-Traditional Deforum depth-based animation with optional Wan FLF2V integration:
-- Generate keyframes with Flux/SD models
-- Use depth warping for 3D camera movement
-- Optionally enable Wan FLF2V for AI interpolation between keyframes
-- Controlled via Distribution tab → "Enable Wan FLF2V for Tweens"
+#### **1. Classic 3D**
+Traditional Deforum with fixed low cadence for maximum stability:
+- **Keyframe Distribution:** OFF (uniform cadence diffusions)
+- **Strength Schedules:** Single (normal strength only)
+- **Defaults:** 24 FPS, cadence=2, 20 steps
+- **Best For:** RAFT optical flow, ControlNet, maximum stability
+- **Compatibility:** Fully compatible with all 3D features
 
-#### **Flux/Wan Mode** 🆕
-Hybrid workflow combining Flux image generation with Wan video interpolation:
-- **Phase 1**: Generate keyframes with Flux
-- **Phase 2**: Interpolate tweens with Wan FLF2V
-- **Phase 3**: Stitch final video
-- Best of both worlds: Flux image quality + Wan cinematic motion
-- Integrated prompt enhancement with Qwen models
+#### **2. New 3D** (Default) ⭐
+Modern keyframe redistribution with dual strength schedules:
+- **Keyframe Distribution:** REDISTRIBUTED (intelligent keyframe placement)
+- **Strength Schedules:** Dual (normal + keyframe strength)
+- **Defaults:** 60 FPS, cadence=5, 20 steps
+- **Best For:** Balanced quality, speed, and stability
+- **Features:** Combines cadence diffusions (high strength) with keyframe diffusions (low strength)
+- **Compatibility:** Works with RAFT, ControlNet, and all 3D features
 
-#### **Interpolation Mode**
-Generate smooth transitions between two prompts
+#### **3. Keyframes Only** ⚡
+Pure keyframe diffusion with depth-based tweening for maximum speed:
+- **Keyframe Distribution:** KEYFRAMES_ONLY (diffusion only at prompt boundaries)
+- **Strength Schedules:** Single (keyframe strength only)
+- **Defaults:** 60 FPS, pseudo-cadence display, 20 steps
+- **Best For:** Fastest rendering, slow movements, pure depth transforms
+- **Features:** Only diffuses at keyframes, depth-warps all tween frames
+- **Note:** Not compatible with RAFT/ControlNet (too many non-diffused frames)
+
+#### **4. Flux/Wan** 🎬
+Hybrid AI workflow combining Flux keyframes with Wan FLF2V interpolation:
+- **Keyframe Distribution:** None (separate Flux/Wan pipeline)
+- **Strength Schedules:** Single (keyframe strength for I2V chaining)
+- **Defaults:** 24 FPS, pseudo-cadence display, 20 steps
+- **Best For:** Dramatic changes, highest quality AI interpolation
+- **Features:**
+  - **Phase 1:** Generate keyframes with Flux at prompt boundaries
+  - **Phase 2:** AI-interpolate tweens with Wan FLF2V (guidance_scale=3.5)
+  - **Phase 3:** Stitch final video
+  - Integrated Qwen prompt enhancement for movement analysis
+- **UI Changes:** Hides 3D tabs (Depth, Shakify), shows Wan Models tab
+- **Separate Step Controls:** Flux steps (top-level) and Wan steps (Wan Models tab)
+
+#### **Mode Selection**
+- Top-level render mode selector updates UI automatically
+- FPS, steps, cadence/pseudo-cadence adapt to selected mode
+- Strength sliders (1 or 2) show/hide based on mode requirements
+- Tab visibility changes (3D tabs vs Wan tab) automatically
 
 ## Requirements
 

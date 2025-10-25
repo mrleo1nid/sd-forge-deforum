@@ -48,8 +48,26 @@ def run_deforum(*args):
     component_names = get_component_names()
     args_dict = {component_names[i]: args[i+2] for i in range(0, len(component_names))}
 
+    # Convert render_mode to legacy animation_mode and keyframe_distribution
+    from deforum.rendering.data.render_mode import RenderMode
+    render_mode_str = args_dict.get('render_mode', 'New 3D')
+    render_mode = RenderMode.from_string(render_mode_str)
+
+    # Override animation_mode and keyframe_distribution based on render_mode
+    args_dict['animation_mode'] = render_mode.to_legacy_animation_mode()
+
+    # Set keyframe_distribution based on render_mode
+    distribution = render_mode.get_keyframe_distribution()
+    if distribution:
+        args_dict['keyframe_distribution'] = distribution.value
+
+    print(f"\n🎨 Render Mode: '{render_mode_str}'")
+    print(f"   → Animation Mode: '{args_dict['animation_mode']}'")
+    if distribution:
+        print(f"   → Keyframe Distribution: '{distribution.value}'")
+
     # Check if resuming - load animation_mode from saved settings
-    animation_mode = args_dict.get('animation_mode', '2D')
+    animation_mode = args_dict.get('animation_mode', '3D')
     print(f"\n🔍 DEBUG: Initial animation_mode from UI: '{animation_mode}'")
     print(f"🔍 DEBUG: resume_from_timestring: {args_dict.get('resume_from_timestring', False)}")
     print(f"🔍 DEBUG: resume_timestring: '{args_dict.get('resume_timestring', '')}'")

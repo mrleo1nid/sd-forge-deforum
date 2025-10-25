@@ -3,7 +3,7 @@
 import pytest
 from PIL import Image
 
-from deforum.utils.functional_utils import (
+from deforum.utils.functional import (
     flat_map,
     tube,
     put_all,

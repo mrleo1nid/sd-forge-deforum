@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import cv2
 
-from deforum.utils.transform_utils import (
+from deforum.utils.image.transforms import (
     normalize_image_to_tensor_range,
     denormalize_tensor_to_image_range,
     sample_from_cv2,

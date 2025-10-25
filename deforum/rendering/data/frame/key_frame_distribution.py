@@ -7,7 +7,6 @@ from deforum.utils.system.logging import log as log_utils
 class KeyFrameDistribution(Enum):
     OFF = "Off"
     KEYFRAMES_ONLY = "Keyframes Only"  # cadence is ignored. all other frames are handled as tweens.
-    ADDITIVE = "Additive"  # both cadence and parseq keyframes are used.
     REDISTRIBUTED = "Redistributed"  # similar to uniform, but keyframe diffusion is enforced.
 
     @staticmethod
@@ -18,8 +17,6 @@ class KeyFrameDistribution(Enum):
                 return KeyFrameDistribution.OFF
             case "Keyframes Only":
                 return KeyFrameDistribution.KEYFRAMES_ONLY
-            case "Additive":
-                return KeyFrameDistribution.ADDITIVE
             case "Redistributed":
                 return KeyFrameDistribution.REDISTRIBUTED
             case _:
@@ -40,8 +37,6 @@ class KeyFrameDistribution(Enum):
                 return self.uniform_indexes(start_index, max_frames, diffusion_frame_count)
             case KeyFrameDistribution.KEYFRAMES_ONLY:
                 return self.select_keyframes(data)
-            case KeyFrameDistribution.ADDITIVE:
-                return self._additive(data, start_index, max_frames)
             case KeyFrameDistribution.REDISTRIBUTED:
                 return self._redistributed(data, start_index, max_frames, diffusion_frame_count)
             case _:
@@ -51,14 +46,6 @@ class KeyFrameDistribution(Enum):
     def uniform_indexes(start_index, max_frames, diffusion_frame_count):
         return [1 + start_index + int(n * (max_frames - 1 - start_index) / (diffusion_frame_count - 1))
                 for n in range(diffusion_frame_count)]
-
-    @staticmethod
-    def _additive(data, start_index, max_frames):
-        """Calculates uniform indices according to cadence and adds keyframes defined by Parseq or Deforum prompt."""
-        temp_diffusion_frame_count = 1 + int((data.args.anim_args.max_frames - start_index) / data.cadence())
-        uniform_indices = KeyFrameDistribution.uniform_indexes(start_index, max_frames, temp_diffusion_frame_count)
-        keyframes = KeyFrameDistribution.select_keyframes(data)
-        return KeyFrameDistribution._merge_with_uniform(uniform_indices, keyframes)
 
     @staticmethod
     def _redistributed(data, start_index, max_frames, diffusion_frame_count):
@@ -78,12 +65,6 @@ class KeyFrameDistribution(Enum):
         key_frames = list(keyframes_set)
         key_frames.sort()
         assert len(key_frames) == diffusion_frame_count
-        return key_frames
-
-    @staticmethod
-    def _merge_with_uniform(uniform_indices, key_frames):
-        key_frames = list(set(set(uniform_indices) | set(key_frames)))
-        key_frames.sort()
         return key_frames
 
     @staticmethod

@@ -5,7 +5,7 @@ import torch
 import pytest
 from PIL import Image
 
-from deforum.utils.noise_utils import (
+from deforum.utils.generation.noise import (
     perlin_fade,
     round_to_multiple,
     normalize_perlin,
