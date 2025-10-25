@@ -100,11 +100,13 @@ class RenderMode(Enum):
 
     def should_show_keyframe_strength(self) -> bool:
         """Return True if keyframe strength slider should be visible."""
-        return self.config.uses_dual_strength
+        # New 3D uses both, Keyframes Only and Flux/Wan use keyframe only
+        return self in [RenderMode.NEW_3D, RenderMode.KEYFRAMES_ONLY, RenderMode.FLUX_WAN]
 
     def should_show_normal_strength(self) -> bool:
         """Return True if normal strength slider should be visible."""
-        return True  # All modes use at least one strength slider
+        # Classic 3D uses normal only, New 3D uses both
+        return self in [RenderMode.CLASSIC_3D, RenderMode.NEW_3D]
 
 
 # Mode configurations

@@ -139,22 +139,23 @@ def setup_deforum_left_side_ui():
         fps = create_gr_elem(dv.fps)
         steps = create_gr_elem(d.steps)
 
-    # Mode-dependent controls row
+    # Mode-dependent controls row - cadence OR pseudo-cadence (mutually exclusive)
     with gr.Row(variant='compact'):
-        cadence = create_gr_elem(da.diffusion_cadence)
-        pseudo_cadence_display = gr.Textbox(
-            label="Calculated Pseudo-Cadence",
-            value="Will be calculated on render",
-            interactive=False,
-            visible=False,
-            info="Average frames between diffusions (calculated from keyframes)"
-        )
+        with gr.Column(scale=1, visible=True) as cadence_column:
+            cadence = create_gr_elem(da.diffusion_cadence)
+        with gr.Column(scale=1, visible=False) as pseudo_cadence_column:
+            pseudo_cadence_display = gr.Textbox(
+                label="Calculated Pseudo-Cadence",
+                value="Will be calculated on render",
+                interactive=False,
+                info="Average frames between diffusions (calculated from keyframes)"
+            )
 
     # Strength schedules - smart sliders + textboxes
     # Sliders for quick constant values, textboxes for complex schedules
     with gr.Row(variant='compact'):
-        # Normal strength (all modes)
-        with gr.Column(scale=1):
+        # Normal strength (Classic 3D, New 3D)
+        with gr.Column(scale=1, visible=True) as normal_strength_column:
             normal_strength_slider = gr.Slider(
                 label="Normal Strength",
                 minimum=0.0,
@@ -165,7 +166,7 @@ def setup_deforum_left_side_ui():
             )
             normal_strength = create_gr_elem(da.strength_schedule)
 
-        # Keyframe strength (dual-strength modes only)
+        # Keyframe strength (New 3D, Keyframes Only, Flux/Wan)
         with gr.Column(scale=1, visible=True) as keyframe_strength_column:
             keyframe_strength_slider = gr.Slider(
                 label="Keyframe Strength",
@@ -225,11 +226,14 @@ def setup_deforum_left_side_ui():
             locals()['steps'] = steps
             locals()['cadence'] = cadence
             locals()['diffusion_cadence'] = cadence  # Alias for backward compatibility with gradio_funcs
+            locals()['cadence_column'] = cadence_column
             locals()['pseudo_cadence_display'] = pseudo_cadence_display
+            locals()['pseudo_cadence_column'] = pseudo_cadence_column
             locals()['strength_schedule'] = normal_strength
             locals()['keyframe_strength_schedule'] = keyframe_strength
             locals()['normal_strength_slider'] = normal_strength_slider
             locals()['keyframe_strength_slider'] = keyframe_strength_slider
+            locals()['normal_strength_column'] = normal_strength_column
             locals()['keyframe_strength_column'] = keyframe_strength_column
 
             # Store tab references for visibility control
@@ -242,7 +246,7 @@ def setup_deforum_left_side_ui():
         """
         Update UI components when render mode changes.
         Returns updates for: tab_depth, tab_shakify, tab_wan, cadence, pseudo_cadence,
-                             fps, steps, sliders, keyframe_strength_column, animation_mode
+                             fps, steps, sliders, strength_columns, animation_mode
         """
         from deforum.rendering.data.render_mode import RenderMode
 
@@ -258,6 +262,7 @@ def setup_deforum_left_side_ui():
         show_pseudo_cadence = config.shows_pseudo_cadence
 
         # Determine strength slider visibility
+        show_normal_strength = render_mode_enum.should_show_normal_strength()
         show_keyframe_strength = render_mode_enum.should_show_keyframe_strength()
 
         # Calculate strength resolution (slider step size) based on steps
@@ -276,23 +281,18 @@ def setup_deforum_left_side_ui():
         # Update legacy animation_mode for backward compatibility
         legacy_mode = render_mode_enum.to_legacy_animation_mode()
 
-        # Cadence update - only set value if visible
-        if show_real_cadence:
-            cadence_update = gr.update(visible=True, value=config.default_cadence)
-        else:
-            cadence_update = gr.update(visible=False)
-
         return [
             gr.update(visible=show_3d_tabs),           # tab_depth
             gr.update(visible=show_3d_tabs),           # tab_shakify
             gr.update(visible=show_wan_tab),           # tab_wan
-            cadence_update,                            # cadence
-            gr.update(visible=show_pseudo_cadence),    # pseudo_cadence_display
+            gr.update(visible=show_real_cadence),      # cadence_column
+            gr.update(visible=show_pseudo_cadence),    # pseudo_cadence_column
             gr.update(value=config.default_fps),       # fps
             gr.update(value=config.default_steps,      # steps
                      info=steps_info),
             gr.update(step=strength_step, info=strength_info),  # normal_strength_slider
             gr.update(step=strength_step, info=strength_info),  # keyframe_strength_slider
+            gr.update(visible=show_normal_strength),   # normal_strength_column
             gr.update(visible=show_keyframe_strength), # keyframe_strength_column
             gr.update(value=legacy_mode)               # animation_mode (hidden)
         ]
@@ -305,12 +305,13 @@ def setup_deforum_left_side_ui():
             tab_depth,
             tab_shakify,
             tab_wan,
-            cadence,
-            pseudo_cadence_display,
+            cadence_column,
+            pseudo_cadence_column,
             fps,
             steps,
             normal_strength_slider,
             keyframe_strength_slider,
+            normal_strength_column,
             keyframe_strength_column,
             animation_mode
         ]
