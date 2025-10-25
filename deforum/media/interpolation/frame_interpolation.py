@@ -156,7 +156,8 @@ def prepare_film_inference(deforum_models_path, x_am, sl_enabled, sl_am, keep_im
     print (f"*Passing interpolated frames to ffmpeg...*")
     exception_raised = False
     try:
-        ffmpeg_stitch_video(ffmpeg_location=f_location, fps=fps, outmp4_path=interp_vid_path, stitch_from_frame=1, stitch_to_frame=999999999, imgs_path=img_path_for_ffmpeg, add_soundtrack=add_soundtrack, audio_path=audio_track, crf=f_crf, preset=f_preset, srt_path=srt_path)
+        # FILM generates interpolated frames starting from 0, so use stitch_from_frame=0
+        ffmpeg_stitch_video(ffmpeg_location=f_location, fps=fps, outmp4_path=interp_vid_path, stitch_from_frame=0, stitch_to_frame=999999999, imgs_path=img_path_for_ffmpeg, add_soundtrack=add_soundtrack, audio_path=audio_track, crf=f_crf, preset=f_preset, srt_path=srt_path)
     except Exception as e:
         exception_raised = True
         print(f"An error occurred while stitching the video: {e}")
