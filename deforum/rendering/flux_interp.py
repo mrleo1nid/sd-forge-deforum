@@ -20,6 +20,7 @@ import os
 import json
 from pathlib import Path
 from typing import List
+import cv2
 
 from modules import shared  # type: ignore
 
@@ -290,9 +291,11 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         first_prompt = strip_negative_prompt(first_prompt_raw)
         last_prompt = strip_negative_prompt(last_prompt_raw)
 
-        # Load keyframe images
-        first_image_cv2 = image_utils.load_image(keyframe_images[first_frame_idx])
-        last_image_cv2 = image_utils.load_image(keyframe_images[last_frame_idx])
+        # Load keyframe images (cv2 uses BGR, convert to RGB)
+        first_image_bgr = cv2.imread(keyframe_images[first_frame_idx])
+        last_image_bgr = cv2.imread(keyframe_images[last_frame_idx])
+        first_image_cv2 = image_utils.bgr_to_rgb(first_image_bgr)
+        last_image_cv2 = image_utils.bgr_to_rgb(last_image_bgr)
 
         # Convert to PIL for Wan FLF2V
         first_image = image_utils.numpy_to_pil(first_image_cv2)
