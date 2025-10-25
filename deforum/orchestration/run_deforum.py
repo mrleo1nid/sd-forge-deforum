@@ -317,7 +317,9 @@ def run_deforum(*args):
             # If the interpolated video was stitched from the upscaled frames, the video needs to be moved
             # out of the upscale directory.
             if use_upscaled_images and ouput_vid_path and os.path.exists(ouput_vid_path):
-                ouput_vid_path_final = os.path.join(args.outdir, Path(ouput_vid_path).stem + "_upscaled.mp4")
+                # Get filename without extension using os.path functions
+                base_name = os.path.splitext(os.path.basename(ouput_vid_path))[0]
+                ouput_vid_path_final = os.path.join(args.outdir, base_name + "_upscaled.mp4")
                 print(f"Moving upscaled, interpolated vid from {ouput_vid_path} to {ouput_vid_path_final}")
                 shutil.move(ouput_vid_path, ouput_vid_path_final)
 
