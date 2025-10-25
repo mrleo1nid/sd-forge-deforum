@@ -839,8 +839,7 @@ def get_tab_init(d, da, dp):
                     extract_to_frame = create_gr_elem(da.extract_to_frame)
                     extract_nth_frame = create_gr_elem(da.extract_nth_frame)
                     overwrite_extracted_frames = create_gr_elem(da.overwrite_extracted_frames)
-                    use_mask_video = create_gr_elem(da.use_mask_video)
-                video_mask_path = create_row(da.video_mask_path)
+                # NOTE: use_mask_video and video_mask_path moved to dedicated Masking tab
             # NOTE: Mask Init tab moved to dedicated Masking tab
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
