@@ -45,7 +45,7 @@ def start_server(request):
         script_directory = os.path.dirname(__file__)
         a1111_directory = Path(script_directory).parent.parent.parent  # sd-webui/extensions/deforum/tests/ -> sd-webui
         print(f"Starting server in {a1111_directory}...")
-        proc = Popen(["python", "-m", "coverage", "run", "--data-file=.coverage.server", "launch.py",
+        proc = Popen(["python3", "-m", "coverage", "run", "--data-file=.coverage.server", "launch.py",
                       "--skip-prepare-environment", "--skip-torch-cuda-test", "--test-server", "--no-half",
                       "--disable-opt-split-attention", "--use-cpu", "all", "--add-stop-route", "--api", "--deforum-api", "--listen"],
             cwd=a1111_directory,

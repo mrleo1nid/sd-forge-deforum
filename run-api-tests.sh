@@ -152,7 +152,7 @@ else
     cd "$FORGE_DIR"
 
     # Start server and capture PID
-    nohup python webui.py \
+    nohup python3 webui.py \
         --skip-prepare-environment \
         --api \
         --deforum-api \
