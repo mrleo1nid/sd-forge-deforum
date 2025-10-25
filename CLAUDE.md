@@ -85,7 +85,7 @@ pip install -r requirements.txt
 
 5. **Rendering Pipelines**
    - **Standard mode (3D/Interpolation):** `deforum/rendering/core.py:22` - `render_animation()`
-   - **Flux/Wan mode:** `scripts/deforum_helpers/rendering/render_wan_flux.py` - `render_wan_flux()` - Flux keyframes + Wan FLF2V interpolation
+   - **Flux + Interpolation mode:** `deforum/rendering/flux_interp.py` - `render_wan_flux()` - Flux keyframes + choice of interpolation (Wan/RIFE/FILM)
 
 ### Core Systems
 
@@ -114,10 +114,14 @@ pip install -r requirements.txt
   - Handles T2V (text-to-video), I2V (image-to-video), and FLF2V (first-last-frame-to-video)
   - Calculates frame counts as 4n+1 per Wan requirements
   - Integrates Deforum prompt scheduling, FPS, seed, and strength
-- **render_wan_flux.py** - Flux/Wan mode hybrid pipeline
-  - Phase 1: Generate keyframes with Flux
-  - Phase 2: Interpolate tweens with Wan FLF2V
+- **flux_interp.py** - Flux + Interpolation mode pipeline with multi-method support
+  - Phase 1: Generate ALL keyframes with Flux
+  - Phase 2: Interpolate tweens with selected method (Wan FLF2V / RIFE v4.6 / FILM)
   - Phase 3: Stitch final video
+  - Supports three interpolation methods via `flux_flf2v_interpolation_method` parameter:
+    - **Wan FLF2V (default):** AI-generated video with semantic understanding
+    - **RIFE v4.6:** Optical flow-based interpolation (no extra models needed)
+    - **FILM:** Google's Frame Interpolation for Large Motion (no extra models needed)
 - **qwen_prompt_expander.py** - AI prompt enhancement (integrated into Prompts tab)
   - Auto-selects Qwen model (3B/7B/14B) based on VRAM
   - Analyzes Deforum movement schedules, translates to English
@@ -220,17 +224,21 @@ The extension now uses a unified `RenderMode` system that replaces the old anima
    - Shows: 3D tabs (Depth, Shakify), pseudo-cadence display (read-only)
    - Not compatible with: RAFT, ControlNet (too many non-diffused frames)
 
-4. **Flux/Wan** - Hybrid AI workflow
-   - Keyframe distribution: None (separate Flux/Wan pipeline)
-   - Strength schedules: Single (keyframe strength for I2V chaining)
+4. **Flux/Wan** - Flux + Multi-Method Interpolation workflow
+   - Keyframe distribution: None (separate Flux + Interpolation pipeline)
+   - Strength schedules: Single (keyframe strength for I2V chaining with Wan)
    - Default: 24 FPS, pseudo-cadence display, 20 steps
-   - Best for: Dramatic changes, highest quality AI interpolation
-   - Shows: Wan Models tab, pseudo-cadence display (read-only)
+   - Best for: Dramatic changes, choice of interpolation method
+   - Shows: Wan Models tab (if using Wan), Flux Interpolation Settings, pseudo-cadence display (read-only)
    - Hides: 3D tabs (Depth, Shakify, RAFT, ControlNet)
-   - Phase 1: Generate keyframes with Flux at prompt boundaries
-   - Phase 2: AI-interpolate tweens with Wan FLF2V (guidance_scale=3.5)
+   - Phase 1: Generate ALL keyframes with Flux at prompt boundaries
+   - Phase 2: Interpolate tweens with selected method (Wan FLF2V / RIFE v4.6 / FILM)
    - Phase 3: Stitch final video
    - Integrated Qwen prompt enhancement
+   - Three interpolation methods available:
+     - **Wan FLF2V (default):** AI video generation with semantic understanding (guidance_scale=3.5)
+     - **RIFE v4.6:** Optical flow-based interpolation (no extra models needed)
+     - **FILM:** Google's Frame Interpolation for Large Motion (no extra models needed)
 
 **Mode Selection Impact:**
 - Top-level UI controls adapt based on selected mode
@@ -390,7 +398,7 @@ When discussing code, use `file_path:line_number` format:
 - Extension init: `scripts/deforum.py:24`
 - Main orchestrator: `scripts/deforum_helpers/run_deforum.py:43`
 - Standard render pipeline (3D/Interpolation): `deforum/rendering/core.py:22`
-- Flux/Wan pipeline: `scripts/deforum_helpers/rendering/render_wan_flux.py:1`
+- Flux + Interpolation pipeline: `deforum/rendering/flux_interp.py:1`
 - Central state: `scripts/deforum_helpers/rendering/data/render_data.py:42`
 - Wan FLF2V wrapper: `scripts/deforum_helpers/wan/wan_simple_integration.py:1`
 - Qwen enhancement (in Prompts tab): `scripts/deforum_helpers/wan/qwen_prompt_expander.py:1`
