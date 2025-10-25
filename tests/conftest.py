@@ -34,13 +34,21 @@ try:
         shared.options_templates = {}
 
     if shared.opts is None:
-        # Create a minimal opts object with required attributes
+        # Create a minimal opts object that returns safe defaults for any attribute
         class MinimalOpts:
             def __init__(self):
                 self.data = {}
 
             def get(self, key, default=None):
                 return self.data.get(key, default)
+
+            def __getattr__(self, name):
+                # Return safe defaults for any attribute access
+                # This prevents AttributeError during module imports
+                return None
+
+            def __contains__(self, key):
+                return key in self.data
 
         shared.opts = MinimalOpts()
 
