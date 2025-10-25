@@ -192,7 +192,8 @@ echo -e "${GREEN}Running Tests${NC}"
 echo -e "${GREEN}========================================${NC}\n"
 
 set +e  # Don't exit on test failure
-"$FORGE_DIR/venv/bin/python" -m pytest $TEST_ARGS -v --tb=short
+# Disable coverage for integration tests (not useful and slows down tests)
+"$FORGE_DIR/venv/bin/python" -m pytest $TEST_ARGS -v --tb=short --no-cov
 TEST_EXIT_CODE=$?
 set -e
 
