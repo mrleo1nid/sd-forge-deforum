@@ -105,14 +105,19 @@ def process_video_interpolation(frame_interpolation_engine, frame_interpolation_
         return None
         
 def prepare_film_inference(deforum_models_path, x_am, sl_enabled, sl_am, keep_imgs, raw_output_imgs_path, img_batch_id, f_location, f_crf, f_preset, fps, audio_track, orig_vid_name, is_random_pics_run, srt_path=None):
-    import shutil 
-    
+    import shutil
+
     parent_folder = os.path.dirname(raw_output_imgs_path)
     grandparent_folder = os.path.dirname(parent_folder)
+
+    # Detect if we're interpolating upscaled frames by checking the path
+    is_upscaled = "_upscaled" in raw_output_imgs_path.lower()
+    upscale_suffix = "_upscaled" if is_upscaled else ""
+
     if orig_vid_name is not None:
-        interp_vid_path = os.path.join(parent_folder, str(orig_vid_name) +'_FILM_x' + str(x_am))
+        interp_vid_path = os.path.join(parent_folder, str(orig_vid_name) +'_FILM_x' + str(x_am) + upscale_suffix)
     else:
-        interp_vid_path = os.path.join(raw_output_imgs_path, str(img_batch_id) +'_FILM_x' + str(x_am))
+        interp_vid_path = os.path.join(raw_output_imgs_path, str(img_batch_id) +'_FILM_x' + str(x_am) + upscale_suffix)
     
     film_model_name = 'film_net_fp16.pt'
     film_model_folder = os.path.join(deforum_models_path,'film_interpolation')
