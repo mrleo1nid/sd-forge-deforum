@@ -267,7 +267,7 @@ def stitch_video(img_batch_id, fps, img_folder_path, audio_path, ffmpeg_location
         
     exception_raised = False
     try:
-        ffmpeg_stitch_video(ffmpeg_location=ffmpeg_location, fps=fps, outmp4_path=mp4_path, stitch_from_frame=0, stitch_to_frame=1000000, imgs_path=t, add_soundtrack=add_soundtrack, audio_path=audio_path, crf=f_crf, preset=f_preset, srt_path=srt_path)
+        ffmpeg_stitch_video(ffmpeg_location=ffmpeg_location, fps=fps, outmp4_path=mp4_path, stitch_from_frame=1, stitch_to_frame=1000000, imgs_path=t, add_soundtrack=add_soundtrack, audio_path=audio_path, crf=f_crf, preset=f_preset, srt_path=srt_path)
     except Exception as e:
         exception_raised = True
         print(f"An error occurred while stitching the video: {e}")

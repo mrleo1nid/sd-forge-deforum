@@ -510,7 +510,7 @@ def stitch_wan_flux_video(data, frame_paths, video_args):
         ffmpeg_location=ffmpeg_location,
         fps=video_args.fps,
         outmp4_path=output_path,
-        stitch_from_frame=0,
+        stitch_from_frame=1,
         stitch_to_frame=len(frame_paths),  # Total number of frames to stitch
         imgs_path=imgs_pattern,
         add_soundtrack=video_args.add_soundtrack,
