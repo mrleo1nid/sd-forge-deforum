@@ -2,8 +2,10 @@
 # run-api-tests.sh - Start Forge server with Deforum API and run integration tests
 #
 # Usage:
-#   ./run-api-tests.sh              # Run all API integration tests
-#   ./run-api-tests.sh --quick      # Skip post-processing tests (faster)
+#   ./run-api-tests.sh                          # Run all tests (force restarts server by default)
+#   ./run-api-tests.sh --quick                  # Skip post-processing tests (faster)
+#   ./run-api-tests.sh --reuse-server           # Reuse existing server if running
+#   ./run-api-tests.sh --force-restart          # Force restart server (default behavior)
 #   ./run-api-tests.sh tests/integration/api_test.py::test_simple_settings  # Run specific test
 
 set -e  # Exit on error
@@ -26,10 +28,18 @@ PID_FILE="${EXTENSION_DIR}/.test-server.pid"
 
 # Parse arguments
 QUICK_MODE=false
+FORCE_RESTART=true  # Default to always restart for test consistency
+REUSE_SERVER=false
 TEST_ARGS=""
 for arg in "$@"; do
     if [ "$arg" = "--quick" ]; then
         QUICK_MODE=true
+    elif [ "$arg" = "--reuse-server" ]; then
+        REUSE_SERVER=true
+        FORCE_RESTART=false
+    elif [ "$arg" = "--force-restart" ]; then
+        FORCE_RESTART=true
+        REUSE_SERVER=false
     else
         TEST_ARGS="$TEST_ARGS $arg"
     fi
@@ -137,13 +147,33 @@ echo -e "Test arguments: ${TEST_ARGS}"
 echo -e "${GREEN}========================================${NC}\n"
 
 # Check if server is already running
+EXISTING_SERVER=false
 if check_server; then
-    echo -e "${YELLOW}⚠ Forge server is already running at ${SERVER_URL}${NC}"
-    echo -e "${YELLOW}Using existing server. Press Ctrl+C within 5s to cancel...${NC}"
-    sleep 5
-    EXISTING_SERVER=true
-else
-    EXISTING_SERVER=false
+    if [ "$REUSE_SERVER" = true ]; then
+        echo -e "${YELLOW}⚠ Forge server is already running at ${SERVER_URL}${NC}"
+        echo -e "${YELLOW}Reusing existing server. Press Ctrl+C within 5s to cancel...${NC}"
+        sleep 5
+        EXISTING_SERVER=true
+    elif [ "$FORCE_RESTART" = true ]; then
+        echo -e "${YELLOW}⚠ Forge server is already running at ${SERVER_URL}${NC}"
+        echo -e "${BLUE}Force restart enabled - killing existing server...${NC}"
+
+        # Find and kill existing server processes
+        pkill -f "webui.py.*deforum-api" 2>/dev/null || true
+
+        # Wait for server to shut down
+        sleep 3
+
+        # Verify server is down
+        if check_server; then
+            echo -e "${RED}Failed to kill existing server - please kill manually${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ Existing server killed${NC}"
+    fi
+fi
+
+if [ "$EXISTING_SERVER" = false ]; then
 
     # Start Forge server in background
     echo -e "${BLUE}Starting Forge server with Deforum API...${NC}"
