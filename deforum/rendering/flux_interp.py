@@ -639,11 +639,15 @@ def generate_rife_segment(first_image, last_image, num_frames, height, width,
         )
 
         # Find RIFE output directory
-        rife_output_dirs = [d for d in os.listdir(temp_output) if d.startswith("interpolated_frames_rife")]
+        # RIFE creates output in the input directory, not the output directory
+        search_dir = temp_input
+        rife_output_dirs = [d for d in os.listdir(search_dir) if d.startswith("interpolated_frames_rife")]
         if not rife_output_dirs:
-            raise RuntimeError("RIFE output directory not found")
+            # Debug: list what's actually in the directory
+            actual_contents = os.listdir(search_dir)
+            raise RuntimeError(f"RIFE output directory not found in {search_dir}. Found: {actual_contents}")
 
-        rife_output_dir = os.path.join(temp_output, rife_output_dirs[0])
+        rife_output_dir = os.path.join(search_dir, rife_output_dirs[0])
 
         # RIFE generates: first_kf, tween1, tween2, ..., tweenN, last_kf
         # We want only the tweens (frames between keyframes)
