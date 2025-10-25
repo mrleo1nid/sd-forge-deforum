@@ -91,18 +91,17 @@ class Model:
             }
 
 def download_rife_model(path, deforum_models_path):
-    options = {'RIFE46': (                          
-               'af6f0b4bed96dea2c9f0624b449216c7adfaf7f0b722fba0c8f5c6e20b2ec39559cf33f3d238d53b160c22f00c6eaa47dc54a6e4f8aa4f59a6e4a9e90e1a808a', 
-                          "https://github.com/hithereai/Practical-RIFE/releases/download/rife46/RIFE46.pkl"), 
-               'RIFE43': ('ed660f58708ee369a0b3855f64d2d07a6997d949f33067faae51d740123c5ee015901cc57553594f2df8ec08131a1c5f7c883c481eac0f9addd84379acea90c8', 
-                          "https://github.com/hithereai/Practical-RIFE/releases/download/rife43/RIFE43.pkl"),
-               'RIFE40': ('0baf0bed23597cda402a97a80a7d14c26a9ed797d2fc0790aac93b19ca5b0f50676ba07aa9f8423cf061ed881ece6e67922f001ea402bfced83ef67675142ce7', 
-                          "https://github.com/hithereai/Practical-RIFE/releases/download/rife40/RIFE40.pkl")}
+    # RIFE v4.25 is the recommended default version for most scenes
+    # Google Drive file ID: 1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg
+    options = {'RIFE425': (
+               'bae7f128eaecffc9cc146ce198e891770b9008b5f1071c87ab6938279dd3293f90f484921e29564d4fbf3b8e41db56c57fe49d091c8260fb11c6de9e38907543',
+               '1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg')}
     if path in options:
         target_file = f"{path}.pkl"
         target_path = os.path.join(deforum_models_path, target_file)
         if not os.path.exists(target_path):
-            from torch.hub import download_url_to_file
-            download_url_to_file(options[path][1], target_path)
+            import gdown
+            print(f"Downloading RIFE model {path} from Google Drive...")
+            gdown.download(id=options[path][1], output=target_path, quiet=False)
             if checksum(target_path) != options[path][0]:
-                raise Exception(f"Error while downloading {target_file}. Please download from here: {options[path][1]} and place in: " + deforum_models_path)
+                raise Exception(f"Checksum mismatch for {target_file}. Please download manually from: https://drive.google.com/file/d/{options[path][1]}/view and place in: " + deforum_models_path)
