@@ -61,10 +61,20 @@ def wait_for_job_to_enter_status(id : str, status : DeforumJobStatusCategory):
 
 
 def gpu_disabled():
-    response = requests.get(SERVER_BASE_URL+"/sdapi/v1/cmd-flags")
-    response.raise_for_status()
-    cmd_flags = response.json()
-    return cmd_flags["use_cpu"] == ["all"]
+    """Check if GPU is disabled on the server.
+
+    Returns True if GPU is disabled, False if GPU is available.
+    If the check fails (server error), assumes GPU is available (False).
+    """
+    try:
+        response = requests.get(SERVER_BASE_URL+"/sdapi/v1/cmd-flags", timeout=5)
+        response.raise_for_status()
+        cmd_flags = response.json()
+        return cmd_flags.get("use_cpu") == ["all"]
+    except (requests.exceptions.RequestException, KeyError, ValueError):
+        # If we can't check GPU status, assume GPU is available
+        # This prevents tests from being skipped due to server issues
+        return False
 
         
 
