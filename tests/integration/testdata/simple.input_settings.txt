@@ -35,7 +35,7 @@
     "animation_prompts_positive": "",
     "animation_prompts_negative": "",
     "animation_mode": "3D",
-    "max_frames": 10,
+    "max_frames": 11,
     "keyframe_distribution": "Keyframes Only",
     "border": "replicate",
     "angle": "0:(0)",
