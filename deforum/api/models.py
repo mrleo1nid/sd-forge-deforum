@@ -82,7 +82,7 @@ class DeforumJobStatus(BaseModel):
     Tracks the job's progress through various phases and provides
     timing information and output locations.
     """
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra='ignore')
 
     id: str = Field(description="Unique job identifier")
     status: DeforumJobStatusCategory = Field(description="Overall job status")
