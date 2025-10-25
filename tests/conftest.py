@@ -23,6 +23,31 @@ sys.path.insert(0, str(extension_root))
 forge_root = extension_root.parent.parent
 sys.path.insert(0, str(forge_root))
 
+# Initialize Forge shared state BEFORE any imports that use it
+# Many Forge modules access shared.opts, shared.options_templates at import time
+try:
+    import modules.shared as shared
+    from modules.options import OptionInfo
+
+    # Initialize minimal shared state to prevent AttributeError during imports
+    if shared.options_templates is None:
+        shared.options_templates = {}
+
+    if shared.opts is None:
+        # Create a minimal opts object with required attributes
+        class MinimalOpts:
+            def __init__(self):
+                self.data = {}
+
+            def get(self, key, default=None):
+                return self.data.get(key, default)
+
+        shared.opts = MinimalOpts()
+
+except Exception as e:
+    # If initialization fails, tests may still work if they don't need these
+    print(f"Warning: Could not initialize Forge shared state: {e}")
+
 # Call deforum_sys_extend() to properly set up all paths
 # This is required for Deforum to import properly
 try:
