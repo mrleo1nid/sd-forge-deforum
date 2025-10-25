@@ -93,6 +93,7 @@ class Model:
 def download_rife_model(path, deforum_models_path):
     # RIFE v4.25 is the recommended default version for most scenes
     # Google Drive file ID: 1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg
+    import hashlib
     options = {'RIFE425': (
                'bae7f128eaecffc9cc146ce198e891770b9008b5f1071c87ab6938279dd3293f90f484921e29564d4fbf3b8e41db56c57fe49d091c8260fb11c6de9e38907543',
                '1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg')}
@@ -103,5 +104,6 @@ def download_rife_model(path, deforum_models_path):
             import gdown
             print(f"Downloading RIFE model {path} from Google Drive...")
             gdown.download(id=options[path][1], output=target_path, quiet=False)
-            if checksum(target_path) != options[path][0]:
+            # Use SHA512 hash to match the expected checksum format
+            if checksum(target_path, hashlib.sha512) != options[path][0]:
                 raise Exception(f"Checksum mismatch for {target_file}. Please download manually from: https://drive.google.com/file/d/{options[path][1]}/view and place in: " + deforum_models_path)
