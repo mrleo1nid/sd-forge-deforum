@@ -896,8 +896,8 @@ def DeforumArgs():
         "mask_file": {
             "label": "Mask file",
             "type": "textbox",
-            "value": "https://deforum.github.io/a1/M1.jpg",
-            "info": ""
+            "value": "",
+            "info": "Path or URL to mask image"
         },
         "invert_mask": {
             "label": "Invert mask",

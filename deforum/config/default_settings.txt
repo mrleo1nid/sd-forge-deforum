@@ -21,7 +21,7 @@
     "init_image": null,
     "use_mask": false,
     "use_alpha_as_mask": false,
-    "mask_file": "https://deforum.github.io/a1/M1.jpg",
+    "mask_file": "",
     "invert_mask": false,
     "mask_contrast_adjust": 1.0,
     "mask_brightness_adjust": 1.0,

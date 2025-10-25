@@ -582,12 +582,7 @@ def _create_masking_content(d, da):
     with gr.Tabs():
         # Tab 1: Basic Masks
         with gr.TabItem('Basic Masks'):
-            gr.HTML(value="""
-                <div style="padding: 10px; background-color: #e7f3ff; border-left: 4px solid #2196F3; margin-bottom: 10px;">
-                    <strong>📝 Basic Masks</strong><br>
-                    Upload mask images to control which areas are regenerated. White areas = regenerate, black areas = keep original.
-                </div>
-            """)
+            gr.Markdown("Upload mask images to control which areas are regenerated. White areas = regenerate, black areas = keep original.")
             with FormRow():
                 use_mask = create_gr_elem(d.use_mask)
                 use_alpha_as_mask = create_gr_elem(d.use_alpha_as_mask)
@@ -605,61 +600,42 @@ def _create_masking_content(d, da):
 
         # Tab 2: Text Masking (CLIPSeg)
         with gr.TabItem('Text Masking (CLIPSeg)'):
-            gr.HTML(value="""
-                <div style="padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 10px;">
-                    <strong>✨ CLIPSeg Text-to-Mask</strong><br>
-                    Generate masks using text descriptions! Use this feature in <strong>Composable Masks</strong> tab
-                    with syntax: <code>&lt;cat&gt;</code>, <code>&lt;sky&gt;</code>, <code>&lt;person's face&gt;</code><br><br>
-                    <strong>How it works:</strong><br>
-                    1. CLIPSeg analyzes your frames and finds regions matching your text description<br>
-                    2. Use the mask in composable expressions: <code>({video_frame} &amp; &lt;background&gt;)</code><br>
-                    3. Combine with other masks: <code>(&lt;cat&gt; | &lt;dog&gt;)</code> to mask cats OR dogs<br><br>
-                    <strong>Examples:</strong><br>
-                    • <code>&lt;cat&gt;</code> - Mask all cats in the frame<br>
-                    • <code>&lt;armor&gt;</code> - Mask armor/metal equipment<br>
-                    • <code>&lt;anime girl&gt;</code> - Mask anime-style female characters<br>
-                    • <code>&lt;sky&gt;</code> - Mask the sky region<br>
-                    • <code>&lt;person's face&gt;</code> - Mask human faces only<br><br>
-                    📍 <strong>Note:</strong> Text masks are used in the <strong>Composable Masks</strong> tab below,
-                    not configured here separately. The CLIPSeg model loads automatically when needed.
-                </div>
-            """)
-            gr.HTML(value="""
-                <div style="padding: 10px; background-color: #d4edda; border-left: 4px solid #28a745; margin-top: 10px;">
-                    <strong>💡 Quick Start Guide:</strong><br>
-                    1. Go to the <strong>Composable Masks</strong> tab below<br>
-                    2. In the <strong>Mask Schedule</strong> field, enter: <code>0: &lt;your text here&gt;</code><br>
-                    3. Enable <strong>Use Noise Mask</strong> if you want to apply it to the noise generation<br>
-                    4. Generate your animation - CLIPSeg will automatically create masks from your text!<br><br>
-                    <strong>Model:</strong> Uses ViT-B/16 CLIPSeg (auto-downloads weights on first use)
-                </div>
+            gr.Markdown("""
+**CLIPSeg Text-to-Mask**: Generate masks using text descriptions in your composable mask expressions.
+
+**Syntax:** `<text description>` - e.g., `<cat>`, `<sky>`, `<person's face>`
+
+**Examples:**
+- `<cat>` - Mask all cats
+- `<armor>` - Mask armor/metal
+- `<sky>` - Mask the sky
+- `<person's face>` - Mask faces
+
+**Usage:** Go to the Composable Masks tab and use text masks in your expressions:
+- `0: <cat>` - Mask only cats
+- `0: (<cat> | <dog>)` - Cats OR dogs
+- `0: !<sky>` - Everything EXCEPT sky
+
+The ViT-B/16 CLIPSeg model auto-downloads on first use.
             """)
 
         # Tab 3: Composable Masks
         with gr.TabItem('Composable Masks'):
-            gr.HTML(value=get_gradio_html('composable_masks'))
-            gr.HTML(value="""
-                <div style="padding: 10px; background-color: #e7f3ff; border-left: 4px solid #2196F3; margin-bottom: 10px;">
-                    <strong>🔧 Boolean Mask Operations</strong><br>
-                    Combine multiple masks using boolean expressions!<br><br>
-                    <strong>Mask Types:</strong><br>
-                    • <code>{variable_name}</code> - Variable masks (e.g., <code>{human_mask}</code>, <code>{video_mask}</code>)<br>
-                    • <code>[path/to/mask.png]</code> - File masks from disk<br>
-                    • <code>&lt;text description&gt;</code> - CLIPSeg text-to-mask (see Text Masking tab above)<br><br>
-                    <strong>Boolean Operators:</strong><br>
-                    • <code>&amp;</code> - AND (intersection)<br>
-                    • <code>|</code> - OR (union)<br>
-                    • <code>^</code> - XOR (exclusive or)<br>
-                    • <code>!</code> - NOT (invert)<br>
-                    • <code>\\</code> - DIFFERENCE (subtract second from first)<br><br>
-                    <strong>Examples:</strong><br>
-                    • <code>0: &lt;cat&gt;</code> - Mask only cats<br>
-                    • <code>0: (&lt;cat&gt; | &lt;dog&gt;)</code> - Mask cats OR dogs<br>
-                    • <code>0: ({human_mask} &amp; [border.png])</code> - Humans AND within border<br>
-                    • <code>0: (({human_mask} &amp; [mask1.png]) ^ &lt;apple&gt;)</code> - Complex combination<br>
-                    • <code>0: !&lt;sky&gt;</code> - Everything EXCEPT the sky<br>
-                    • <code>0: ({video_frame} \\ &lt;background&gt;)</code> - Frame minus background
-                </div>
+            gr.Markdown("""
+**Combine masks using boolean expressions**
+
+**Mask Types:**
+- `{variable}` - Variable masks (e.g., `{human_mask}`, `{video_mask}`)
+- `[path.png]` - File masks from disk
+- `<text>` - CLIPSeg text-to-mask
+
+**Operators:** `&` (AND), `|` (OR), `^` (XOR), `!` (NOT), `\\` (DIFFERENCE)
+
+**Examples:**
+- `0: <cat>` - Mask only cats
+- `0: (<cat> | <dog>)` - Cats OR dogs
+- `0: ({human_mask} & [border.png])` - Humans within border
+- `0: !<sky>` - Everything except sky
             """)
             mask_schedule = create_row(da.mask_schedule)
             use_noise_mask = create_row(da.use_noise_mask)
@@ -667,43 +643,25 @@ def _create_masking_content(d, da):
 
         # Tab 4: Video & Human Masks
         with gr.TabItem('Video & Human'):
-            gr.HTML(value="""
-                <div style="padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 10px;">
-                    <strong>🎬 Advanced Masking Features</strong><br>
-                    Use per-frame video masks or automatically detect humans in your frames.
-                </div>
-            """)
-
-            with gr.Accordion("📹 Video Masks (Animated)", open=False):
-                gr.HTML(value="""
-                    <p><strong>Per-frame video mask sequences</strong><br>
-                    Load a video file where each frame is a mask. Useful for:<br>
-                    • Rotoscoped masks from video editing software<br>
-                    • Time-varying region selection<br>
-                    • Animated masks that change per-frame</p>
+            with gr.Accordion("Video Masks (Animated)", open=False):
+                gr.Markdown("""
+Per-frame video mask sequences. Useful for rotoscoped masks from video editing software or time-varying region selection.
                 """)
                 use_mask_video = create_gr_elem(da.use_mask_video)
                 video_mask_path = create_row(da.video_mask_path)
 
-            with gr.Accordion("👤 Human Detection (AI)", open=True):
-                gr.HTML(value="""
-                    <p><strong>Automatic human detection using RobustVideoMatting</strong><br>
-                    Use <code>{human_mask}</code> in your composable mask expressions (Composable Masks tab) to automatically detect and mask humans.<br><br>
-                    <strong>Examples:</strong><br>
-                    • <code>0: !{human_mask}</code> - Regenerate everything EXCEPT humans (keep humans unchanged)<br>
-                    • <code>0: {human_mask}</code> - Regenerate ONLY humans (keep background unchanged)<br>
-                    • <code>0: ({human_mask} &amp; &lt;armor&gt;)</code> - Only humans wearing armor<br>
-                    • <code>0: ({human_mask} | &lt;cat&gt;)</code> - Humans OR cats<br><br>
-                    The human detection model (RobustVideoMatting resnet50) will auto-download from PyTorch Hub on first use.</p>
-                """)
-                gr.HTML(value="""
-                    <div style="padding: 10px; background-color: #d4edda; border-left: 4px solid #28a745; margin-top: 10px;">
-                        <strong>💡 Tips:</strong><br>
-                        • Works best with clear, well-lit footage<br>
-                        • Model automatically creates an alpha matte mask<br>
-                        • No configuration needed - just use <code>{human_mask}</code> in your expressions!<br>
-                        • Combines seamlessly with text masks: <code>({human_mask} \\ &lt;background&gt;)</code>
-                    </div>
+            with gr.Accordion("Human Detection (AI)", open=False):
+                gr.Markdown("""
+**Automatic human detection using RobustVideoMatting**
+
+Use `{human_mask}` in composable mask expressions to automatically detect humans.
+
+**Examples:**
+- `0: !{human_mask}` - Regenerate everything EXCEPT humans
+- `0: {human_mask}` - Regenerate ONLY humans
+- `0: ({human_mask} & <armor>)` - Only humans wearing armor
+
+The RobustVideoMatting resnet50 model auto-downloads from PyTorch Hub on first use.
                 """)
 
     return {k: v for k, v in {**locals(), **vars()}.items()}
