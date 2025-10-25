@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 import requests
 from moviepy.editor import VideoFileClip
-from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
+from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
 
 from deforum.api.models import (DeforumJobPhase,
                                         DeforumJobStatusCategory)
@@ -37,17 +37,20 @@ TESTDATA_DIR = Path(__file__).parent / 'testdata'
 def test_post_process_FILM(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
-        
+
     deforum_settings["frame_interpolation_engine"] = "FILM"
     deforum_settings["frame_interpolation_x_amount"] = 3
     deforum_settings["frame_interpolation_slow_mo_enabled"] = False
 
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -70,21 +73,24 @@ def test_post_process_FILM(snapshot):
     assert clip.duration * clip.fps == deforum_settings['max_frames'] * deforum_settings["frame_interpolation_x_amount"], "Video frame count does not match input settings (including interpolation)"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"    
 
-@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
+@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_post_process_RIFE(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
-        
+
     deforum_settings["frame_interpolation_engine"] = "RIFE v4.6"
     deforum_settings["frame_interpolation_x_amount"] = 3
     deforum_settings["frame_interpolation_slow_mo_enabled"] = False
 
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -107,21 +113,24 @@ def test_post_process_RIFE(snapshot):
     assert clip.duration * clip.fps == deforum_settings['max_frames'] * deforum_settings["frame_interpolation_x_amount"], "Video frame count does not match input settings (including interpolation)"
     assert clip.size == [deforum_settings['W'], deforum_settings['H']] , "Video dimensions are not as expected"        
 
-@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
+@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_post_process_UPSCALE(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
-        
+
     deforum_settings["r_upscale_video"] = True
     deforum_settings["r_upscale_factor"] = "x4"
     deforum_settings["r_upscale_model"] = "realesrgan-x4plus"
 
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -145,25 +154,28 @@ def test_post_process_UPSCALE(snapshot):
     assert clip.size == [deforum_settings['W']*4, deforum_settings['H']*4] , "Video dimensions are not as expected (including upscaling)"
 
 
-@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")  
+@pytest.mark.skipif(gpu_disabled(), reason="requires GPU-enabled server")
 def test_post_process_UPSCALE_FILM(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
-        
+
     deforum_settings["r_upscale_video"] = True
     deforum_settings["r_upscale_factor"] = "x4"
     deforum_settings["r_upscale_model"] = "realesrgan-x4plus"
     deforum_settings["frame_interpolation_engine"] = "FILM"
     deforum_settings["frame_interpolation_x_amount"] = 3
     deforum_settings["frame_interpolation_slow_mo_enabled"] = False
-    deforum_settings["frame_interpolation_use_upscaled"] = True    
+    deforum_settings["frame_interpolation_use_upscaled"] = True
+
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
 
     response = requests.post(API_BASE_URL+"/batches", json={
         "deforum_settings":[deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-            }
+        "options_overrides": options_overrides
         })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]

@@ -13,7 +13,7 @@ import pytest
 import requests
 from moviepy.editor import VideoFileClip
 
-from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
+from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
 from deforum.api.models import DeforumJobStatusCategory
 
 
@@ -40,7 +40,8 @@ def test_wan_flf2v_tween_generation():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -79,7 +80,8 @@ def test_wan_flf2v_multiple_segments():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -112,7 +114,8 @@ def test_wan_flf2v_guidance_scale_variations():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -141,7 +144,8 @@ def test_wan_flf2v_prompt_mode_blend():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -170,7 +174,8 @@ def test_wan_flf2v_with_seed_schedule():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -200,7 +205,8 @@ def test_wan_flf2v_with_strength_schedule():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -228,7 +234,8 @@ def test_wan_flf2v_frame_count_validation():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -265,7 +272,8 @@ def test_wan_flf2v_model_selection():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -298,7 +306,8 @@ def test_wan_flf2v_fps_inheritance():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -336,7 +345,8 @@ def test_wan_flf2v_redistributed_mode():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]

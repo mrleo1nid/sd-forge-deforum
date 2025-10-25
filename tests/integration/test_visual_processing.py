@@ -23,7 +23,7 @@ import numpy as np
 from PIL import Image
 from moviepy.editor import VideoFileClip
 
-from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
+from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
 from deforum.api.models import DeforumJobStatusCategory
 
 
@@ -288,12 +288,15 @@ def test_subtitle_generation():
 
     from deforum.media.subtitle_handler import get_user_values
 
+    options_overrides = get_test_options_overrides()
+    options_overrides.update({
+        "deforum_save_gen_info_as_srt": True,
+        "deforum_save_gen_info_as_srt_params": get_user_values(),
+    })
+
     response = requests.post(f"{API_BASE_URL}/batches", json={
         "deforum_settings": [deforum_settings],
-        "options_overrides": {
-            "deforum_save_gen_info_as_srt": True,
-            "deforum_save_gen_info_as_srt_params": get_user_values(),
-        }
+        "options_overrides": options_overrides
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]

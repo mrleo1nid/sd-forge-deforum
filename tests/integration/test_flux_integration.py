@@ -16,7 +16,7 @@ import pytest
 import requests
 from moviepy.editor import VideoFileClip
 
-from .utils import API_BASE_URL, gpu_disabled, wait_for_job_to_complete
+from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
 from deforum.api.models import DeforumJobStatusCategory
 
 
@@ -45,7 +45,8 @@ def test_flux_basic_generation():
     deforum_settings['H'] = 512
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -85,7 +86,8 @@ def test_flux_controlnet_v2():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -124,7 +126,8 @@ def test_flux_wan_hybrid_mode():
     deforum_settings['wan_flf2v_guidance_scale'] = 3.5
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -163,7 +166,8 @@ def test_flux_qwen_prompt_enhancement():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -195,7 +199,8 @@ def test_flux_resolution_512x512():
     deforum_settings['prompts'] = {"0": "test image", "4": "test image 2"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -231,7 +236,8 @@ def test_flux_resolution_768x768():
     deforum_settings['prompts'] = {"0": "test image", "4": "test image 2"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -272,7 +278,8 @@ def test_flux_with_movement_analysis():
     }
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -302,7 +309,8 @@ def test_flux_steps_configuration():
     deforum_settings['prompts'] = {"0": "quick test", "4": "quick test 2"}
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
@@ -332,7 +340,8 @@ def test_flux_vae_integration():
     # VAE should be auto-selected for Flux
 
     response = requests.post(f"{API_BASE_URL}/batches", json={
-        "deforum_settings": [deforum_settings]
+        "deforum_settings": [deforum_settings],
+        "options_overrides": get_test_options_overrides()
     })
     response.raise_for_status()
     job_id = response.json()["job_ids"][0]
