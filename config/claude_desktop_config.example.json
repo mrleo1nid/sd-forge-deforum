@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "deforum": {
+      "command": "python",
+      "args": ["-m", "deforum.api.mcp_server"],
+      "env": {
+        "DEFORUM_API_URL": "http://localhost:7860/deforum_api"
+      }
+    }
+  }
+}

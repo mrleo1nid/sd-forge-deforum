@@ -1,0 +1,7 @@
+# Model Context Protocol (MCP) - Optional
+# Install with: pip install -r requirements-mcp.txt
+#
+# Enables MCP server for Claude Desktop integration
+# Allows Claude to programmatically control Deforum via MCP
+
+mcp>=0.1.0
