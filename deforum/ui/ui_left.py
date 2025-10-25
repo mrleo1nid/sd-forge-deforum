@@ -198,6 +198,7 @@ def setup_deforum_left_side_ui():
             locals()['animation_mode'] = animation_mode
             locals()['fps'] = fps
             locals()['cadence'] = cadence
+            locals()['diffusion_cadence'] = cadence  # Alias for backward compatibility with gradio_funcs
             locals()['pseudo_cadence_display'] = pseudo_cadence_display
             locals()['strength_schedule'] = normal_strength
             locals()['keyframe_strength_schedule'] = keyframe_strength
