@@ -7,6 +7,12 @@ It configures the Python path so that the deforum package can be imported.
 import sys
 from pathlib import Path
 
+# CRITICAL: Mock sys.argv BEFORE any imports
+# modules.shared_cmd_options calls parse_args() at import time,
+# which would fail with pytest's arguments
+original_argv = sys.argv.copy()
+sys.argv = ['webui.py']  # Minimal args that won't cause argparse errors
+
 # Add the extension root directory to Python path
 # This allows `from deforum.utils import ...` to work
 extension_root = Path(__file__).parent.parent
