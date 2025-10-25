@@ -14,6 +14,14 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}=== Deforum GPU Integration Tests ===${NC}"
 echo ""
 
+# Detect Python command first
+PYTHON_CMD="python"
+if [ -f "../../venv/bin/python" ]; then
+    PYTHON_CMD="../../venv/bin/python"
+elif [ -n "$VIRTUAL_ENV" ]; then
+    PYTHON_CMD="$VIRTUAL_ENV/bin/python"
+fi
+
 # Check if running in Forge environment
 if [ -z "$VIRTUAL_ENV" ]; then
     echo -e "${YELLOW}Warning: Not running in a virtual environment${NC}"
@@ -23,7 +31,7 @@ fi
 
 # Check CUDA availability
 echo -e "${GREEN}Checking GPU...${NC}"
-python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')" || {
+$PYTHON_CMD -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')" || {
     echo -e "${RED}Error: Cannot detect GPU. Tests may be skipped.${NC}"
 }
 echo ""
@@ -83,14 +91,6 @@ echo ""
 # Run pytest
 echo -e "${GREEN}Running tests...${NC}"
 echo ""
-
-# Use Forge's Python environment
-PYTHON_CMD="python"
-if [ -f "../../venv/bin/python" ]; then
-    PYTHON_CMD="../../venv/bin/python"
-elif [ -n "$VIRTUAL_ENV" ]; then
-    PYTHON_CMD="$VIRTUAL_ENV/bin/python"
-fi
 
 $PYTHON_CMD -m pytest $TEST_PATH $PYTEST_ARGS || {
     EXIT_CODE=$?
