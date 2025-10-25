@@ -329,19 +329,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
         log_utils.info(f"      Method: {interp_method}", log_utils.BLUE)
 
         # Route to appropriate interpolation function
-        if interp_method == "RIFE v4.6":
-            log_utils.info(f"      Using RIFE v4.6 optical flow interpolation", log_utils.BLUE)
-            segment_frames = generate_rife_segment(
-                first_image=first_image,
-                last_image=last_image,
-                num_frames=num_tween_frames,
-                height=data.height(),
-                width=data.width(),
-                first_frame_idx=first_frame_idx,
-                output_dir=data.output_directory,
-                fps=video_args.fps
-            )
-        elif interp_method == "FILM":
+        if interp_method == "FILM":
             log_utils.info(f"      Using FILM (Frame Interpolation for Large Motion)", log_utils.BLUE)
             segment_frames = generate_film_segment(
                 first_image=first_image,
@@ -561,128 +549,6 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
     )
 
     return output_path
-
-
-def generate_rife_segment(first_image, last_image, num_frames, height, width,
-                         first_frame_idx, output_dir, fps=30):
-    """
-    Generate frames for one RIFE v4.6 interpolation segment.
-
-    Uses optical flow-based frame interpolation to generate smooth transitions
-    between two keyframes.
-
-    Args:
-        first_image: PIL Image of first keyframe
-        last_image: PIL Image of last keyframe
-        num_frames: Number of tween frames to generate (excluding keyframes)
-        height: Frame height
-        width: Frame width
-        first_frame_idx: Global index of first keyframe
-        output_dir: Directory to save generated frames
-        fps: Target FPS for interpolation
-
-    Returns:
-        List of paths to generated tween frames
-    """
-    import shutil
-    from deforum.integrations.external_repos.rife.inference_video import run_rife_new_video_infer
-
-    log_utils.info(f"   🔧 RIFE v4.6 interpolation: {num_frames} frames", log_utils.BLUE)
-
-    # Create working directory for RIFE in the output directory (not /tmp)
-    # This avoids cleanup issues and keeps intermediate files with the project
-    rife_work_dir = os.path.join(output_dir, f"_rife_segment_{first_frame_idx}_to_{first_frame_idx + num_frames + 1}")
-    temp_input = os.path.join(rife_work_dir, "input")
-    temp_output = os.path.join(rife_work_dir, "output")
-    os.makedirs(temp_input, exist_ok=True)
-    os.makedirs(temp_output, exist_ok=True)
-
-    try:
-        # Save first and last keyframes to temp input directory
-        # RIFE expects numbered frames: 0.png, 1.png
-        # IMPORTANT: RIFE uses cv2.imread() which expects BGR format, so we must save as BGR
-        import numpy as np
-        first_image_np = np.array(first_image)  # PIL RGB → numpy RGB
-        last_image_np = np.array(last_image)
-        first_image_bgr = cv2.cvtColor(first_image_np, cv2.COLOR_RGB2BGR)  # RGB → BGR for cv2
-        last_image_bgr = cv2.cvtColor(last_image_np, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(os.path.join(temp_input, "0000000.png"), first_image_bgr)
-        cv2.imwrite(os.path.join(temp_input, "0000001.png"), last_image_bgr)
-
-        # Calculate interpolation amount
-        # RIFE will generate interp_x_amount - 1 frames between each pair
-        # So interp_x_amount = num_frames + 1
-        interp_amount = num_frames + 1
-
-        log_utils.info(f"   Temp input: {temp_input}", log_utils.YELLOW)
-        log_utils.info(f"   Interpolation factor: {interp_amount}x", log_utils.YELLOW)
-
-        # Call RIFE inference
-        from deforum.media.video_audio_utilities import get_ffmpeg_params
-        ffmpeg_location, _, _ = get_ffmpeg_params()
-
-        run_rife_new_video_infer(
-            output=temp_output,
-            model="RIFE46",
-            fp16=False,
-            UHD=(height >= 2048 or width >= 2048),
-            scale=1.0,
-            fps=fps,
-            deforum_models_path=os.path.join(os.getcwd(), "models", "Deforum"),
-            raw_output_imgs_path=temp_input,
-            img_batch_id=f"segment_{first_frame_idx}",  # Unique ID for this segment
-            ffmpeg_location=ffmpeg_location,
-            audio_track=None,
-            interp_x_amount=interp_amount,
-            slow_mo_enabled=False,
-            slow_mo_x_amount=2,
-            ffmpeg_crf=17,
-            ffmpeg_preset='veryslow',
-            keep_imgs=True,  # Keep interpolated frames
-            orig_vid_name=None,  # None = use img_batch_id for naming (don't cleanup raw frames)
-            srt_path=None
-        )
-
-        # Find RIFE output directory
-        # RIFE creates output in the input directory, not the output directory
-        search_dir = temp_input
-        rife_output_dirs = [d for d in os.listdir(search_dir) if d.startswith("interpolated_frames_rife")]
-        if not rife_output_dirs:
-            # Debug: list what's actually in the directory
-            actual_contents = os.listdir(search_dir)
-            raise RuntimeError(f"RIFE output directory not found in {search_dir}. Found: {actual_contents}")
-
-        rife_output_dir = os.path.join(search_dir, rife_output_dirs[0])
-
-        # RIFE generates: first_kf, tween1, tween2, ..., tweenN, last_kf
-        # We want only the tweens (frames between keyframes)
-        rife_frames = sorted([f for f in os.listdir(rife_output_dir) if f.endswith('.png')])
-
-        # Skip first and last frame (those are the keyframes)
-        tween_frames = rife_frames[1:-1] if len(rife_frames) > 2 else rife_frames
-
-        # Move tween frames to output directory with correct naming
-        frame_paths = []
-        for local_idx, rife_filename in enumerate(tween_frames[:num_frames]):
-            # Calculate global frame index (start after first keyframe)
-            global_frame_idx = first_frame_idx + 1 + local_idx
-            target_filename = f"{global_frame_idx:09d}.png"
-            target_path = os.path.join(output_dir, target_filename)
-
-            # Copy frame from RIFE output to final output directory
-            rife_frame_path = os.path.join(rife_output_dir, rife_filename)
-            shutil.copy2(rife_frame_path, target_path)
-            frame_paths.append(target_path)
-
-        log_utils.info(f"   ✅ RIFE generated {len(frame_paths)} tween frames", log_utils.GREEN)
-        return frame_paths
-
-    finally:
-        # Cleanup RIFE working directory
-        # TEMPORARILY DISABLED for debugging
-        pass
-        # if os.path.exists(rife_work_dir):
-        #     shutil.rmtree(rife_work_dir, ignore_errors=True)
 
 
 def generate_film_segment(first_image, last_image, num_frames, height, width,

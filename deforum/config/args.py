@@ -1144,9 +1144,9 @@ def WanArgs():
         "flux_flf2v_interpolation_method": {
             "label": "FLF2V Interpolation Method",
             "type": "dropdown",
-            "choices": ["Wan", "RIFE v4.6", "FILM"],
+            "choices": ["Wan", "FILM"],
             "value": "Wan",
-            "info": "Interpolation method for Flux FLF2V mode: 'Wan' (AI-generated video, default), 'RIFE v4.6' (Real-Time Intermediate Flow Estimation, optical flow-based), 'FILM' (Frame Interpolation for Large Motion, Google's ML model)"
+            "info": "Interpolation method for Flux FLF2V mode: 'Wan' (AI-generated video, recommended for large motion), 'FILM' (Frame Interpolation for Large Motion, Google's ML model). Note: RIFE is available in post-processing for framerate doubling."
         },
 
         # Advanced Generation Settings
