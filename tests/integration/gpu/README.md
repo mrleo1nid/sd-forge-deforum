@@ -1,10 +1,31 @@
 # GPU Integration Tests
 
-Local GPU integration tests that run Deforum directly without requiring the API server.
+⚠️ **CURRENTLY NOT FUNCTIONAL** - These tests have a design issue (see Status below).
 
-## Overview
+Local GPU integration tests that were intended to run Deforum directly without requiring the API server.
 
-These tests verify Deforum functionality by actually generating frames on the GPU, but use minimal settings (3 frames, low resolution, few steps) for speed.
+## Status - NOT WORKING
+
+**Problem:** These tests require Forge's full environment (loaded models, shared state, etc.) but can't initialize it properly when run standalone. Simply importing `from modules import shared` triggers Forge's full initialization sequence which:
+- Parses command-line arguments (conflicts with pytest)
+- Attempts to load models
+- Initializes the entire WebUI stack
+
+**Why this is hard:**
+- Can't just import Forge modules without side effects
+- Can't mock the environment because tests need real GPU/model access
+- Full Forge initialization is what API tests already do (defeating the purpose)
+
+**Possible solutions:**
+1. Redesign as scripts that run inside a launched Forge instance
+2. Create a minimal Forge initialization mode for testing
+3. Remove these tests and rely on API integration tests
+
+**Current state:** All tests skip with message about needing full Forge environment.
+
+## Overview (Original Intent)
+
+These tests were designed to verify Deforum functionality by actually generating frames on the GPU, but use minimal settings (3 frames, low resolution, few steps) for speed.
 
 ### Differences from API Integration Tests
 
