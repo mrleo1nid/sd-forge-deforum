@@ -20,7 +20,7 @@ tests/
 │   └── conftest.py                  # Integration test fixtures
 │
 ├── unit/                # Fast unit tests (no server, no GPU, no external deps)
-│   └── (empty - to be created)
+│   └── ~1000+ tests across 33 test files (test_*.py)
 │
 ├── functional/          # End-to-end functional tests
 │   └── (empty - reserved for future use)
@@ -62,22 +62,27 @@ tests/
 
 **When to run:** Before releases, after major refactoring, in CI
 
-### Unit Tests (`unit/`) - **To Be Created**
-**What:** Tests for individual functions and classes in isolation.
+### Unit Tests (`unit/`)
+**What:** Tests for individual functions and classes in isolation (~1000+ tests).
 
 **Requirements:**
 - No server
 - No GPU
 - No external dependencies (use mocks)
-- Fast (milliseconds per test)
+- Fast (seconds for entire suite)
 
-**Examples (planned):**
-- `test_keyframe_distribution.py` - Test keyframe distribution algorithms
+**Examples:**
+- `test_keyframes.py` - Test keyframe distribution algorithms
 - `test_args.py` - Test argument parsing and validation
 - `test_prompt.py` - Test prompt scheduling logic
-- `test_wan_integration.py` - Test Wan frame count calculations (with mocked model)
+- `test_animation.py` - Test animation calculations
+- `test_noise.py` - Test noise generation
+- `test_schedule_utils.py` - Test schedule manipulation
+- ... and 27 more test files
 
 **When to run:** During development, on every commit, in CI
+
+**Coverage:** Optional, enable with `./run-unit-tests.sh --coverage`
 
 ### Functional Tests (`functional/`) - Reserved
 **What:** End-to-end tests of complete workflows from user perspective.
@@ -90,6 +95,60 @@ tests/
 **Future use:** To track performance regressions and optimize bottlenecks.
 
 ## Running Tests
+
+> **IMPORTANT:** Unit tests and integration tests are now **strictly separated**. Each test runner explicitly ignores the other suite to keep logs clean and enable different workflows.
+
+### Unit Tests (Fast, No Server, With Coverage)
+Run all unit tests (no coverage by default):
+```bash
+./run-unit-tests.sh
+```
+
+Run with HTML coverage report:
+```bash
+./run-unit-tests.sh --coverage
+# Opens htmlcov/index.html to view coverage
+```
+
+Run specific unit test file:
+```bash
+./run-unit-tests.sh tests/unit/test_keyframes.py
+```
+
+**Characteristics:**
+- Runs ~1000+ tests in seconds
+- No server required
+- No GPU required
+- Coverage optional (via `--coverage` flag)
+- Suitable for CI/CD pipelines
+
+### Integration Tests (Slow, Requires Server, No Coverage)
+Run all integration tests (starts server automatically):
+```bash
+./run-api-tests.sh
+```
+
+Run only fast API tests (skip post-processing):
+```bash
+./run-api-tests.sh --quick
+```
+
+Reuse existing server instead of restarting:
+```bash
+./run-api-tests.sh --reuse-server
+```
+
+Run specific integration test:
+```bash
+./run-api-tests.sh tests/integration/api_test.py::test_simple_settings
+```
+
+**Characteristics:**
+- Runs ~17 tests (may take minutes)
+- Starts/stops Forge server automatically
+- Requires GPU and loaded models
+- Coverage disabled (via `--no-cov` flag)
+- Local testing only (not suitable for CI)
 
 ### Quick Manual API Test (No pytest required)
 For quick verification that the API and Swagger documentation are working:
@@ -110,33 +169,6 @@ This runs fast verification tests without GPU/models:
 - ✓ All endpoints documented
 - ✓ Response models defined
 - ✓ Basic endpoints work (list jobs/batches)
-
-### API Integration Tests
-```bash
-./run-tests.sh                          # Run all API tests (starts server)
-./run-tests.sh --quick                  # Skip slow post-processing tests
-```
-
-### Run Specific Test
-```bash
-./run-tests.sh tests/integration/api_test.py::test_simple_settings
-```
-
-### Run Swagger/OpenAPI Tests Only (Fast)
-```bash
-# Requires server running with --deforum-api
-pytest tests/integration/test_api_swagger.py -v
-```
-
-### Run Unit Tests Only (When Created)
-```bash
-pytest tests/unit/ -v
-```
-
-### Run All Tests
-```bash
-pytest tests/ -v
-```
 
 ### Run Tests by Category
 

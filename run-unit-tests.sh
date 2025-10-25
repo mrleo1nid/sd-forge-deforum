@@ -85,11 +85,12 @@ fi
 
 # Run tests
 echo -e "\n${GREEN}========================================${NC}"
-echo -e "${GREEN}Running Unit Tests${NC}"
+echo -e "${GREEN}Running Unit Tests (Integration tests excluded)${NC}"
 echo -e "${GREEN}========================================${NC}\n"
 
 # Build pytest command
-PYTEST_CMD="$FORGE_DIR/venv/bin/python -m pytest $TEST_ARGS -v --tb=short"
+# Explicitly ignore integration tests to keep unit test suite separate
+PYTEST_CMD="$FORGE_DIR/venv/bin/python -m pytest $TEST_ARGS -v --tb=short --ignore=tests/integration"
 
 if [ "$COVERAGE_MODE" = true ]; then
     # Add coverage options

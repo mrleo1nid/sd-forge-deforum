@@ -218,12 +218,13 @@ fi
 
 # Run tests
 echo -e "\n${GREEN}========================================${NC}"
-echo -e "${GREEN}Running Tests${NC}"
+echo -e "${GREEN}Running Integration Tests (Unit tests excluded)${NC}"
 echo -e "${GREEN}========================================${NC}\n"
 
 set +e  # Don't exit on test failure
 # Disable coverage for integration tests (not useful and slows down tests)
-"$FORGE_DIR/venv/bin/python" -m pytest $TEST_ARGS -v --tb=short --no-cov
+# Explicitly ignore unit tests to keep integration test logs clean
+"$FORGE_DIR/venv/bin/python" -m pytest $TEST_ARGS -v --tb=short --no-cov --ignore=tests/unit
 TEST_EXIT_CODE=$?
 set -e
 
