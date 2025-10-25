@@ -2393,42 +2393,6 @@ def get_tab_output(da, dv):
                                        inputs=[vid_to_upscale_chosen_file, ncnn_upscale_in_vid_fps_ui_window,
                                                ncnn_upscale_in_vid_res, ncnn_upscale_out_vid_res, ncnn_upscale_model,
                                                ncnn_upscale_factor, ncnn_upscale_keep_imgs])
-        # Vid2Depth TAB - not built using our args.py at all - all data and params are here and in .vid2depth file
-        with gr.TabItem('Vid2depth'):
-            vid_to_depth_chosen_file = gr.File(label="Video to get Depth from", interactive=True, file_count="single",
-                                               file_types=["video"], elem_id="vid_to_depth_chosen_file")
-            with FormRow():
-                mode = gr.Dropdown(label='Mode', elem_id="mode",
-                                   choices=['Depth (Midas/Adabins)', 'Anime Remove Background', 'Mixed',
-                                            'None (just grayscale)'], value='Depth (Midas/Adabins)')
-                threshold_value = gr.Slider(label="Threshold Value Lower", value=127, minimum=0, maximum=255, step=1)
-                threshold_value_max = gr.Slider(label="Threshold Value Upper", value=255, minimum=0, maximum=255,
-                                                step=1)
-            thresholding = create_row(gr.Radio(
-                ['None', 'Simple', 'Simple (Auto-value)', 'Adaptive (Mean)', 'Adaptive (Gaussian)'],
-                label="Thresholding Mode", value='None'))
-            with FormRow():
-                adapt_block_size = gr.Number(label="Block size", value=11)
-                adapt_c = gr.Number(label="C", value=2)
-                invert = gr.Checkbox(label='Closer is brighter', value=True, elem_id="invert")
-            with FormRow():
-                end_blur = gr.Slider(label="End blur width", value=0, minimum=0, maximum=255, step=1)
-                depth_weight_vid2depth = gr.Slider(
-                    label="Depth weight (vid2depth - legacy)", value=da.midas_weight, minimum=0,
-                    maximum=1, step=0.05, interactive=True,
-                    info="Legacy parameter, no longer used with Depth-Anything V2")
-                depth_keep_imgs = gr.Checkbox(label='Keep Imgs', value=True, elem_id="depth_keep_imgs")
-
-            # This is the actual button that's pressed to initiate the Upscaling:
-            depth_btn = create_row(gr.Button(value="*Get depth from uploaded video*"))
-
-            create_row(gr.HTML("* check your CLI for outputs"))  # Show a text about CLI outputs:
-
-            # make the function call when the UPSCALE button is clicked
-            depth_btn.click(fn=upload_vid_to_depth,
-                            inputs=[vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max,
-                                    adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth,
-                                    depth_keep_imgs])
         # STITCH FRAMES TO VID TAB
         with gr.TabItem(f"{emoji_utils.frames()} Frames to Video") as stitch_imgs_to_vid_row:
             gr.HTML(value=get_gradio_html('frames_to_video'))

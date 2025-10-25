@@ -20,7 +20,6 @@ from deforum.utils.general import get_os
 from deforum.media.upscaling import process_ncnn_upscale_vid_upload_logic
 from deforum.media.video_audio_utilities import extract_number, get_quick_vid_info, get_ffmpeg_params
 from deforum.media.interpolation import process_interp_vid_upload_logic, process_interp_pics_upload_logic, gradio_f_interp_get_fps_and_fcount
-from deforum.depth.vid2depth import process_depth_vid_upload_logic
 
 # Import pure functions from refactored utils module
 from deforum.utils.math.resolution import (
@@ -124,15 +123,6 @@ def ncnn_upload_vid_to_upscale(vid_path, in_vid_fps, in_vid_res, out_vid_res, up
     f_location, f_crf, f_preset = get_ffmpeg_params()
     current_user = get_os()
     process_ncnn_upscale_vid_upload_logic(vid_path, in_vid_fps, in_vid_res, out_vid_res, f_models_path, upscale_model, upscale_factor, keep_imgs, f_location, f_crf, f_preset, current_user)
-
-def upload_vid_to_depth(vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth, depth_keep_imgs):
-    # print msg and do nothing if vid not uploaded
-    if not vid_to_depth_chosen_file:
-        return print("Please upload a video :()")
-    f_location, f_crf, f_preset = get_ffmpeg_params()
-
-    process_depth_vid_upload_logic(vid_to_depth_chosen_file, mode, thresholding, threshold_value, threshold_value_max, adapt_block_size, adapt_c, invert, end_blur, depth_weight_vid2depth,
-                                   vid_to_depth_chosen_file.name, depth_keep_imgs, f_location, f_crf, f_preset, f_models_path)
 
 # END gradio-to-frame-interoplation/ upscaling functions
 
