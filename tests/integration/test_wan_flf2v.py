@@ -13,7 +13,7 @@ import pytest
 import requests
 from moviepy.editor import VideoFileClip
 
-from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
+from .utils import (API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete, get_test_batch_name)
 from deforum.api.models import DeforumJobStatusCategory
 
 
@@ -26,6 +26,9 @@ def test_wan_flf2v_tween_generation():
     """Test basic FLF2V tween generation between two keyframes."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_tween_generation')
 
     # Configure for FLF2V tween generation
     deforum_settings['animation_mode'] = "3D"
@@ -66,6 +69,9 @@ def test_wan_flf2v_multiple_segments():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_multiple_segments')
+
     # Create multiple segments (need 4n+1 frames per segment)
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 17  # Frame 0-8 (segment 1), frame 8-16 (segment 2)
@@ -101,6 +107,9 @@ def test_wan_flf2v_guidance_scale_variations():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_guidance_scale_variations')
+
     # Test with balanced guidance (recommended)
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 9
@@ -130,6 +139,9 @@ def test_wan_flf2v_prompt_mode_blend():
     """Test FLF2V with 'blend' prompt mode."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_prompt_mode_blend')
 
     # Use blend mode to combine keyframe prompts
     deforum_settings['animation_mode'] = "3D"
@@ -161,6 +173,9 @@ def test_wan_flf2v_with_seed_schedule():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_with_seed_schedule')
+
     # Use seed schedule to control keyframe generation
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 9
@@ -190,6 +205,9 @@ def test_wan_flf2v_with_strength_schedule():
     """Test FLF2V with strength scheduling for I2V chaining."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_with_strength_schedule')
 
     # Strength schedule affects how much previous frame influences next
     deforum_settings['animation_mode'] = "3D"
@@ -221,6 +239,9 @@ def test_wan_flf2v_frame_count_validation():
     """Test that FLF2V correctly handles 4n+1 frame count requirements."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_frame_count_validation')
 
     # Frame count between keyframes should follow 4n+1 rule
     # Frames 0-5 = 6 frames (not 4n+1, but system should handle this)
@@ -259,6 +280,9 @@ def test_wan_flf2v_model_selection():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_model_selection')
+
     # Specify a particular Wan model (e.g., VACE variant)
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 9
@@ -293,6 +317,9 @@ def test_wan_flf2v_fps_inheritance():
     """Test that FLF2V tweens inherit FPS from settings."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_fps_inheritance')
 
     # Set specific FPS
     deforum_settings['animation_mode'] = "3D"
@@ -331,6 +358,9 @@ def test_wan_flf2v_redistributed_mode():
     """Test FLF2V with 'Redistributed' keyframe distribution mode."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_wan_flf2v_redistributed_mode')
 
     # Redistributed mode intelligently places keyframes
     deforum_settings['animation_mode'] = "3D"

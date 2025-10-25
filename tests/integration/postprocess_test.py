@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 import requests
 from moviepy.editor import VideoFileClip
-from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
+from .utils import (API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete, get_test_batch_name)
 
 from deforum.api.models import (DeforumJobPhase,
                                         DeforumJobStatusCategory)
@@ -37,6 +37,9 @@ TESTDATA_DIR = Path(__file__).parent / 'testdata'
 def test_post_process_FILM(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_post_process_FILM')
 
     deforum_settings["frame_interpolation_engine"] = "FILM"
     deforum_settings["frame_interpolation_x_amount"] = 3
@@ -78,6 +81,9 @@ def test_post_process_RIFE(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_post_process_RIFE')
+
     deforum_settings["frame_interpolation_engine"] = "RIFE v4.6"
     deforum_settings["frame_interpolation_x_amount"] = 3
     deforum_settings["frame_interpolation_slow_mo_enabled"] = False
@@ -117,6 +123,9 @@ def test_post_process_RIFE(snapshot):
 def test_post_process_UPSCALE(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_post_process_UPSCALE')
 
     deforum_settings["r_upscale_video"] = True
     deforum_settings["r_upscale_factor"] = "x4"
@@ -158,6 +167,9 @@ def test_post_process_UPSCALE(snapshot):
 def test_post_process_UPSCALE_FILM(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_post_process_UPSCALE_FILM')
 
     deforum_settings["r_upscale_video"] = True
     deforum_settings["r_upscale_factor"] = "x4"

@@ -23,7 +23,7 @@ import numpy as np
 from PIL import Image
 from moviepy.editor import VideoFileClip
 
-from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
+from .utils import (API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete, get_test_batch_name)
 from deforum.api.models import DeforumJobStatusCategory
 
 
@@ -36,6 +36,9 @@ def test_depth_map_generation():
     """Test that Depth-Anything V2 generates depth maps correctly."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_depth_map_generation')
 
     # Configure for 3D mode with depth
     deforum_settings['animation_mode'] = "3D"
@@ -76,6 +79,9 @@ def test_3d_depth_warping():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_3d_depth_warping')
+
     # Configure 3D animation with camera movement
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 5
@@ -108,6 +114,9 @@ def test_keyframe_distribution_keyframes_only():
     """Test keyframe distribution in 'Keyframes Only' mode."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_keyframe_distribution_keyframes_only')
 
     # Set up keyframe distribution
     deforum_settings['animation_mode'] = "3D"
@@ -144,6 +153,9 @@ def test_prompt_scheduling():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_prompt_scheduling')
+
     # Set up prompt schedule with distinct prompts
     deforum_settings['max_frames'] = 8
     deforum_settings['prompts'] = {
@@ -176,6 +188,9 @@ def test_seed_scheduling():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_seed_scheduling')
+
     # Set up seed schedule
     deforum_settings['max_frames'] = 6
     deforum_settings['seed_schedule'] = "0:(42), 3:(1337), 5:(9999)"
@@ -203,6 +218,9 @@ def test_strength_scheduling():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_strength_scheduling')
+
     # Set up strength schedule
     deforum_settings['max_frames'] = 6
     deforum_settings['strength_schedule'] = "0:(0.6), 3:(0.8), 5:(0.4)"
@@ -229,6 +247,9 @@ def test_camera_shakify():
     """Test that camera shakify patterns are applied."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_camera_shakify')
 
     # Enable shakify
     deforum_settings['animation_mode'] = "3D"
@@ -259,6 +280,9 @@ def test_optical_flow_raft():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_optical_flow_raft')
+
     # Enable RAFT optical flow
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 5
@@ -286,6 +310,9 @@ def test_subtitle_generation():
     """Test that .srt subtitle files are generated correctly."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_subtitle_generation')
 
     deforum_settings['max_frames'] = 5
     deforum_settings['prompts'] = {
@@ -332,6 +359,9 @@ def test_video_stitching_basic():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_video_stitching_basic')
+
     # Basic settings for video stitching
     deforum_settings['max_frames'] = 4
     deforum_settings['fps'] = 10
@@ -375,6 +405,9 @@ def test_cfg_scale_schedule():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_cfg_scale_schedule')
+
     # Set up CFG scale schedule
     deforum_settings['max_frames'] = 6
     deforum_settings['cfg_scale_schedule'] = "0:(7.0), 3:(10.0), 5:(5.0)"
@@ -402,6 +435,9 @@ def test_color_coherence():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_color_coherence')
+
     # Test with MatchColorHSV
     deforum_settings['animation_mode'] = "3D"
     deforum_settings['max_frames'] = 5
@@ -428,6 +464,9 @@ def test_noise_schedule():
     """Test noise scheduling across frames."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_noise_schedule')
 
     # Set up noise schedule
     deforum_settings['max_frames'] = 6

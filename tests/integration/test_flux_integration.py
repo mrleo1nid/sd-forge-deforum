@@ -16,7 +16,7 @@ import pytest
 import requests
 from moviepy.editor import VideoFileClip
 
-from .utils import API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete
+from .utils import (API_BASE_URL, get_test_options_overrides, gpu_disabled, wait_for_job_to_complete, get_test_batch_name)
 from deforum.api.models import DeforumJobStatusCategory
 
 
@@ -30,6 +30,9 @@ def test_flux_basic_generation():
     """Test basic Flux.1 keyframe generation."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_basic_generation')
 
     # Configure for Flux/Wan mode
     deforum_settings['animation_mode'] = "Flux/Wan"
@@ -75,6 +78,9 @@ def test_flux_controlnet_v2():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_controlnet_v2')
+
     # Configure Flux with ControlNet
     deforum_settings['animation_mode'] = "3D"  # 3D mode can use Flux ControlNet
     deforum_settings['max_frames'] = 5
@@ -110,6 +116,9 @@ def test_flux_wan_hybrid_mode():
     """Test Flux/Wan hybrid mode: Flux keyframes + Wan FLF2V tweens."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_wan_hybrid_mode')
 
     # Flux/Wan hybrid workflow
     deforum_settings['animation_mode'] = "Flux/Wan"
@@ -155,6 +164,9 @@ def test_flux_qwen_prompt_enhancement():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_qwen_prompt_enhancement')
+
     # Enable Qwen enhancement
     deforum_settings['animation_mode'] = "Flux/Wan"
     deforum_settings['max_frames'] = 9
@@ -190,6 +202,9 @@ def test_flux_resolution_512x512():
     """Test Flux generation at 512x512 resolution."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_resolution_512x512')
 
     deforum_settings['animation_mode'] = "Flux/Wan"
     deforum_settings['max_frames'] = 5
@@ -228,6 +243,9 @@ def test_flux_resolution_768x768():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_resolution_768x768')
+
     deforum_settings['animation_mode'] = "Flux/Wan"
     deforum_settings['max_frames'] = 5
     deforum_settings['W'] = 768
@@ -265,6 +283,9 @@ def test_flux_with_movement_analysis():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_with_movement_analysis')
+
     # Use movement schedules that Qwen can analyze
     deforum_settings['animation_mode'] = "Flux/Wan"
     deforum_settings['max_frames'] = 9
@@ -301,6 +322,9 @@ def test_flux_steps_configuration():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
 
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_steps_configuration')
+
     # Test with minimal steps (Flux Schnell can do 4 steps)
     deforum_settings['animation_mode'] = "Flux/Wan"
     deforum_settings['max_frames'] = 5
@@ -331,6 +355,9 @@ def test_flux_vae_integration():
     """Test that Flux uses correct VAE."""
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_flux_vae_integration')
 
     # Flux requires specific VAE
     deforum_settings['animation_mode'] = "Flux/Wan"
