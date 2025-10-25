@@ -30,19 +30,21 @@ These tests verify Deforum functionality by actually generating frames on the GP
 
 ### Run specific test
 ```bash
-pytest tests/integration/gpu/test_flux_controlnet.py::test_flux_controlnet_basic_generation -v
+pytest tests/integration/gpu/test_flux_controlnet.py::test_flux_controlnet_basic_generation -v --no-cov
 ```
 
 ### Run with output inspection (don't cleanup)
 ```bash
-pytest tests/integration/gpu/ -v -s
+pytest tests/integration/gpu/ -v -s --no-cov
 # Outputs saved to tests/integration/gpu/test_outputs/
 ```
 
 ### Run only fast tests (skip slow generation tests)
 ```bash
-pytest tests/integration/gpu/ -v -m "not slow"
+pytest tests/integration/gpu/ -v -m "not slow" --no-cov
 ```
+
+**Note:** Always use `--no-cov` when running GPU tests manually. The coverage configuration in the root `pytest.ini` tries to instrument API modules which causes connection errors. The `run-integration-tests.sh` script automatically adds this flag.
 
 ## Test Organization
 

@@ -96,7 +96,8 @@ echo ""
 echo -e "${GREEN}Running tests...${NC}"
 echo ""
 
-$PYTHON_CMD -m pytest $TEST_PATH $PYTEST_ARGS || {
+# Disable coverage for GPU integration tests (they don't need it and it causes issues)
+$PYTHON_CMD -m pytest $TEST_PATH $PYTEST_ARGS --no-cov || {
     EXIT_CODE=$?
     echo ""
     echo -e "${RED}Tests failed with exit code $EXIT_CODE${NC}"

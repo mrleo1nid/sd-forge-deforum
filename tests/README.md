@@ -120,12 +120,14 @@ tests/
 
 ### Run Specific Test
 ```bash
-# GPU integration test
-pytest tests/integration/gpu/test_flux_controlnet.py::test_flux_controlnet_basic_generation -v
+# GPU integration test (requires --no-cov)
+pytest tests/integration/gpu/test_flux_controlnet.py::test_flux_controlnet_basic_generation -v --no-cov
 
 # API integration test
 ./run-tests.sh tests/integration/api_test.py::test_simple_settings
 ```
+
+**Important:** GPU integration tests must be run with `--no-cov` to avoid coverage instrumentation of API modules (which causes connection errors).
 
 ### Run Unit Tests Only (When Created)
 ```bash
