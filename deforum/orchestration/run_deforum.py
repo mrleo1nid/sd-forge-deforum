@@ -301,11 +301,12 @@ def run_deforum(*args):
             make_upscale_v2(upscale_factor = video_args.r_upscale_factor, upscale_model = video_args.r_upscale_model, keep_imgs = video_args.r_upscale_keep_imgs, imgs_raw_path = args.outdir, imgs_batch_id = root.timestring, fps = video_args.fps, deforum_models_path = root.models_path, current_user_os = root.current_user_os, ffmpeg_location=f_location, stitch_from_frame=1, stitch_to_frame=anim_args.max_frames, ffmpeg_crf=f_crf, ffmpeg_preset=f_preset, add_soundtrack = video_args.add_soundtrack ,audio_path=real_audio_track, srt_path=srt_path)
 
         # FRAME INTERPOLATION TIME
-        if need_to_frame_interpolate: 
+        if need_to_frame_interpolate:
             print(f"Got a request to *frame interpolate* using {video_args.frame_interpolation_engine}")
             path_to_interpolate = args.outdir
-            
-            upscaled_folder_path = os.path.join(args.outdir, f"{root.timestring}_upscaled")
+
+            # Match upscaling.py naming convention (no timestring, like depth-maps)
+            upscaled_folder_path = os.path.join(args.outdir, "upscaled")
             use_upscaled_images = video_args.frame_interpolation_use_upscaled and os.path.exists(upscaled_folder_path) and len(os.listdir(upscaled_folder_path)) > 1
             if use_upscaled_images:
                 print(f"Using upscaled images for frame interpolation.")

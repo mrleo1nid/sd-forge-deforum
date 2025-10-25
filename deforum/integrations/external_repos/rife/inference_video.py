@@ -251,10 +251,15 @@ def pad_image(img, fp16, padding):
 def stitch_video(img_batch_id, fps, img_folder_path, audio_path, ffmpeg_location, interp_x_amount, slow_mo_enabled, slow_mo_x_amount, f_crf, f_preset, keep_imgs, orig_vid_name, srt_path=None):
     parent_folder = os.path.dirname(img_folder_path)
     grandparent_folder = os.path.dirname(parent_folder)
+
+    # Detect if we're interpolating upscaled frames by checking the path
+    is_upscaled = "_upscaled" in img_folder_path.lower()
+    upscale_suffix = "_upscaled" if is_upscaled else ""
+
     if orig_vid_name is not None:
-        mp4_path = os.path.join(grandparent_folder, str(orig_vid_name) +'_RIFE_' + 'x' + str(interp_x_amount))
+        mp4_path = os.path.join(grandparent_folder, str(orig_vid_name) +'_RIFE_' + 'x' + str(interp_x_amount) + upscale_suffix)
     else:
-        mp4_path = os.path.join(parent_folder, str(img_batch_id) +'_RIFE_' + 'x' + str(interp_x_amount))
+        mp4_path = os.path.join(parent_folder, str(img_batch_id) +'_RIFE_' + 'x' + str(interp_x_amount) + upscale_suffix)
 
     if slow_mo_enabled:
         mp4_path = mp4_path + '_slomo_x' + str(slow_mo_x_amount)
