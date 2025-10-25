@@ -120,6 +120,17 @@ def check_flux_available():
     return True
 
 
+@pytest.fixture(scope="session", autouse=True)
+def start_server(request):
+    """Override parent conftest's start_server fixture.
+
+    GPU tests run directly without API server, so we don't need
+    to start or wait for the server.
+    """
+    # Do nothing - GPU tests don't need the API server
+    pass
+
+
 def pytest_configure(config):
     """Register custom markers for GPU integration tests."""
     config.addinivalue_line(
