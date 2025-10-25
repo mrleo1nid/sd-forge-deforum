@@ -668,7 +668,7 @@ try:
     import modules.script_callbacks as script_callbacks    
     if cmd_opts.deforum_api:
         script_callbacks.on_app_started(deforum_api)
-    if cmd_opts.deforum_simple_api:
+    if cmd_opts.deforum_api or cmd_opts.deforum_simple_api:
         script_callbacks.on_app_started(deforum_simple_api)
     if cmd_opts.deforum_run_now:       
         script_callbacks.on_app_started(deforum_init_batch)
