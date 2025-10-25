@@ -189,7 +189,7 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     log_utils.info("="*60, log_utils.BLUE)
 
     # Get interpolation method (check once for all segments)
-    interp_method = getattr(args, 'flux_flf2v_interpolation_method', 'Wan')
+    interp_method = getattr(wan_args, 'flux_flf2v_interpolation_method', 'Wan')
     log_utils.info(f"📊 Interpolation method: {interp_method}", log_utils.BLUE)
 
     # Unload Flux model to free GPU memory

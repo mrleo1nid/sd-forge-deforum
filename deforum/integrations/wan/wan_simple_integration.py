@@ -1182,9 +1182,12 @@ class WanSimpleIntegration:
                 
             except Exception as diffusers_e:
                 print(f"❌ Diffusers loading failed: {diffusers_e}")
-                
+
+                # Determine model version for error message (2.1 for FLF2V, 2.2 for TI2V)
+                model_version = "2.1" if model_info.get('type') == 'FLF2V' else "2.2"
+
                 raise RuntimeError(f"""
-❌ CRITICAL: Could not load Wan 2.2 model!
+❌ CRITICAL: Could not load Wan {model_version} model!
 
 🔧 TROUBLESHOOTING:
 1. 📦 Dependencies upgraded automatically by extension
