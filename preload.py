@@ -32,13 +32,13 @@ def preload(parser):
         "--deforum-api",
         action="store_true",
         help="Enable the Deforum API",
-        default=None,
+        default=False,  # Must be False, not None, for proper FlagsModel type inference
     )
     parser.add_argument(
         "--deforum-simple-api",
         action="store_true",
         help="Enable the simplified version of Deforum API",
-        default=None,
+        default=False,  # Must be False, not None, for proper FlagsModel type inference
     )
     parser.add_argument(
         "--deforum-run-now",
@@ -50,5 +50,5 @@ def preload(parser):
         "--deforum-terminate-after-run-now",
         action="store_true",
         help="Whether to shut down the a1111 process immediately after completing the generations passed in to '--deforum-run-now'.",
-        default=None,
+        default=False,  # Must be False, not None, for proper FlagsModel type inference
     )
