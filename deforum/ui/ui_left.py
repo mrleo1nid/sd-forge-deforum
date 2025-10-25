@@ -135,6 +135,7 @@ def setup_deforum_left_side_ui():
         from .ui_elements import create_gr_elem
         render_mode = create_gr_elem(da.render_mode)
         fps = create_gr_elem(dv.fps)
+        steps = create_gr_elem(d.steps)
 
     # Mode-dependent controls row
     with gr.Row(variant='compact'):
@@ -145,6 +146,13 @@ def setup_deforum_left_side_ui():
             interactive=False,
             visible=False,
             info="Average frames between diffusions (calculated from keyframes)"
+        )
+        strength_resolution_display = gr.Textbox(
+            label="Strength Resolution",
+            value="1/steps (adjust steps for finer control)",
+            interactive=False,
+            visible=True,
+            info="Strength resolution = 1/steps. More steps = finer strength tuning. Flux Dev (20) = 0.05, Flux Schnell (4) = 0.25"
         )
 
     # Strength schedules - visibility depends on render mode
@@ -197,9 +205,11 @@ def setup_deforum_left_side_ui():
             locals()['render_mode'] = render_mode
             locals()['animation_mode'] = animation_mode
             locals()['fps'] = fps
+            locals()['steps'] = steps
             locals()['cadence'] = cadence
             locals()['diffusion_cadence'] = cadence  # Alias for backward compatibility with gradio_funcs
             locals()['pseudo_cadence_display'] = pseudo_cadence_display
+            locals()['strength_resolution_display'] = strength_resolution_display
             locals()['strength_schedule'] = normal_strength
             locals()['keyframe_strength_schedule'] = keyframe_strength
 
@@ -213,7 +223,7 @@ def setup_deforum_left_side_ui():
         """
         Update UI components when render mode changes.
         Returns updates for: tab_depth, tab_shakify, tab_wan, cadence, pseudo_cadence,
-                             fps, keyframe_strength, animation_mode
+                             fps, steps, strength_resolution, keyframe_strength, animation_mode
         """
         from deforum.rendering.data.render_mode import RenderMode
 
@@ -231,6 +241,10 @@ def setup_deforum_left_side_ui():
         # Determine strength slider visibility
         show_keyframe_strength = render_mode_enum.should_show_keyframe_strength()
 
+        # Calculate strength resolution display
+        strength_res = 1.0 / config.default_steps
+        strength_res_text = f"1/{config.default_steps} = {strength_res:.4f} (Flux Dev=20→0.05, Schnell=4→0.25)"
+
         # Update legacy animation_mode for backward compatibility
         legacy_mode = render_mode_enum.to_legacy_animation_mode()
 
@@ -242,6 +256,8 @@ def setup_deforum_left_side_ui():
                      value=config.default_cadence),
             gr.update(visible=show_pseudo_cadence),    # pseudo_cadence_display
             gr.update(value=config.default_fps),       # fps
+            gr.update(value=config.default_steps),     # steps
+            gr.update(value=strength_res_text),        # strength_resolution_display
             gr.update(visible=show_keyframe_strength), # keyframe_strength
             gr.update(value=legacy_mode)               # animation_mode (hidden)
         ]
@@ -257,6 +273,8 @@ def setup_deforum_left_side_ui():
             cadence,
             pseudo_cadence_display,
             fps,
+            steps,
+            strength_resolution_display,
             keyframe_strength,
             animation_mode
         ]

@@ -18,6 +18,7 @@ class ModeConfig(NamedTuple):
     uses_dual_strength: bool  # True if mode uses both strength schedules
     default_fps: int
     default_cadence: int
+    default_steps: int  # Default sampling steps for this mode
     shows_pseudo_cadence: bool  # True if mode displays calculated pseudo-cadence
     description: str
 
@@ -114,12 +115,14 @@ _MODE_CONFIGS = {
         uses_dual_strength=False,
         default_fps=24,
         default_cadence=2,
+        default_steps=20,  # Flux Dev standard
         shows_pseudo_cadence=False,
         description=(
             "Traditional Deforum rendering with fixed low cadence. "
             "Generates a diffusion frame every N frames (e.g., cadence=2). "
             "Best for use with RAFT and ControlNet. Slower but most stable. "
-            "Uses only normal strength schedule."
+            "Uses only normal strength schedule. "
+            "20 steps = 0.05 strength resolution."
         )
     ),
 
@@ -129,13 +132,15 @@ _MODE_CONFIGS = {
         uses_dual_strength=True,
         default_fps=60,
         default_cadence=5,
+        default_steps=20,  # Flux Dev standard
         shows_pseudo_cadence=False,
         description=(
             "Modern keyframe redistribution with dual strength schedules. "
             "Combines regular cadence diffusions (high strength) with keyframe diffusions (low strength). "
             "Keyframes replace closest cadence frames for rhythm preservation. "
             "Balances quality, speed, and stability. Works with RAFT and ControlNet. "
-            "Uses both strength schedules: keyframe_strength for keyframes, normal strength for cadence frames."
+            "Uses both strength schedules: keyframe_strength for keyframes, normal strength for cadence frames. "
+            "20 steps = 0.05 strength resolution."
         )
     ),
 
@@ -145,6 +150,7 @@ _MODE_CONFIGS = {
         uses_dual_strength=False,
         default_fps=60,
         default_cadence=10,  # Not used, but provides pseudo-cadence hint
+        default_steps=20,  # Flux Dev standard
         shows_pseudo_cadence=True,
         description=(
             "Pure keyframe diffusion with depth-based tweening between keyframes. "
@@ -153,7 +159,8 @@ _MODE_CONFIGS = {
             "Fastest mode, best for slow movements and pure depth transforms. "
             "Cadence is ignored; pseudo-cadence is calculated and displayed. "
             "Not compatible with RAFT/ControlNet (too many non-diffused frames). "
-            "Uses only keyframe strength schedule."
+            "Uses only keyframe strength schedule. "
+            "20 steps = 0.05 strength resolution."
         )
     ),
 
@@ -163,6 +170,7 @@ _MODE_CONFIGS = {
         uses_dual_strength=False,
         default_fps=24,
         default_cadence=10,  # Not used for diffusion, but provides pseudo-cadence hint
+        default_steps=20,  # Flux Dev for keyframes (Schnell=4, Dev=20)
         shows_pseudo_cadence=True,
         description=(
             "Hybrid AI workflow: Flux generates keyframes, Wan FLF2V interpolates tweens. "
@@ -171,7 +179,10 @@ _MODE_CONFIGS = {
             "Phase 3: Stitch final video. "
             "Best quality for dramatic changes between keyframes. "
             "Hides 3D-specific controls (RAFT, ControlNet, Shakify, Depth). "
-            "Shows Wan Models tab. Uses only keyframe strength schedule for I2V chaining."
+            "Shows Wan Models tab. Uses only keyframe strength schedule for I2V chaining. "
+            "IMPORTANT: Strength resolution depends on steps. "
+            "Flux Dev (20 steps) = 0.05 resolution. Flux Schnell (4 steps) = 0.25 resolution. "
+            "Lower steps make strength harder to tune precisely."
         )
     ),
 }
