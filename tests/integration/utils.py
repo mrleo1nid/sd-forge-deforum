@@ -24,7 +24,7 @@ API_ROOT = "/deforum_api"
 API_BASE_URL = SERVER_BASE_URL + API_ROOT
 
 # Dedicated test output directory (not mixed with production outputs)
-TEST_OUTPUT_DIR = str(Path(__file__).parent.parent.parent.parent.parent / "outputs" / "test-deforum")
+TEST_OUTPUT_DIR = str(Path(__file__).parent.parent.parent.parent.parent / "outputs" / "deforum-tests")
 
 def get_test_options_overrides():
     """Get standard options_overrides for integration tests.
@@ -37,6 +37,24 @@ def get_test_options_overrides():
     return {
         "outdir_samples": TEST_OUTPUT_DIR,
     }
+
+def cleanup_test_output_dir():
+    """Clean the test output directory before test run.
+
+    Removes all contents to ensure clean state for each test run.
+    Creates the directory if it doesn't exist.
+    """
+    import shutil
+    import os
+
+    test_dir = Path(TEST_OUTPUT_DIR)
+
+    # Remove existing directory and all contents
+    if test_dir.exists():
+        shutil.rmtree(test_dir)
+
+    # Recreate empty directory
+    os.makedirs(test_dir, exist_ok=True)
 
 @retry(wait=wait_fixed(2), stop=stop_after_delay(900))
 def wait_for_job_to_complete(id : str):

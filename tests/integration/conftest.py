@@ -23,9 +23,21 @@ from pathlib import Path
 from tenacity import retry, stop_after_delay, wait_fixed
 import threading
 import requests
+from .utils import cleanup_test_output_dir
 
 def pytest_addoption(parser):
     parser.addoption("--start-server", action="store_true", help="start the server before the test run (if not specified, you must start the server manually)")
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_test_outputs():
+    """Clean test output directory before test session starts.
+
+    This ensures each test run starts with a clean slate.
+    Runs automatically for all tests (autouse=True).
+    """
+    cleanup_test_output_dir()
+    yield  # Tests run here
+    # Could add cleanup after tests too if desired
 
 @pytest.fixture
 def cmdopt(request):
