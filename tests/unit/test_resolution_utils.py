@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.resolution_utils import (
+from deforum.utils.math.resolution import (
     calculate_upscaled_resolution,
     get_scale_factor_for_model,
     calculate_upscaled_resolution_by_model,

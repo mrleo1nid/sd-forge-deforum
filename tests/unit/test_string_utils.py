@@ -3,7 +3,7 @@
 import re
 import pytest
 
-from deforum.utils.string_utils import (
+from deforum.utils.parsing.strings import (
     get_os,
     custom_placeholder_format,
     clean_gradio_path_strings,

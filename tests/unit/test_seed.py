@@ -3,7 +3,7 @@
 import pytest
 from types import SimpleNamespace
 
-from deforum.utils.seed_utils import (
+from deforum.utils.generation.seeds import (
     MAX_SEED,
     calculate_seed_increment,
     calculate_next_control,

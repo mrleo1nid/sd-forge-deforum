@@ -3,7 +3,7 @@
 import pytest
 from PIL import Image
 
-from deforum.utils.validation_utils import (
+from deforum.utils.validation.validators import (
     blank_if_none,
     none_if_blank,
     is_valid_json,

@@ -7,7 +7,7 @@ strings, following functional programming principles with no side effects.
 from typing import List
 
 # Import schedule parsing functions
-from .schedule_utils import parse_schedule_string, interpolate_schedule_values
+from .schedules import parse_schedule_string, interpolate_schedule_values
 
 
 def apply_shakify_to_schedule(

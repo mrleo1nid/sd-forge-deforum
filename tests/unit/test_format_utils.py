@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.format_utils import (
+from deforum.utils.conversion.formats import (
     format_value_to_schedule,
     format_frame_time,
     format_bytes,

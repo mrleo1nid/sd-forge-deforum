@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.expression_utils import (
+from deforum.utils.parsing.expressions import (
     parse_embedded_expressions,
     parse_frame_expression,
     has_embedded_expressions,

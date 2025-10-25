@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.schedule_utils import (
+from deforum.utils.parsing.schedules import (
     parse_schedule_string,
     interpolate_schedule_values,
 )

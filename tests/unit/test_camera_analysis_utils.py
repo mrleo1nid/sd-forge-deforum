@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.camera_analysis_utils import (
+from deforum.utils.camera.analysis import (
     analyze_frame_ranges,
     generate_segment_description,
     group_similar_segments,

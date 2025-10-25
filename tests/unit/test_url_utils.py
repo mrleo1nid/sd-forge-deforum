@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.url_utils import (
+from deforum.utils.filesystem.urls import (
     extract_extension_from_url,
     extract_extension_from_path,
     parse_content_disposition_filename,

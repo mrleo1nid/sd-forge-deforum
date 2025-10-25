@@ -3,7 +3,7 @@
 import pytest
 import re
 
-from deforum.utils.conversion_utils import (
+from deforum.utils.conversion.types import (
     generate_random_name,
     string_to_boolean,
 )

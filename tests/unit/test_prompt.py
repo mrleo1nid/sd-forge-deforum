@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from deforum.utils.prompt_utils import (
+from deforum.utils.generation.prompts import (
     check_is_number,
     evaluate_weight_expression,
     parse_weight,
@@ -295,7 +295,7 @@ class TestInterpolatePrompts:
     """Test interpolate_prompts function."""
 
     def test_simple_two_keyframes(self):
-        from deforum.utils.prompt_utils import interpolate_prompts
+        from deforum.utils.generation.prompts import interpolate_prompts
         
         prompts = {"0": "cat", "10": "dog"}
         result = interpolate_prompts(prompts, 20)
@@ -312,7 +312,7 @@ class TestInterpolatePrompts:
         assert result[15] == "dog"
 
     def test_three_keyframes(self):
-        from deforum.utils.prompt_utils import interpolate_prompts
+        from deforum.utils.generation.prompts import interpolate_prompts
         
         prompts = {"0": "morning", "50": "noon", "100": "night"}
         result = interpolate_prompts(prompts, 150)
@@ -329,7 +329,7 @@ class TestInterpolatePrompts:
         assert result[125] == "night"
 
     def test_single_keyframe(self):
-        from deforum.utils.prompt_utils import interpolate_prompts
+        from deforum.utils.generation.prompts import interpolate_prompts
         
         prompts = {"0": "static"}
         result = interpolate_prompts(prompts, 10)
@@ -339,7 +339,7 @@ class TestInterpolatePrompts:
             assert result[i] == "static"
 
     def test_with_weights(self):
-        from deforum.utils.prompt_utils import interpolate_prompts
+        from deforum.utils.generation.prompts import interpolate_prompts
         
         prompts = {"0": "(cat):1.5", "10": "(dog):2.0"}
         result = interpolate_prompts(prompts, 20)

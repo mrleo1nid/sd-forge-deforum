@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import torch
 
-from deforum.utils.math_utils import (
+from deforum.utils.math.core import (
     rotation_matrix,
     rotate_camera_towards_depth,
     round_by_factor,

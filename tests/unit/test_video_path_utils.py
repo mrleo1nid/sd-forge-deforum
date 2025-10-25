@@ -4,7 +4,7 @@ import os
 import tempfile
 import pytest
 
-from deforum.utils.video_path_utils import (
+from deforum.utils.filesystem.video_paths import (
     get_next_frame_path,
     get_output_video_path,
 )

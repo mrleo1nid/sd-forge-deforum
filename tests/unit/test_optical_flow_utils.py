@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 
-from deforum.utils.optical_flow_utils import make_consistency
+from deforum.utils.media.optical_flow import make_consistency
 
 
 class TestMakeConsistency:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.path_utils import (
+from deforum.utils.filesystem.paths import (
     extract_number_from_string,
     get_frame_name,
 )

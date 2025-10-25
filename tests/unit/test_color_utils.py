@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.color_utils import (
+from deforum.utils.image.color import (
     hex_to_rgb,
     rgb_to_hex,
     hex_to_ansi_foreground,

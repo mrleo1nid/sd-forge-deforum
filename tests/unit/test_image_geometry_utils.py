@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from deforum.utils.image_geometry_utils import (
+from deforum.utils.image.geometry import (
     center_crop,
     calculate_center_crop_bounds,
     extend_with_grid,

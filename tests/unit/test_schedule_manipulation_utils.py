@@ -2,7 +2,7 @@
 
 import pytest
 
-from deforum.utils.schedule_manipulation_utils import (
+from deforum.utils.parsing.schedule_manipulation import (
     apply_shakify_to_schedule,
     combine_schedules,
     scale_schedule,
