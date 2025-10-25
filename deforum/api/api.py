@@ -39,7 +39,7 @@ from deforum.config.args import (DeforumAnimArgs, DeforumArgs,
                                   DeforumOutputArgs, LoopArgs, ParseqArgs,
                                   RootArgs, get_component_names)
 from deforum.utils.system.opts_overrider import A1111OptionsOverrider
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, HTTPException
 
 from modules.shared import cmd_opts, opts, state
 
@@ -177,9 +177,9 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
         # Extract the settings files from the request
         deforum_settings_data = batch.deforum_settings
         if not deforum_settings_data:
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return ErrorResponse(
-                message="No settings files provided. Please provide 'deforum_settings' in the request."
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No settings files provided. Please provide 'deforum_settings' in the request."
             )
 
         if not isinstance(deforum_settings_data, list):
@@ -247,8 +247,10 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
         """
         jobsForBatch = JobStatusTracker().batches.get(id)
         if not jobsForBatch:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            return ErrorResponse(id=id, status="NOT FOUND", message=f"Batch {id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Batch {id} not found"
+            )
         return [JobStatusTracker().get(job_id) for job_id in jobsForBatch]
 
     @app.delete(
@@ -276,8 +278,10 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
         jobsForBatch = JobStatusTracker().batches.get(id)
         cancelled_jobs = []
         if not jobsForBatch:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            return ErrorResponse(id=id, status="NOT FOUND", message=f"Batch {id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Batch {id} not found"
+            )
 
         for job_id in jobsForBatch:
             try:
@@ -327,8 +331,10 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
         """
         jobStatus = JobStatusTracker().get(id)
         if not jobStatus:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            return ErrorResponse(id=id, status="NOT FOUND", message=f"Job {id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job {id} not found"
+            )
         return jobStatus
 
     @app.delete(
@@ -359,14 +365,15 @@ def deforum_api(_: gr.Blocks, app: FastAPI):
             if _cancel_job(id):
                 return JobCancelResponse(id=id, message="Job cancelled.")
             else:
-                response.status_code = status.HTTP_400_BAD_REQUEST
-                return ErrorResponse(
-                    id=id,
-                    message=f"Job {id} not in a cancellable state. Has it already finished?"
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Job {id} not in a cancellable state. Has it already finished?"
                 )
         except FileNotFoundError as e:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            return ErrorResponse(id=id, message=f"Job {id} not found.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job {id} not found."
+            )
 
     # Shared logic for job cancellation
     def _cancel_job(job_id:str):
