@@ -73,23 +73,27 @@ def test_simple_settings(snapshot):
 
 def test_api_cancel_active_job():
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
-        data = json.load(settings_file)
-        response = requests.post(API_BASE_URL+"/batches", json={
-            "deforum_settings":[data],
-            "options_overrides": get_test_options_overrides()
-        })
-        response.raise_for_status()
-        job_id = response.json()["job_ids"][0]
-        wait_for_job_to_enter_phase(job_id, DeforumJobPhase.GENERATING)
+        deforum_settings = json.load(settings_file)
 
-        cancel_url = API_BASE_URL+"/jobs/"+job_id
-        response = requests.delete(cancel_url)
-        response.raise_for_status()
-        assert response.status_code == 200, f"DELETE request to {cancel_url} failed: {response.status_code}"
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_api_cancel_active_job')
 
-        jobStatus = wait_for_job_to_complete(job_id)
+    response = requests.post(API_BASE_URL+"/batches", json={
+        "deforum_settings":[deforum_settings],
+        "options_overrides": get_test_options_overrides()
+    })
+    response.raise_for_status()
+    job_id = response.json()["job_ids"][0]
+    wait_for_job_to_enter_phase(job_id, DeforumJobPhase.GENERATING)
 
-        assert jobStatus.status == DeforumJobStatusCategory.CANCELLED, f"Job {job_id} did not cancel: {jobStatus}"
+    cancel_url = API_BASE_URL+"/jobs/"+job_id
+    response = requests.delete(cancel_url)
+    response.raise_for_status()
+    assert response.status_code == 200, f"DELETE request to {cancel_url} failed: {response.status_code}"
+
+    jobStatus = wait_for_job_to_complete(job_id)
+
+    assert jobStatus.status == DeforumJobStatusCategory.CANCELLED, f"Job {job_id} did not cancel: {jobStatus}"
 
 
 def test_3d_mode(snapshot):
