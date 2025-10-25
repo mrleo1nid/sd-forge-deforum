@@ -39,6 +39,25 @@ def clean_test_outputs():
     yield  # Tests run here
     # Could add cleanup after tests too if desired
 
+@pytest.fixture(scope="function", autouse=True)
+def cleanup_gpu_memory():
+    """Clean up GPU memory after each test to prevent OOM errors.
+
+    This is especially important for tests that use large models like
+    FILM interpolation or upscaling, which can leave VRAM allocated.
+    """
+    yield  # Test runs here
+    # Cleanup after test
+    try:
+        import torch
+        import gc
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+        gc.collect()
+    except Exception:
+        pass  # Silent fail if torch not available
+
 @pytest.fixture
 def cmdopt(request):
     return request.config.getoption("--start-server")

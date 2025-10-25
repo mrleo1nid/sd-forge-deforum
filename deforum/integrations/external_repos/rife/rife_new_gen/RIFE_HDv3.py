@@ -91,15 +91,13 @@ class Model:
             }
 
 def download_rife_model(path, deforum_models_path):
-    # RIFE v4.25 is the recommended default version for most scenes
-    # Google Drive file ID: 1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg
+    # RIFE v4.6 is stable and widely compatible
+    # Google Drive file ID: 1APIzVeI-4ZZCEuIRE1m6WYfSCaOsi_7_
     import hashlib
-    import zipfile
-    import shutil
 
-    options = {'RIFE425': (
-               'bae7f128eaecffc9cc146ce198e891770b9008b5f1071c87ab6938279dd3293f90f484921e29564d4fbf3b8e41db56c57fe49d091c8260fb11c6de9e38907543',
-               '1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg')}
+    options = {'RIFE46': (
+               '1da8ec98395d7e8e08e5e13e9a5b92da173159abbeca5c47d020edcd1d3cb0b408fa4cc0005141d57d8d526960a5e1ec8bf4948a73eadbea15b6f289574394a2',
+               '1APIzVeI-4ZZCEuIRE1m6WYfSCaOsi_7_')}
     if path in options:
         target_file = f"{path}.pkl"
         target_path = os.path.join(deforum_models_path, target_file)
@@ -107,28 +105,12 @@ def download_rife_model(path, deforum_models_path):
             import gdown
             print(f"Downloading RIFE model {path} from Google Drive...")
 
-            # Download to temporary file
-            temp_zip_path = os.path.join(deforum_models_path, f"{path}_temp.zip")
-            gdown.download(id=options[path][1], output=temp_zip_path, quiet=False)
+            # RIFE v4.6 is distributed as a direct .pkl file (not a ZIP archive)
+            gdown.download(id=options[path][1], output=target_path, quiet=False)
 
-            # Verify checksum of downloaded ZIP
-            if checksum(temp_zip_path, hashlib.sha512) != options[path][0]:
-                os.remove(temp_zip_path)
+            # Verify checksum of downloaded file
+            if checksum(target_path, hashlib.sha512) != options[path][0]:
+                os.remove(target_path)
                 raise Exception(f"Checksum mismatch for {target_file}. Please download manually from: https://drive.google.com/file/d/{options[path][1]}/view and place in: " + deforum_models_path)
 
-            # Extract flownet.pkl from train_log/ directory
-            print(f"Extracting {path} model from archive...")
-            try:
-                with zipfile.ZipFile(temp_zip_path, 'r') as zip_ref:
-                    # Extract train_log/flownet.pkl to target location
-                    with zip_ref.open('train_log/flownet.pkl') as source:
-                        with open(target_path, 'wb') as target:
-                            shutil.copyfileobj(source, target)
-                print(f"Successfully extracted RIFE model to {target_path}")
-            except KeyError:
-                os.remove(temp_zip_path)
-                raise Exception(f"Archive structure unexpected - train_log/flownet.pkl not found in downloaded file")
-            finally:
-                # Clean up temporary ZIP file
-                if os.path.exists(temp_zip_path):
-                    os.remove(temp_zip_path)
+            print(f"Successfully downloaded RIFE model to {target_path}")
