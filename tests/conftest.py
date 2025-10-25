@@ -44,8 +44,10 @@ try:
 
             def __getattr__(self, name):
                 # Return safe defaults for any attribute access
+                # Return empty list for iterables (like hide_samplers),
+                # None for other attributes
                 # This prevents AttributeError during module imports
-                return None
+                return []
 
             def __contains__(self, key):
                 return key in self.data
