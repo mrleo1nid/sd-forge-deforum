@@ -43,7 +43,7 @@ def start_server(request):
 
         # Kick off server subprocess
         script_directory = os.path.dirname(__file__)
-        a1111_directory = Path(script_directory).parent.parent.parent  # sd-webui/extensions/deforum/tests/ -> sd-webui
+        a1111_directory = Path(script_directory).parent.parent.parent.parent  # extensions/sd-forge-deforum/tests/integration/ -> stable-diffusion-webui-forge
         venv_python = str(a1111_directory / "venv" / "bin" / "python")
         print(f"Starting server in {a1111_directory}...")
         print(f"Using Python: {venv_python}")
