@@ -58,7 +58,7 @@ def test_depth_map_generation():
         f"Job {job_id} failed: {jobStatus.message}"
 
     # Check that depth maps were generated
-    depth_dir = os.path.join(jobStatus.outdir, "depth")
+    depth_dir = os.path.join(jobStatus.outdir, "depth-maps")
     assert os.path.exists(depth_dir), "Depth maps directory should exist"
 
     depth_files = glob.glob(os.path.join(depth_dir, "*.png"))
