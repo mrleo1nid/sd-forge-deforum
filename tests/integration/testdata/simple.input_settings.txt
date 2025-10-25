@@ -30,15 +30,13 @@
     "reroll_blank_frames": "ignore",
     "reroll_patience": 10.0,
     "prompts": {
-        "0": "tiny cute swamp bunny, highly detailed, intricate, ultra hd, sharp photo, crepuscular rays, in focus, by tomasz alen kopera",
-        "30": "anthropomorphic clean cat, surrounded by fractals, epic angle and pose, symmetrical, 3d, depth of field, ruan jia and fenghua zhong",
-        "60": "a beautiful coconut --neg photo, realistic",
-        "90": "a beautiful durian, trending on Artstation"
+        "0": "tiny cute swamp bunny, highly detailed, intricate, ultra hd, sharp photo, crepuscular rays, in focus"
     },
     "animation_prompts_positive": "",
     "animation_prompts_negative": "",
     "animation_mode": "3D",
-    "max_frames": 5,
+    "max_frames": 10,
+    "keyframe_distribution": "Off",
     "border": "replicate",
     "angle": "0:(0)",
     "zoom": "0:(1.0025+0.002*sin(1.25*3.14*t/30))",
