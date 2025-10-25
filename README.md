@@ -23,7 +23,7 @@ This fork has undergone significant refactoring and modernization:
 - **❌ Hybrid Video Mode**: Completely removed (experimental core only)
 - **❌ Legacy Render Core**: Removed stable/legacy core (experimental core is now the only option)
 - **❌ 2D Animation Mode**: Removed (3D mode is now default)
-- **❌ Wan Only Mode**: Removed (superseded by Flux/Wan hybrid mode)
+- **❌ Wan Only Mode**: Removed (superseded by Flux + Interpolation hybrid mode)
 - **❌ Legacy Depth Models**: MiDaS, AdaBins, LeReS, ZoeDepth removed
 
 ### **Updated & Fixed Features**
@@ -54,7 +54,7 @@ The Deforum UI is organized into main tabs for easy navigation:
 ### Main Tabs
 
 **Top-Level Controls** (before tabs):
-- **Render Mode** - Select workflow: Classic 3D, New 3D, Keyframes Only, or Flux/Wan
+- **Render Mode** - Select workflow: Classic 3D, New 3D, Keyframes Only, or Flux + Interpolation
 - **FPS** - Frame rate (auto-adjusts based on mode: 24 or 60)
 - **Steps** - Sampling steps (mode-specific info shows what it controls)
 - **Cadence/Pseudo-Cadence** - Shows real cadence slider or calculated pseudo-cadence
@@ -73,7 +73,7 @@ The Deforum UI is organized into main tabs for easy navigation:
 5. **Shakify** - Camera shake effects from Blender Camera Shakify patterns (3D modes only)
 6. **3D Depth** - Depth warping settings and FOV configuration (3D modes only)
 7. **Init** - Initialization settings
-8. **Wan Models** - Wan model selection and configuration (Flux/Wan mode only)
+8. **Wan Models** - Wan model selection and configuration (Flux + Interpolation mode - only needed when using Wan method)
 9. **Output** - Video settings (FPS, resolution, audio, etc.)
 
 ### Render Modes
@@ -106,9 +106,9 @@ Pure keyframe diffusion with depth-based tweening for maximum speed:
 - **Features:** Only diffuses at keyframes, depth-warps all tween frames
 - **Note:** Not compatible with RAFT/ControlNet (too many non-diffused frames)
 
-#### **4. Flux/Wan** 🎬
-Hybrid AI workflow combining Flux keyframes with Wan FLF2V interpolation:
-- **Keyframe Distribution:** None (separate Flux/Wan pipeline)
+#### **4. Flux + Interpolation** 🎬
+Hybrid AI workflow combining Flux keyframes with multi-method interpolation (Wan/RIFE/FILM):
+- **Keyframe Distribution:** None (separate Flux + Interpolation pipeline)
 - **Strength Schedules:** Single (keyframe strength for I2V chaining)
 - **Defaults:** 24 FPS, pseudo-cadence display, 20 steps
 - **Best For:** Dramatic changes, highest quality AI interpolation
@@ -409,8 +409,9 @@ https://github.com/Tok/sd-forge-deforum/blob/main/deforum/config/default_setting
 * **3D Mode** (Default): Traditional Deforum depth-based animation
   * Optional Wan FLF2V integration for AI-powered tween interpolation
   * Keyframes Only or Cadence-based distribution
-* **Flux/Wan Mode**: Hybrid Flux keyframes + Wan FLF2V interpolation
-  * Flux image quality + Wan cinematic motion
+* **Flux + Interpolation Mode**: Hybrid Flux keyframes + multi-method interpolation
+  * Choose interpolation method: Wan FLF2V, RIFE v4.6, or FILM
+  * Flux image quality + smooth cinematic motion
   * Integrated Qwen prompt enhancement
 * **Interpolation**: Smooth transitions between two prompts
 

@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Camera Shakify integration** for realistic camera shake effects from Blender data
 - **QwenPromptExpander** for AI-powered prompt enhancement and movement analysis
 
-The extension operates as a Forge extension that hooks into WebUI's script system to provide animation capabilities across 3 modes: 3D (default), Flux/Wan, and Interpolation.
+The extension operates as a Forge extension that hooks into WebUI's script system to provide animation capabilities across 3 modes: 3D (default), Flux + Interpolation, and Interpolation.
 
 ## Running the Extension
 
@@ -224,7 +224,7 @@ The extension now uses a unified `RenderMode` system that replaces the old anima
    - Shows: 3D tabs (Depth, Shakify), pseudo-cadence display (read-only)
    - Not compatible with: RAFT, ControlNet (too many non-diffused frames)
 
-4. **Flux/Wan** - Flux + Multi-Method Interpolation workflow
+4. **Flux + Interpolation** - Flux + Multi-Method Interpolation workflow
    - Keyframe distribution: None (separate Flux + Interpolation pipeline)
    - Strength schedules: Single (keyframe strength for I2V chaining with Wan)
    - Default: 24 FPS, pseudo-cadence display, 20 steps
@@ -434,7 +434,7 @@ Known compatibility issues:
 **Removed Features:**
 - **Legacy/Stable Core** - Removed in favor of render core only
 - **2D Animation Mode** - Removed (3D mode is now default and only depth-based mode)
-- **Wan Only Mode** - Removed (superseded by Flux/Wan mode)
+- **Wan Only Mode** - Removed (superseded by Flux + Interpolation mode)
 - **Hybrid Video Mode** - Removed completely
 - **Legacy Depth Models** - MiDaS, AdaBins, LeReS, ZoeDepth removed (Depth-Anything V2 only)
 - **Legacy ControlNet** - Removed (use Flux ControlNet V2 instead, available in 3D Depth tab)
