@@ -6,12 +6,17 @@ Organized test suite following pytest best practices.
 
 ```
 tests/
-├── integration/         # API and system integration tests (require server + GPU)
-│   ├── api_test.py              # Basic Deforum API tests (2D, 3D, Parseq, cancellation)
+├── integration/         # Integration tests
+│   ├── api_test.py              # API integration tests (require server + GPU)
 │   ├── postprocess_test.py      # Post-processing tests (FILM, RIFE, upscaling)
-│   ├── utils.py                 # Shared utilities for integration tests
+│   ├── utils.py                 # Shared utilities for API tests
 │   ├── testdata/                # Test fixtures (settings files, videos)
-│   └── __snapshots__/           # Snapshot data for regression testing
+│   ├── __snapshots__/           # Snapshot data for regression testing
+│   └── gpu/                     # ⭐ Local GPU integration tests (NEW)
+│       ├── test_flux_controlnet.py  # Flux ControlNet tests
+│       ├── conftest.py              # GPU test fixtures
+│       ├── test_outputs/            # Generated test outputs (gitignored)
+│       └── README.md                # GPU test documentation
 │
 ├── unit/                # Fast unit tests (no server, no GPU, no external deps)
 │   └── (empty - to be created)
@@ -29,7 +34,10 @@ tests/
 ## Test Types
 
 ### Integration Tests (`integration/`)
-**What:** Tests that verify Deforum works correctly with the Forge API and generates valid videos.
+**What:** Tests that verify Deforum works correctly - either via API or directly on GPU.
+
+#### API Integration Tests (`integration/*.py`)
+**What:** Tests that verify Deforum API endpoints work correctly and generate valid videos.
 
 **Requirements:**
 - Running Forge server with `--deforum-api` flag
@@ -43,6 +51,30 @@ tests/
 - `postprocess_test.py::test_post_process_FILM` - Frame interpolation with FILM
 
 **When to run:** Before releases, after major refactoring, in CI
+
+#### GPU Integration Tests (`integration/gpu/`) ⭐ NEW
+**What:** Tests that verify Deforum functionality by running directly on GPU (no API server required).
+
+**Requirements:**
+- GPU with CUDA
+- Flux model loaded in Forge
+- Running within Forge environment
+- Fast (30-60 seconds per test with minimal settings)
+
+**Examples:**
+- `test_flux_controlnet.py::test_flux_controlnet_basic_generation` - 3-frame ControlNet test
+- `test_flux_controlnet.py::test_flux_controlnet_model_loading` - Verify ControlNet loads correctly
+- `test_flux_controlnet.py::test_flux_controlnet_single_frame` - Fastest smoke test
+
+**Advantages over API tests:**
+- No server startup required
+- Faster execution (direct Python calls)
+- Better for testing specific components (ControlNet, depth, etc.)
+- Easier debugging (direct access to Python objects)
+
+**When to run:** During development, testing specific features, debugging GPU issues
+
+**See:** `tests/integration/gpu/README.md` for detailed documentation
 
 ### Unit Tests (`unit/`) - **To Be Created**
 **What:** Tests for individual functions and classes in isolation.
@@ -73,18 +105,25 @@ tests/
 
 ## Running Tests
 
-### Quick Start (All Integration Tests)
+### GPU Integration Tests (Local, No Server Required) ⭐ RECOMMENDED
 ```bash
-./run-tests.sh
+./run-integration-tests.sh              # Run all GPU integration tests
+./run-integration-tests.sh --quick      # Skip slow generation tests
+./run-integration-tests.sh --verbose    # Verbose output with VRAM stats
 ```
 
-### Quick Mode (Skip Slow Post-Processing Tests)
+### API Integration Tests (Requires Server)
 ```bash
-./run-tests.sh --quick
+./run-tests.sh                          # Run all API tests (starts server)
+./run-tests.sh --quick                  # Skip slow post-processing tests
 ```
 
 ### Run Specific Test
 ```bash
+# GPU integration test
+pytest tests/integration/gpu/test_flux_controlnet.py::test_flux_controlnet_basic_generation -v
+
+# API integration test
 ./run-tests.sh tests/integration/api_test.py::test_simple_settings
 ```
 
@@ -96,6 +135,14 @@ pytest tests/unit/ -v
 ### Run All Tests
 ```bash
 pytest tests/ -v
+```
+
+### Run Tests by Marker
+```bash
+pytest -m gpu                    # All GPU tests
+pytest -m flux_controlnet        # Flux ControlNet tests only
+pytest -m "not slow"             # Fast tests only
+pytest -m "gpu and not slow"     # Fast GPU tests
 ```
 
 ## Test Organization Principles
