@@ -133,3 +133,27 @@ def wave():
 
 def broom():
     return _select('\U0001F9F9')  # 🧹
+
+
+def masking():
+    return _select('\U0001F3AD')  # 🎭
+
+
+def gear():
+    return _select(f'\U00002699{_suffix}')  # ⚙️
+
+
+def wrench():
+    return _select('\U0001F527')  # 🔧
+
+
+def stopwatch():
+    return _select(f'\U000023F1{_suffix}')  # ⏱️
+
+
+def tools():
+    return _select(f'\U0001F6E0{_suffix}')  # 🛠️
+
+
+def movie_camera():
+    return _select('\U0001F3AC')  # 🎬

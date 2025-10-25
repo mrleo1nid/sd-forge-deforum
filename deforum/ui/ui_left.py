@@ -202,7 +202,7 @@ def setup_deforum_left_side_ui():
                 tab_depth_params = get_tab_depth_warping(da, skip_tabitem=True)  # 5. 3D Depth - 3D mode only
             with gr.TabItem(f"{emoji_utils.bicycle()} Shakify", visible=True) as tab_shakify:
                 tab_shakify_params = get_tab_shakify(da, skip_tabitem=True)  # 6. Shakify - 3D mode only
-            with gr.TabItem(f"🎭 Masking", visible=True) as tab_masking:
+            with gr.TabItem(f"{emoji_utils.masking()} Masking", visible=True) as tab_masking:
                 tab_masking_params = get_tab_masking(d, da, skip_tabitem=True)  # 7. Masking - all modes
 
             # Flux/Wan mode only tab:

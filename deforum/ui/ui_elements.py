@@ -315,14 +315,14 @@ def get_tab_prompts(da, dw, dv=None):
             """)
 
             # Qwen Settings
-            with gr.Accordion("⚙️ Qwen Settings", open=True):
+            with gr.Accordion(f"{emoji_utils.gear()} Qwen Settings", open=True):
                 with FormRow():
                     wan_qwen_model = create_gr_elem(dw.wan_qwen_model)
                     wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
                     wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
 
             # Model Management
-            with gr.Accordion("🔧 Model Management", open=False):
+            with gr.Accordion(f"{emoji_utils.wrench()} Model Management", open=False):
                 gr.Markdown("""
                 **Model Information & Status**
 
@@ -379,7 +379,7 @@ def get_tab_prompts(da, dw, dv=None):
             )
 
         # FPS CONVERTER
-        with gr.Accordion("⏱️ FPS Converter", open=False):
+        with gr.Accordion(f"{emoji_utils.stopwatch()} FPS Converter", open=False):
             gr.Markdown("""
             **Convert prompt frame numbers between different FPS settings**
 
@@ -462,14 +462,14 @@ def get_tab_qwen(dw: SimpleNamespace):
         """)
 
         # Qwen Settings
-        with gr.Accordion("⚙️ Qwen Settings", open=True):
+        with gr.Accordion(f"{emoji_utils.gear()} Qwen Settings", open=True):
             with FormRow():
                 wan_qwen_model = create_gr_elem(dw.wan_qwen_model)
                 wan_qwen_language = create_gr_elem(dw.wan_qwen_language)
                 wan_qwen_auto_download = create_gr_elem(dw.wan_qwen_auto_download)
 
         # Model Management
-        with gr.Accordion("🔧 Model Management", open=False):
+        with gr.Accordion(f"{emoji_utils.wrench()} Model Management", open=False):
             gr.Markdown("""
             **Model Information & Status**
 
@@ -536,7 +536,7 @@ def get_tab_shakify(da, skip_tabitem=False):
     shake_speed = create_row(da.shake_speed)
 
     # Explanation after controls
-    with gr.Accordion("ℹ️ About Camera Shakify", open=True):
+    with gr.Accordion(f"{emoji_utils.info} About Camera Shakify", open=True):
         gr.Markdown("""
         ## Camera Shakify
         **Integrate dynamic camera shake effects** into your renders with data sourced from EatTheFuture's 'Camera Shakify' Blender plugin.
@@ -568,7 +568,7 @@ def get_tab_masking(d, da, skip_tabitem=False):
     components = {}
 
     if not skip_tabitem:
-        with gr.TabItem('🎭 Masking'):
+        with gr.TabItem(f'{emoji_utils.masking()} Masking'):
             components.update(_create_masking_content(d, da))
     else:
         components.update(_create_masking_content(d, da))
@@ -674,7 +674,7 @@ def get_tab_depth_warping(da, skip_tabitem=False):
     is_info_visible = is_visible
 
     # Controls first - most important
-    with gr.Accordion("⚙️ Depth Settings", open=True):
+    with gr.Accordion(f"{emoji_utils.gear()} Depth Settings", open=True):
         depth_warp_msg_html = gr.HTML(
             value='Please switch to 3D animation mode to view this section.',
             elem_id='depth_warp_msg_html',
@@ -734,7 +734,7 @@ def get_tab_depth_warping(da, skip_tabitem=False):
         with FormRow(visible=is_visible) as flux_controlnet_row_5:
             flux_base_model = create_gr_elem(da.flux_base_model)
 
-    with gr.Accordion("⚙️ FOV & Advanced Settings", open=False):
+    with gr.Accordion(f"{emoji_utils.gear()} FOV & Advanced Settings", open=False):
         with FormRow(visible=is_visible) as depth_warp_row_3:
             aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
         with FormRow(visible=is_visible) as depth_warp_row_4:
@@ -747,7 +747,7 @@ def get_tab_depth_warping(da, skip_tabitem=False):
             far_schedule = create_gr_elem(da.far_schedule)
 
     # Explanation after controls
-    with gr.Accordion("ℹ️ About 3D Depth Warping", open=False):
+    with gr.Accordion(f"{emoji_utils.info} About 3D Depth Warping", open=False):
         gr.Markdown("""
         ## 3D Depth Warping & FOV
         **Transform 2D images into 3D space** using AI depth estimation for realistic camera movement.
@@ -1577,7 +1577,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
         """)
 
     # DEPRECATED SECTION - Hide old standalone workflow
-    with gr.Accordion("⚠️ DEPRECATED: Standalone Wan Workflow (Hidden)", open=False, visible=False):
+    with gr.Accordion(f"{emoji_utils.warn} DEPRECATED: Standalone Wan Workflow (Hidden)", open=False, visible=False):
         gr.Markdown("""
         **🎯 Essential for Wan Generation:** These prompts define what video clips will be generated.
         
@@ -1721,7 +1721,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
     # END DEPRECATED SECTION
     
     # MODEL SETTINGS - Collapsed by default
-    with gr.Accordion("🔧 Model Settings", open=False):
+    with gr.Accordion(f"{emoji_utils.wrench()} Model Settings", open=False):
         gr.Markdown("""
         **📥 One-Click Model Download**: Download official Wan 2.2 models from Hugging Face!
         - **TI2V-5B** (Recommended): Works with 16GB VRAM using automatic CPU offload
@@ -1811,7 +1811,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
             wan_guidance_override = create_gr_elem(dw.wan_guidance_override)
             wan_guidance_scale = create_gr_elem(dw.wan_guidance_scale)
     
-    with gr.Accordion("🎞️ FLF2V Interpolation Settings", open=True):
+    with gr.Accordion(f"{emoji_utils.frames()} FLF2V Interpolation Settings", open=True):
         gr.Markdown("""
         **FLF2V interpolates smooth transitions between keyframes.**
 
@@ -1830,7 +1830,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
             wan_flf2v_guidance_scale = create_gr_elem(dw.wan_flf2v_guidance_scale)
             wan_flf2v_prompt_mode = create_gr_elem(dw.wan_flf2v_prompt_mode)
     
-    with gr.Accordion("🔧 Advanced Generation", open=False):
+    with gr.Accordion(f"{emoji_utils.wrench()} Advanced Generation", open=False):
 
         # Advanced Generation Settings
         with FormRow():
@@ -2006,7 +2006,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
             - **Display Info**: Console shows exactly which frames will be discarded before generation
             """)
             
-            with gr.Accordion("🎬 Movement Translation: From Deforum Schedules to Prompt Descriptions", open=False):
+            with gr.Accordion(f"{emoji_utils.movie_camera()} Movement Translation: From Deforum Schedules to Prompt Descriptions", open=False):
                 gr.Markdown("""
                 ### ✨ NEW: Frame-Specific Movement Analysis
                 
@@ -2139,7 +2139,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
                 This frame-specific system ensures each video clip gets movement descriptions that accurately reflect what's happening during its specific timeframe!
                 """)
             
-        with gr.Accordion("🛠️ Setup Guide", open=False):
+        with gr.Accordion(f"{emoji_utils.tools()} Setup Guide", open=False):
             gr.Markdown("""
             #### Step 1: Configure Prompts
             ```json
@@ -2310,7 +2310,7 @@ def get_tab_distribution(da):
         keyframe_distribution = create_row(da.keyframe_distribution)
 
         # Wan FLF2V Integration
-        with gr.Accordion("🎬 Wan FLF2V Tween Mode (Experimental)", open=False):
+        with gr.Accordion(f"{emoji_utils.movie_camera()} Wan FLF2V Tween Mode (Experimental)", open=False):
             gr.Markdown("""
             **Use Wan AI video interpolation instead of depth-based tweening.**
 
