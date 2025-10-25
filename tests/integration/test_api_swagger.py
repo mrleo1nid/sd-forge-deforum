@@ -152,7 +152,7 @@ def test_get_nonexistent_job_returns_404():
     assert response.status_code == 404, "Non-existent job should return 404"
 
     data = response.json()
-    assert "message" in data, "Error response should contain message"
+    assert "detail" in data, "Error response should contain detail message"
 
 
 def test_get_nonexistent_batch_returns_404():
@@ -161,7 +161,7 @@ def test_get_nonexistent_batch_returns_404():
     assert response.status_code == 404, "Non-existent batch should return 404"
 
     data = response.json()
-    assert "message" in data, "Error response should contain message"
+    assert "detail" in data, "Error response should contain detail message"
 
 
 def test_endpoint_tags_are_consistent():
