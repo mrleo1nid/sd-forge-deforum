@@ -21,7 +21,7 @@ from pathlib import Path
 
 import requests
 from moviepy.editor import VideoFileClip
-from .utils import (API_BASE_URL, get_test_options_overrides,
+from .utils import (API_BASE_URL, get_test_options_overrides, get_test_batch_name,
                     wait_for_job_to_complete,
                     wait_for_job_to_enter_phase, wait_for_job_to_enter_status)
 
@@ -37,6 +37,9 @@ TESTDATA_DIR = Path(__file__).parent / 'testdata'
 def test_simple_settings(snapshot):
     with open(TESTDATA_DIR / 'simple.input_settings.txt', 'r') as settings_file:
         deforum_settings = json.load(settings_file)
+
+    # Set test-specific batch name for easier output identification
+    deforum_settings['batch_name'] = get_test_batch_name('test_simple_settings')
 
     # Merge test-specific overrides with standard test overrides
     options_overrides = get_test_options_overrides()

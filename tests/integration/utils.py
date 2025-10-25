@@ -26,6 +26,23 @@ API_BASE_URL = SERVER_BASE_URL + API_ROOT
 # Dedicated test output directory (not mixed with production outputs)
 TEST_OUTPUT_DIR = str(Path(__file__).parent.parent.parent.parent.parent / "outputs" / "deforum-tests")
 
+def get_test_batch_name(test_name: str) -> str:
+    """Get a batch name that includes the test name for easier identification.
+
+    Args:
+        test_name: Name of the test function (e.g., 'test_simple_settings')
+
+    Returns:
+        Batch name pattern like 'test_simple_settings_{timestring}'
+
+    Example:
+        deforum_settings['batch_name'] = get_test_batch_name('test_simple_settings')
+        # Results in output directory: outputs/deforum-tests/test_simple_settings_20251025123456/
+    """
+    # Remove 'test_' prefix for cleaner names
+    name = test_name.replace('test_', '', 1) if test_name.startswith('test_') else test_name
+    return f"{name}_{{timestring}}"
+
 def get_test_options_overrides():
     """Get standard options_overrides for integration tests.
 
@@ -33,6 +50,9 @@ def get_test_options_overrides():
     - outdir_samples: Dedicated test output directory
 
     This ensures test outputs don't pollute production outputs.
+
+    Note: To make test outputs easier to identify, also set batch_name in deforum_settings:
+        deforum_settings['batch_name'] = get_test_batch_name('test_simple_settings')
     """
     return {
         "outdir_samples": TEST_OUTPUT_DIR,
