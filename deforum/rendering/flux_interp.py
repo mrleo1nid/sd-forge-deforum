@@ -574,7 +574,7 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
         stdout, stderr = process.communicate()
 
         if process.returncode != 0:
-            log_utils.error(f"FFmpeg failed: {stderr}", log_utils.RED)
+            log_utils.error(f"FFmpeg failed: {stderr}")
             raise RuntimeError(f"FFmpeg failed with return code {process.returncode}")
 
         log_utils.info(f"✅ Video stitched successfully", log_utils.GREEN)
@@ -600,7 +600,7 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
             audio_stdout, audio_stderr = audio_process.communicate()
 
             if audio_process.returncode != 0:
-                log_utils.warning(f"Failed to add audio: {audio_stderr}", log_utils.YELLOW)
+                log_utils.warning(f"Failed to add audio: {audio_stderr}")
             else:
                 os.replace(temp_output, output_path)
                 log_utils.info(f"✅ Audio added successfully", log_utils.GREEN)
