@@ -57,7 +57,7 @@ def on_ui_settings():
 
     add_subsection("General Deforum Settings")
     add_cb("deforum_keep_3d_models_in_vram", "Keep 3D models in VRAM between runs",
-           not (cmd_opts.lowvram or cmd_opts.medvram))
+           not (getattr(cmd_opts, 'lowvram', False) or getattr(cmd_opts, 'medvram', False)))
     add_cb("deforum_enable_persistent_settings", "Keep settings persistent upon relaunch of webUI.")
     add("deforum_persistent_settings_path", "Path for saving your persistent settings file:",
         "models/Deforum/deforum_persistent_settings.txt")
