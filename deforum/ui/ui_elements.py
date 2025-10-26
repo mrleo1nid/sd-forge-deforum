@@ -1538,7 +1538,7 @@ def get_tab_wan(dw: SimpleNamespace, skip_tabitem=False):
     **Choose your interpolation method for smooth transitions between keyframes:**
 
     - **Wan FLF2V:** AI-generated video with semantic understanding (requires FLF2V model download)
-    - **FILM:** Google's Frame Interpolation for Large Motion (works out of the box)
+    - **FILM:** Frame Interpolation for smearcore aesthetics - artistic purposes only, creates motion blur effect (works out of the box)
 
     **Note:** RIFE is available in the post-processing tab for framerate doubling/tripling on completed videos.
 

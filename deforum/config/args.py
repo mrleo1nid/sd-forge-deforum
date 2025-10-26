@@ -1146,7 +1146,7 @@ def WanArgs():
             "type": "dropdown",
             "choices": ["Wan", "FILM"],
             "value": "Wan",
-            "info": "Interpolation method for Flux FLF2V mode: 'Wan' (AI-generated video, recommended for large motion), 'FILM' (Frame Interpolation for Large Motion, Google's ML model). Note: RIFE is available in post-processing for framerate doubling."
+            "info": "Interpolation method for Flux FLF2V mode: 'Wan' (AI-generated video, recommended for large motion), 'FILM' (Frame Interpolation for smearcore aesthetics - artistic purposes only, creates motion blur effect). Note: RIFE is available in post-processing for framerate doubling."
         },
 
         # Advanced Generation Settings
