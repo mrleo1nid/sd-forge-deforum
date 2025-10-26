@@ -573,7 +573,7 @@ def generate_film_segment(first_image, last_image, num_frames, height, width,
         List of paths to generated tween frames
     """
     import shutil
-    from deforum.integrations.film import film_interpolate
+    from deforum.integrations.external_repos.film_interpolation.film_inference import run_film_interp_infer
 
     log_utils.info(f"   🎬 FILM interpolation: {num_frames} frames", log_utils.BLUE)
 
@@ -601,11 +601,14 @@ def generate_film_segment(first_image, last_image, num_frames, height, width,
         log_utils.info(f"   Recursion depth: {recursion_depth} (generates {total_frames_generated - 2} tweens)", log_utils.YELLOW)
 
         # Call FILM interpolation
-        film_interpolate(
-            input_dir=temp_input,
-            output_dir=temp_output,
-            times_to_interpolate=recursion_depth,
-            fps=fps
+        # FILM model should be in models/Deforum directory
+        film_model_path = os.path.join(os.getcwd(), "models", "Deforum", "film_net_fp16.pt")
+
+        run_film_interp_infer(
+            model_path=film_model_path,
+            input_folder=temp_input,
+            save_folder=temp_output,
+            inter_frames=recursion_depth
         )
 
         # Find FILM output frames
