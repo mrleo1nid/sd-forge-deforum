@@ -45,6 +45,17 @@ def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, control
     """
     log_utils.info("🎬 Flux/Wan Mode: Flux Keyframes + Wan FLF2V Interpolation", log_utils.BLUE)
 
+    # Pre-download soundtrack if specified (same as core.py)
+    if video_args.add_soundtrack == 'File' and video_args.soundtrack_path is not None:
+        if video_args.soundtrack_path.startswith(('http://', 'https://')):
+            print(f"Pre-downloading soundtrack at the beginning of the render process: {video_args.soundtrack_path}")
+            try:
+                from deforum.media.video_audio_utilities import download_audio
+                video_args.soundtrack_path = download_audio(video_args.soundtrack_path)
+                print(f"Audio successfully pre-downloaded to: {video_args.soundtrack_path}")
+            except Exception as e:
+                print(f"Error pre-downloading audio: {e}")
+
     # Create render data
     data = RenderData.create(args, parseq_args, anim_args, video_args, loop_args, controlnet_args, root)
 
@@ -580,6 +591,9 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
         log_utils.info(f"✅ Video stitched successfully", log_utils.GREEN)
 
         # Add audio if specified (use pre-downloaded path from video_args)
+        log_utils.info(f"🔍 DEBUG: video_args.add_soundtrack = {video_args.add_soundtrack}")
+        log_utils.info(f"🔍 DEBUG: video_args.soundtrack_path = {video_args.soundtrack_path}")
+
         if video_args.add_soundtrack == 'File' and video_args.soundtrack_path:
             log_utils.info(f"🎵 Adding audio track...", log_utils.BLUE)
             temp_output = output_path + '.temp.mp4'
