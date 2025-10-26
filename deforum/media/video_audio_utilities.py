@@ -235,22 +235,45 @@ def get_quick_vid_info(vid_path):
 
 
 def download_audio(audio_path):
-    # TODO? check if file already exists and don't DL again if it does.
+    """Download audio file from URL with caching to avoid repeated downloads.
+
+    Audio files are cached in models/Deforum/audio_cache/ directory using
+    URL hash as filename to enable reuse across multiple generations.
+    """
     audio_path = clean_gradio_path_strings(audio_path)
     if audio_path.startswith(('http://', 'https://')):
         url = audio_path
+
+        # Setup cache directory
+        cache_dir = os.path.join(os.getcwd(), "models", "Deforum", "audio_cache")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        # Create cache filename from URL hash + extension
+        import hashlib
+        url_hash = hashlib.sha256(url.encode()).hexdigest()[:16]
+        _, ext = os.path.splitext(url)
+        ext = ext if ext else '.mp3'
+        cache_filename = f"{url_hash}{ext}"
+        cache_path = os.path.join(cache_dir, cache_filename)
+
+        # Check cache first
+        if os.path.exists(cache_path):
+            print(f"Using cached audio file: {cache_filename}")
+            return cache_path
+
+        # Download if not cached
         print(f"Downloading audio file from: {url}")
         response = get_http_client().get(url, stream=True)
         response.raise_for_status()
-        _, ext = os.path.splitext(url)  # Extract the file extension from the URL..
-        ext = ext if ext else '.mp3'  # ..or default to .mp3 if no extension is present
-        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as temp_file:
+
+        # Save to cache
+        with open(cache_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
-                if chunk:  # filter out keep-alive new chunks
-                    temp_file.write(chunk)
-            audio_path = temp_file.name
-            print(f"Audio saved to: {audio_path}")
-        temp_file.close()
+                if chunk:
+                    f.write(chunk)
+
+        print(f"Audio cached to: {cache_filename}")
+        audio_path = cache_path
     return audio_path
 
 
