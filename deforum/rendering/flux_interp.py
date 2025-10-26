@@ -517,8 +517,10 @@ def generate_flf2v_segment(wan_integration, first_image, last_image, prompt, num
 
 
 def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
-    """Stitch all frames into final video"""
+    """Stitch all frames into final video using ffmpeg concat demuxer"""
     from deforum.media.video_audio_utilities import get_ffmpeg_params
+    import glob
+    import subprocess
 
     # Get ffmpeg parameters from settings
     ffmpeg_location, ffmpeg_crf, ffmpeg_preset = get_ffmpeg_params()
@@ -529,32 +531,84 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
     output_filename = f"{data.args.root.timestring}_flux_{method_suffix}.mp4"
     output_path = os.path.join(data.output_directory, output_filename)
 
-    # Build frame pattern (frames are named 000000001.png, 000000002.png, etc.)
-    imgs_pattern = os.path.join(data.output_directory, "%09d.png")
+    # Collect ALL frame files (keyframes + tweens) sorted numerically
+    all_frames = sorted(
+        glob.glob(os.path.join(data.output_directory, "[0-9]" * 9 + ".png")),
+        key=lambda x: int(os.path.basename(x).split('.')[0])
+    )
 
-    # Count ALL frames in output directory (keyframes + tweens)
-    # frame_paths only contains tweens, but keyframes are also saved to output_dir
-    # Only count numbered frames (000000001.png format), not settings/other PNGs
-    import glob
-    import re
-    all_pngs = glob.glob(os.path.join(data.output_directory, "*.png"))
-    numbered_frames = [f for f in all_pngs if re.match(r'.*\d{9}\.png$', f)]
-    total_frames = len(numbered_frames)
-
+    total_frames = len(all_frames)
     log_utils.info(f"🎬 Stitching {total_frames} frames (includes {len(data.keyframes)} keyframes + {len(frame_paths)} tweens)...", log_utils.BLUE)
 
-    ffmpeg_stitch_video(
-        ffmpeg_location=ffmpeg_location,
-        fps=video_args.fps,
-        outmp4_path=output_path,
-        stitch_from_frame=1,
-        stitch_to_frame=total_frames,  # ALL frames (keyframes + tweens)
-        imgs_path=imgs_pattern,
-        add_soundtrack=video_args.add_soundtrack,
-        audio_path=video_args.soundtrack_path if video_args.add_soundtrack == 'File' else None,
-        crf=ffmpeg_crf,
-        preset=ffmpeg_preset
-    )
+    # Create concat file list for ffmpeg
+    concat_file = os.path.join(data.output_directory, f"_{data.args.root.timestring}_concat.txt")
+    with open(concat_file, 'w') as f:
+        for frame_path in all_frames:
+            # Escape single quotes for ffmpeg concat demuxer
+            escaped_path = frame_path.replace("'", "'\\''")
+            f.write(f"file '{escaped_path}'\n")
+            # Duration for each frame (1/fps seconds)
+            f.write(f"duration {1.0 / video_args.fps}\n")
+        # Last frame needs to be repeated without duration for proper video ending
+        if all_frames:
+            escaped_path = all_frames[-1].replace("'", "'\\''")
+            f.write(f"file '{escaped_path}'\n")
+
+    try:
+        # Build ffmpeg command using concat demuxer
+        cmd = [
+            ffmpeg_location,
+            '-y',  # Overwrite output
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', concat_file,
+            '-c:v', 'libx264',
+            '-pix_fmt', 'yuv420p',
+            '-crf', str(ffmpeg_crf),
+            '-preset', ffmpeg_preset,
+            output_path
+        ]
+
+        log_utils.info(f"   Running ffmpeg concat...", log_utils.BLUE)
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        stdout, stderr = process.communicate()
+
+        if process.returncode != 0:
+            log_utils.error(f"FFmpeg failed: {stderr}", log_utils.RED)
+            raise RuntimeError(f"FFmpeg failed with return code {process.returncode}")
+
+        log_utils.info(f"✅ Video stitched successfully", log_utils.GREEN)
+
+        # Add audio if specified (use pre-downloaded path from video_args)
+        if video_args.add_soundtrack == 'File' and video_args.soundtrack_path:
+            log_utils.info(f"🎵 Adding audio track...", log_utils.BLUE)
+            temp_output = output_path + '.temp.mp4'
+
+            audio_cmd = [
+                ffmpeg_location,
+                '-y',
+                '-i', output_path,
+                '-i', video_args.soundtrack_path,  # Already downloaded by render orchestrator
+                '-map', '0:v',
+                '-map', '1:a',
+                '-c:v', 'copy',
+                '-shortest',
+                temp_output
+            ]
+
+            audio_process = subprocess.Popen(audio_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            audio_stdout, audio_stderr = audio_process.communicate()
+
+            if audio_process.returncode != 0:
+                log_utils.warning(f"Failed to add audio: {audio_stderr}", log_utils.YELLOW)
+            else:
+                os.replace(temp_output, output_path)
+                log_utils.info(f"✅ Audio added successfully", log_utils.GREEN)
+
+    finally:
+        # Cleanup concat file
+        if os.path.exists(concat_file):
+            os.remove(concat_file)
 
     return output_path
 
@@ -601,13 +655,8 @@ def generate_film_segment(first_image, last_image, num_frames, height, width,
         first_image.save(os.path.join(temp_input, "0000000.png"))
         last_image.save(os.path.join(temp_input, "0000001.png"))
 
-        # Calculate interpolation amount (FILM uses 2^n recursion)
-        # For num_frames, find nearest power of 2
-        recursion_depth = max(1, math.ceil(math.log2(num_frames + 1)))
-        total_frames_generated = 2 ** recursion_depth + 1  # Includes keyframes
-
+        log_utils.info(f"   Generating {num_frames} intermediate frames", log_utils.YELLOW)
         log_utils.info(f"   Temp input: {temp_input}", log_utils.YELLOW)
-        log_utils.info(f"   Recursion depth: {recursion_depth} (generates {total_frames_generated - 2} tweens)", log_utils.YELLOW)
 
         # Ensure FILM model is downloaded
         film_model_folder = os.path.join(os.getcwd(), "models", "Deforum")
@@ -616,11 +665,13 @@ def generate_film_segment(first_image, last_image, num_frames, height, width,
         log_utils.info(f"   Checking FILM model: {film_model_path}", log_utils.YELLOW)
         check_and_download_film_model('film_net_fp16.pt', film_model_folder)
 
+        # FILM's inter_frames parameter = number of frames to ADD between input frames
+        # For 10 tween frames needed, pass inter_frames=10 (not recursion depth)
         run_film_interp_infer(
             model_path=film_model_path,
             input_folder=temp_input,
             save_folder=temp_output,
-            inter_frames=recursion_depth
+            inter_frames=num_frames  # Number of intermediate frames to generate
         )
 
         # Find FILM output frames
