@@ -532,15 +532,23 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
     # Build frame pattern (frames are named 000000001.png, 000000002.png, etc.)
     imgs_pattern = os.path.join(data.output_directory, "%09d.png")
 
-    # Stitch with ffmpeg
-    log_utils.info(f"🎬 Stitching {len(frame_paths)} frames...", log_utils.BLUE)
+    # Count ALL frames in output directory (keyframes + tweens)
+    # frame_paths only contains tweens, but keyframes are also saved to output_dir
+    # Only count numbered frames (000000001.png format), not settings/other PNGs
+    import glob
+    import re
+    all_pngs = glob.glob(os.path.join(data.output_directory, "*.png"))
+    numbered_frames = [f for f in all_pngs if re.match(r'.*\d{9}\.png$', f)]
+    total_frames = len(numbered_frames)
+
+    log_utils.info(f"🎬 Stitching {total_frames} frames (includes {len(data.keyframes)} keyframes + {len(frame_paths)} tweens)...", log_utils.BLUE)
 
     ffmpeg_stitch_video(
         ffmpeg_location=ffmpeg_location,
         fps=video_args.fps,
         outmp4_path=output_path,
         stitch_from_frame=1,
-        stitch_to_frame=len(frame_paths),  # Total number of frames to stitch
+        stitch_to_frame=total_frames,  # ALL frames (keyframes + tweens)
         imgs_path=imgs_pattern,
         add_soundtrack=video_args.add_soundtrack,
         audio_path=video_args.soundtrack_path if video_args.add_soundtrack == 'File' else None,
