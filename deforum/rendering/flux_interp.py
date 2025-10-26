@@ -35,15 +35,17 @@ from deforum.integrations.wan.wan_simple_integration import WanSimpleIntegration
 from deforum.media.video_audio_utilities import ffmpeg_stitch_video
 
 
-def render_wan_flux(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root):
+def render_flux_interp(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, wan_args, root):
     """
-    Flux/Wan rendering mode: Flux for keyframes + Wan for interpolation
+    Flux + Interpolation rendering mode: Flux for keyframes + choice of interpolation
 
     1. Generate all keyframes with Flux/SD
-    2. Interpolate between keyframes with Wan FLF2V
+    2. Interpolate between keyframes with Wan FLF2V or FILM
     3. Stitch final video
+
+    Interpolation method is selected via wan_args.flux_interpolation_method
     """
-    log_utils.info("🎬 Flux/Wan Mode: Flux Keyframes + Wan FLF2V Interpolation", log_utils.BLUE)
+    log_utils.info("🎬 Flux + Interpolation Mode: Flux Keyframes + ML Interpolation", log_utils.BLUE)
 
     # Pre-download soundtrack if specified (same as core.py)
     if video_args.add_soundtrack == 'File' and video_args.soundtrack_path is not None:
