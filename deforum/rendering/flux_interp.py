@@ -538,7 +538,7 @@ def stitch_wan_flux_video(data, frame_paths, video_args, interp_method="Wan"):
     )
 
     total_frames = len(all_frames)
-    log_utils.info(f"🎬 Stitching {total_frames} frames (includes {len(data.keyframes)} keyframes + {len(frame_paths)} tweens)...", log_utils.BLUE)
+    log_utils.info(f"🎬 Stitching {total_frames} total frames into video...", log_utils.BLUE)
 
     # Create concat file list for ffmpeg
     concat_file = os.path.join(data.output_directory, f"_{data.args.root.timestring}_concat.txt")
